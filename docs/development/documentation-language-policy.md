@@ -21,6 +21,7 @@ document families:
 | Canonical English source | Japanese reference translation |
 |---|---|
 | `README.md` | `README_ja.md` |
+| `docs/architecture/defender-event-processing-flow.md` | `docs/architecture/defender-event-processing-flow_ja.md` |
 | `docs/AI_SOC_Lab_Master_Guide.md` | `docs/AI_SOC_Lab_Master_Guide_ja.md` |
 | `docs/roadmap/roadmap.md` | `docs/roadmap/roadmap_ja.md` |
 | `docs/roadmap/phase*.md` | Phase-specific Japanese translations are optional and are not required for every phase. |

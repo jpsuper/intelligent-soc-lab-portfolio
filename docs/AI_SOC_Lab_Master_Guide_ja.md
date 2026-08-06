@@ -68,7 +68,7 @@ Rule Improvement
 
 Defender側のtelemetry → parser → normalization → detection → correlation →
 triage → investigationフローにおける詳細な責務とtrust boundaryについては、
-[Defender Event Processing Flow](architecture/defender-event-processing-flow.md)
+[Defender Event Processing Flow（日本語参考訳）](architecture/defender-event-processing-flow_ja.md)
 を参照してください。
 
 設計原則:
@@ -376,7 +376,7 @@ evaluation / comparison / review済みimprovement
 - Phase7のhistoryとdeferred scenario boundary:
   [Phase7 Roadmap](roadmap/phase7.md)
 - cross-platform defender flow:
-  [Defender Event Processing Flow](architecture/defender-event-processing-flow.md)
+  [Defender Event Processing Flow（日本語参考訳）](architecture/defender-event-processing-flow_ja.md)
 - Action後のevidence boundary:
   [Post-action DFIR Investigation](design/dfir/post_action_dfir_investigation.md)
 - review済みRule Improvement artifact flow:
@@ -733,7 +733,7 @@ repository-structure review processと、必要に応じてADRが必要です。
   "timestamp": "2026-03-16T10:00:00Z",
   "host": "ubuntu-victim01",
   "event_type": "ssh_failed_login",
-  "src_ip": "192.0.2.40",
+  "src_ip": "10.0.1.10",
   "user": "root",
   "raw_log": "...",
   "rule": null,
@@ -779,7 +779,7 @@ primary artifactの例:
   "scenario_name": "ssh_bruteforce_priv_esc",
   "severity": "high",
   "host": "ubuntu-victim01",
-  "src_ip": "192.0.2.40",
+  "src_ip": "10.0.1.10",
   "timeline": [],
   "matched_rules": [
     "ssh_failed_login",
@@ -1038,7 +1038,7 @@ runner successをdefender側のobservationと表現してはいけません。
 - active priorityとDone Criteria:
   [Main Roadmap](roadmap/roadmap.md)
 - sourceからcommon defender stageまでの境界:
-  [Defender Event Processing Flow](architecture/defender-event-processing-flow.md)
+  [Defender Event Processing Flow（日本語参考訳）](architecture/defender-event-processing-flow_ja.md)
 - Phase6 implementation history:
   [Phase6 Roadmap](roadmap/phase6.md)
 - Phase7 implementation history:
@@ -1079,7 +1079,7 @@ runner successをdefender側のobservationと表現してはいけません。
 - [Agent Architecture](architecture/agent-architecture.md)
 - [Lab Architecture](architecture/lab-architecture.md)
 - [SOC Lab System Diagram](architecture/soc-lab-system-diagram.md)
-- [Defender Event Processing Flow](architecture/defender-event-processing-flow.md)
+- [Defender Event Processing Flow（日本語参考訳）](architecture/defender-event-processing-flow_ja.md)
 - [Repository Structure Policy](development/repository_structure.md)
 - [Documentation Language Policy](development/documentation-language-policy.md)
 

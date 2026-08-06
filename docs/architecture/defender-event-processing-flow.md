@@ -1,5 +1,7 @@
 # Defender Event Processing Flow
 
+[日本語](defender-event-processing-flow_ja.md)
+
 ## Purpose
 
 This document explains how defender-side telemetry moves from source-specific
