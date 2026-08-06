@@ -48,6 +48,13 @@
 
 [著作権表示](NOTICE.md) · [セキュリティポリシー](SECURITY.md)
 
+## ポートフォリオ概要資料
+
+プロジェクトの研究目的、end-to-end architecture、現在の実装境界、
+代表的な公開証跡、現在状況を9ページでまとめています。
+
+- [Intelligent SecOps Lab ポートフォリオ概要（PDF、9ページ）](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
+
 ## 5～10分のReview Path
 
 1. **Architecture:**
