@@ -1,8 +1,7 @@
 # Windows Telemetry MVP Contract
 
-Status: Design Contract / Source Fixture, Parser, Expected Parsed, Native
-Parity Tooling, Normalized Mapper, And Fixture A/B/C Expected
-Normalized/Detection Parity Implemented; Windows Telemetry Pipeline Pending
+Status: Design contract. See the [Main Roadmap](../../roadmap/roadmap.md) for
+current implementation and validation status.
 
 ## 1. Purpose
 
@@ -11,6 +10,14 @@ Windows endpoint telemetry MVP. It describes how Windows Event Log and Sysmon
 source events can be parsed and mapped into the existing
 [`normalized_endpoint_event`](../defender/normalized_endpoint_event_contract.md)
 contract and consumed by deterministic detection.
+
+> Document responsibility:
+> This document owns stable Windows source semantics, identity, normalization,
+> provenance, trust boundaries, and MVP scope. The
+> [Main Roadmap](../../roadmap/roadmap.md) owns implementation status,
+> priorities, sequencing, validation depth, and Done Criteria. Detailed fixture,
+> mapper, and native-parity evidence remains with the linked contracts and
+> runbook.
 
 The intended flow is:
 
@@ -32,131 +39,25 @@ The MVP starts with standalone Windows process telemetry, centered on Sysmon
 Event ID 1. Active Directory and Domain Controller telemetry are deferred.
 Detection remains deterministic under the existing lab policy.
 
-### Current Implementation Status
+### Implementation And Evidence References
 
-Implemented:
+Current Windows and cross-platform implementation status is maintained in the
+[Main Roadmap](../../roadmap/roadmap.md), including the distinction among
+fixture parity, bounded native observation, focused-test validation, live
+runtime validation, and complete cross-platform execution.
 
-- Sysmon Event ID 1 source fixture schema; and
-- focused source fixture schema tests;
-- sanitized Fixture A/B/C source JSON; and
-- focused source fixture inventory and consistency tests;
-- Sysmon Event ID 1 source parser; and
-- focused source parser tests;
-- parsed-event schema;
-- Fixture A/B/C expected parsed artifacts; and
-- exact parser parity tests;
-- native Event ID 1 collector adapter tooling;
-- local-only source/parser/parsed-schema parity validator;
-- focused collector and validator tooling tests; and
-- native parity runbook;
-- Sysmon Event ID 1 normalized endpoint mapper;
-- deterministic canonical event ID generation;
-- explicit `utc_time` timestamp precedence;
-- Windows path basename mapping; and
-- focused mapper tests;
-- Fixture A/B/C static expected normalized endpoint event objects; and
-- endpoint-envelope schema validation, expected-parsed-to-mapper exact parity,
-  and source-to-parser-to-mapper exact parity tests;
-- existing atomic DSL/evaluator extensions for exact Windows/Sysmon routing,
-  case-insensitive exact PowerShell process matching, and case-insensitive exact
-  encoded-command token matching;
-- deterministic PowerShell process and encoded-command observation rules;
-- a dedicated expected-detection schema and Fixture A/B/C static
-  `expected_detection` artifacts; and
-- focused exact positive/negative parity and evaluator regression tests;
-- the Common Pipeline v0 detector-invocation spine;
-- a platform-neutral canonical-detection dedupe-to-correlation execution
-  boundary that reuses deterministic dedupe, invokes the existing Linux/SSH
-  correlation policies in fixed order, validates correlation output fail closed,
-  and preserves Fixture A/B/C = 1 / 2 / 0 deduped detections with 0
-  correlations; and
-- a platform-neutral correlation-result-to-Incident bridge that revalidates
-  deterministic dedupe and correlation contracts, creates one schema-valid
-  correlation-level Incident per result, and preserves correlation-derived
-  identity and defender evidence; and
-- a platform-neutral Incident selection boundary that gives exact validated
-  supporting-detection IDs correlation precedence, suppresses only their
-  observation-level duplicates, and preserves every uncovered detection as an
-  observation fallback; and
-- a platform-neutral canonical detection-to-Incident bridge with bounded
-  Fixture A/B/C observation-level Incident validation, including shared
-  top-level and timeline string-array `evidence_refs`; and
-- a platform-neutral canonical Incident-to-deterministic-Rule-Triage list
-  boundary with Fixture A/B/C = 1 / 2 / 0 schema-valid, identity-preserving
-  results; and
-- a platform-neutral identity-linked Incident/Triage-to-evidence-aware
-  pre-case-Investigation boundary with Fixture A/B/C = 1 / 2 / 0 schema-valid
-  results.
+Detailed evidence for this contract remains close to the relevant boundary:
 
-Observed manually on 2026-07-26:
+- the [Sysmon Event ID 1 Fixture Contract](sysmon_event1_fixture_contract.md)
+  owns fixture, parser, expected-output, and bounded native-observation evidence;
+- the [Sysmon Event ID 1 Normalized Mapper Contract](sysmon_event1_normalized_mapper_contract.md)
+  owns mapper identity, timestamp, field-mapping, and parity behavior; and
+- the [native parity runbook](../../runbooks/windows/sysmon_event1_native_parity.md)
+  owns the operator procedure and observed-run evidence.
 
-- bounded `windows-victim01` native collection;
-- source-shape, parser, and parsed-schema parity for 2/2 records;
-- independently valid `system_time` and `utc_time`; exact equality is not
-  required;
-- no unknown EventData warnings observed; and
-- no live artifacts committed.
-
-Not implemented:
-
-- full cross-platform execution validation;
-- live Windows detection-to-Investigation validation;
-- continuous live collection; and
-- Wazuh Windows integration.
-
-Correlation-to-correlation Incident merge or suppression is not implemented.
-It is an optional future policy, not a gap in the current selection boundary,
-and is not required for Common Pipeline v0 completion.
-
-The mapper reaches one normalized endpoint event per source-specific parsed
-event. Fixture A/B/C exact normalized/detection parity, the shared
-canonical-detection dedupe-to-correlation execution boundary, the focused-test
-validated correlation-result-to-Incident bridge, bounded observation-level
-Incident, exact-ID observation-vs-correlation duplicate suppression, and
-deterministic Rule Triage boundary validation, and bounded pre-case
-Investigation boundary mechanics and canonical Detection-entry in-memory
-composition are implemented. Fixture
-A/B/C produce no correlation because the current Windows observations do not
-satisfy either existing Linux/SSH multi-event policy. Selected-Incident
-downstream composition is focused-test validated with Fixture A/B/C = 1 / 2 / 0
-at Incident, Triage, and Investigation. Windows Triage/Investigation quality,
-AI/model validation, full cross-platform execution validation, later downstream
-stages, and live runtime integration remain unimplemented, so this does not make
-the Windows telemetry pipeline or Common Pipeline v0 complete.
-Correlation-to-correlation merge or suppression remains an optional future
-policy and is not required for v0 completion.
-
-```text
-Shared canonical-detection dedupe-to-correlation execution boundary:
-implemented and fixture-validated
-
-Correlation-result-to-Incident execution boundary:
-implemented and focused-test validated
-
-Correlation/no-correlation Incident selection policy:
-implemented and focused-test validated
-
-Observation-vs-correlation duplicate suppression:
-implemented by exact validated supporting-detection ID precedence
-
-Correlation-to-correlation merge or suppression:
-not implemented
-
-Canonical Detection → dedupe → correlation → selected Incident → Triage → Investigation composition:
-implemented and focused-test validated
-
-Full cross-platform execution validation:
-not complete
-
-Full Common Pipeline v0:
-not complete
-```
-
-This composition is in-memory and run-local. It does not define stable identity
-across reprocessing, changed selection results, or persistent storage, and it
-does not replace the separate existing detector spine.
-Correlation-to-correlation merge or suppression is an optional future policy
-and is not required for Common Pipeline v0 completion.
+The sections below define required behavior and scope. Describing a boundary or
+validation slice here does not by itself claim that it is implemented, live, or
+complete.
 
 ## 2. MVP Scope
 
@@ -171,9 +72,9 @@ Secondary / later in the same Windows MVP
   Security Event ID 4625 - Failed logon
 ```
 
-The first implementation slice can be complete with Sysmon Event ID 1 alone.
-Event IDs 4624 and 4625 require their own source-field mapping and fixtures
-before they are added.
+The MVP scope permits a Sysmon Event ID 1-only initial slice. Event IDs 4624
+and 4625 require their own source-field mapping and fixtures before they are
+added.
 
 The first MVP does not cover:
 
@@ -334,11 +235,11 @@ None of these identifiers substitutes for another. In particular, a backend
 record ID is not a Windows `event_record_id`, and a fixture record ID is not a
 live record identity.
 
-### Required Parsed Input For The Current Mapper
+### Required Parsed Input For The Sysmon Event ID 1 Mapper
 
 The complete authority is
 [`sysmon_event1_parsed_event.schema.json`](../../../schemas/sysmon_event1_parsed_event.schema.json).
-The implemented first-slice mapper requires these parsed fields:
+The Sysmon Event ID 1 mapper requires these parsed fields:
 
 ```text
 fixture_contract_version
@@ -367,7 +268,7 @@ timestamp, while `system_time` is required independent provenance.
 `parent_image` are also schema-required inputs, not partial-mapping quality
 hints.
 
-The implemented first-slice mapper fails closed with
+The Sysmon Event ID 1 mapper fails closed with
 `SysmonEvent1MappingError` when the parsed-event schema, provider route,
 identity inputs, timestamp inputs, Windows basename requirements, or endpoint
 output schema are invalid. A wrong provider, provider Event ID, or channel is
@@ -406,12 +307,12 @@ unrestricted copy of the raw event.
 
 ## 6. Mapping To `normalized_endpoint_event`
 
-The current
+The
 [`endpoint_events.schema.json`](../../../schemas/endpoint_events.schema.json)
 is the canonical field authority. The Sysmon Event ID 1 mapping uses its
 existing names.
 
-The exact implemented policy is defined in the
+The exact mapping policy is defined in the
 [`Sysmon Event ID 1 Normalized Mapper Contract`](sysmon_event1_normalized_mapper_contract.md).
 
 ### Canonical Event ID Generation
@@ -433,7 +334,7 @@ with SHA-256, and emitted as `sysmon-event1:v1:` plus the full lowercase
 version is `sysmon-event1-event-id.v1`. Original host case is preserved in
 `host`. `process_guid` remains provenance but is not an identity input while
 required `event_record_id` is present. Fallback and fixture-only identity are
-not implemented.
+outside this contract.
 
 | Sysmon parsed value | Canonical field | Mapping rule |
 |---|---|---|
@@ -533,7 +434,7 @@ Sysmon `EventRecordID`, or replace the original provider with Wazuh.
 
 ## 9. Initial Deterministic Detection
 
-The first implemented detection slice is a PowerShell process
+The initial deterministic detection contract is a PowerShell process
 observation derived from normalized `process_exec` events. Process creation is
 an atomic observation, not a malicious verdict.
 
@@ -544,7 +445,7 @@ Atomic observation
   event_type == process_exec
   process_name case-insensitive exact match == powershell.exe
 
-Implemented observable behavior features
+Observable behavior features
   powershell_process_observed
   encoded_command_observed
 ```
@@ -570,7 +471,7 @@ severity, confidence, assessment, or response approval.
 
 ## 10. Fixture-First Validation
 
-The implementation order begins independently of Wazuh:
+The validation path remains independent of Wazuh:
 
 ```text
 sanitized Sysmon Event ID 1 fixture
@@ -582,7 +483,7 @@ sanitized Sysmon Event ID 1 fixture
   -> incident boundary smoke
 ```
 
-The first fixture set must be:
+The validation fixture set must be:
 
 - sanitized and deterministic;
 - free of real usernames, credentials, tokens, and secrets;
@@ -595,7 +496,7 @@ The source fixture must not contain a `malicious` label. Expected normalized
 events and expected behavior features belong in separate test expectations or
 fixtures so source evidence is not confused with a verdict.
 
-## 11. Candidate Fixture Set
+## 11. Validation Fixture Set
 
 ### Fixture A: Ordinary PowerShell Administration
 
@@ -703,7 +604,7 @@ semantics. Their correlation model differs from standalone endpoint process
 telemetry. Adding them before standalone mapping is stable would expand the
 contract before its first boundary is validated.
 
-Work can progress to an AD/DC design after:
+An AD/DC design must preserve these entry conditions:
 
 ```text
 Sysmon Event ID 1 fixture parser is stable
@@ -716,66 +617,20 @@ a Wazuh-independent fixture path is complete
 These are entry criteria for later design, not completion claims in this
 document.
 
-## 16. Follow-Up Sequence
+## 16. Status And Planning References
 
-Completed:
+The [Main Roadmap](../../roadmap/roadmap.md) is the source of truth for the
+active sequence, Common Defender Pipeline completion boundary, and incomplete
+Windows work:
 
-1. Complete this Windows telemetry contract.
-2. Define a sanitized Sysmon Event ID 1 fixture contract.
-3. Implement the Sysmon Event ID 1 source fixture schema and focused tests.
-4. Add sanitized Fixture A/C and focused source fixture tests.
-5. Implement the Sysmon Event ID 1 source parser and focused parser tests.
-6. Add expected parsed artifacts, a parsed-event schema, and parity tests.
-7. Run bounded native Sysmon Event ID 1 collection/source-shape and parser
-   parity.
-8. Implement `normalized_endpoint_event` mapping.
-9. Add `expected_normalized` Fixture A/C artifacts and exact parity tests.
-10. Add Fixture B (`sysmon-event1-encoded-flag-001`) source, parsed, and
-    normalized coverage.
-11. Add the deterministic PowerShell observation rule and Fixture A/B/C
-    `expected_detection` parity.
-12. Implement the Common Defender Pipeline v0 detector-invocation spine.
-13. Connect bounded Windows Slice 1 to the existing observation-level Incident
-    boundary.
-14. Connect the canonical Incident list to bounded deterministic Rule Triage.
-15. Connect identity-linked Incident/Triage pairs to bounded evidence-aware
-    pre-case Investigation.
-16. Implement the shared platform-neutral canonical-detection
-    dedupe-to-correlation execution boundary with characterization coverage for
-    both existing policies plus Linux Scenario 009 and Windows Fixture A/B/C
-    parity.
-17. Implement the platform-neutral correlation-result-to-Incident in-memory
-    boundary with focused fail-closed and parity coverage.
-18. Implement exact supporting-detection-ID Incident selection and
-    observation-vs-correlation duplicate suppression with focused coverage.
-19. Connect canonical Detections through dedupe, fixed correlation, exact-ID
-    selected Incident, Rule Triage, and pre-case Investigation as an in-memory
-    composition with Linux Scenario 009 and Windows Fixture A/B/C coverage.
+- [Active Sequence](../../roadmap/roadmap.md#4-active-sequence)
+- [Common Defender Pipeline v0](../../roadmap/roadmap.md#5-common-defender-pipeline-v0)
+- [Windows and cross-platform defender flow](../../roadmap/roadmap.md#61-windows-and-cross-platform-defender-flow)
 
-Next:
-
-20. Complete full cross-platform validation for Common Pipeline v0.
-21. Add the Windows Slice 2 multi-event correlation validation.
-
-Future implementation and integration:
-
-22. Add Security Event ID 4624 and 4625 fixtures and mapping.
-23. Add optional Wazuh Indexer retrieval.
-24. Validate Windows Wazuh mapping parity.
-25. Define AD and Domain Controller telemetry.
-
-Every implementation step requires its own focused review. The implemented
-Common Pipeline v0 subset is limited to the detector spine, the standalone
-shared canonical-detection dedupe-to-correlation execution boundary, the
-focused-test validated correlation-result-to-Incident and exact-ID Incident
-selection boundaries, and the canonical Detection-entry in-memory composition
-through selected Incident, deterministic Rule Triage, and pre-case
-Investigation. This document does not claim full cross-platform execution
-validation, continuous collection, Wazuh
-retrieval, live normalized parity, Windows Triage/Investigation quality, AI
-model validation, or full Common Pipeline v0 completion.
-Correlation-to-correlation merge or suppression remains an optional future
-policy and is not required for v0 completion.
+This contract intentionally carries no independent Completed, Next, or Future
+implementation list. Contract changes still require focused review and must
+preserve the source, identity, provenance, safety, runtime, and retrieval
+boundaries defined here.
 
 ## 17. Non-Goals
 
@@ -794,5 +649,5 @@ This design does not:
   runtime artifacts; or
 - change Windows, Sysmon, Wazuh, or lab runtime configuration.
 
-Observed product behavior, if added later, must be labeled separately from this
-future lab design. Product behavior does not override lab policy.
+Observed product behavior must be labeled separately from this contract.
+Product behavior does not override lab policy.

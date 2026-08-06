@@ -6,7 +6,8 @@ This document defines how `observed_effects_alignment` gaps should be surfaced t
 
 The goal is to connect attacker-side observed effects with the improvement loop without confusing attacker-side evidence with defender-side detection.
 
-This contract is intentionally docs-first. It should be used to guide a later additive implementation in the process pipeline or Rule Improvement Agent.
+This contract governs the additive signal path used by the Rule Improvement
+Agent and its human-review artifacts.
 
 ---
 
@@ -132,7 +133,7 @@ Recommended review categories:
 
 ## 7. Review Signal Shape
 
-A future implementation may emit a signal shaped like this:
+The additive review signal uses this shape:
 
 ```json
 {
@@ -169,7 +170,7 @@ A future implementation may emit a signal shaped like this:
 | `effect_type` | Attacker-side observed effect type. |
 | `expected_defender_artifact` | Defender-side artifact expected by the mapping. |
 | `review_required` | Must be `true` for this contract. |
-| `auto_generate_rule_candidate` | Must be `false` for initial implementation. |
+| `auto_generate_rule_candidate` | Must be `false` under this contract. |
 
 ### 7.2 Recommended fields
 
@@ -185,11 +186,11 @@ A future implementation may emit a signal shaped like this:
 
 ## 8. Rule Improvement Handling Policy
 
-### 8.1 Initial behavior
+### 8.1 Review behavior
 
-The Rule Improvement workflow should treat these signals as human-reviewable context.
+The Rule Improvement workflow treats these signals as human-reviewable context.
 
-Initial behavior:
+Review behavior:
 
 ```text
 observed_effects_alignment gap
@@ -200,7 +201,7 @@ candidate_review.md or equivalent review artifact
   ↓
 human classification
   ↓
-optional candidate generation in a later step
+optional candidate generation after a separate review gate
 ```
 
 ### 8.2 Candidate generation gate
@@ -251,22 +252,15 @@ It does not redefine the alignment algorithm.
 
 ### 9.3 Rule Improvement outputs
 
-Existing Rule Improvement outputs remain unchanged:
-
-```text
-rule_candidates.yaml
-prompt_candidates.yaml
-promotion_recommendation.yaml
-candidate_review.md
-```
-
-A later implementation may add a review section or optional signal file, but this docs-only contract does not require a new runtime artifact.
-
-Possible future artifact:
+Relevant Rule Improvement review outputs include:
 
 ```text
 observed_effects_alignment_signals.json
+candidate_review.md
 ```
+
+The signal artifact and review rendering remain additive and review-only. They
+must not populate candidate or recommendation artifacts automatically.
 
 ---
 
@@ -295,29 +289,31 @@ Signals may include:
 
 ---
 
-## 11. Minimal Implementation Plan
+## 11. Status And Evidence Ownership
 
-Recommended implementation order:
+This document owns alignment-gap signal semantics, the separation between
+attacker-side and defender-side evidence, human-review requirements, and the
+non-candidate boundary. Implemented signal generation, review rendering, and
+focused tests are evidence for those boundaries.
 
-1. Document this contract.
-2. Update roadmap and Phase6 references.
-3. Add an optional review signal section to Rule Improvement review output.
-4. Keep candidate generation disabled by default.
-5. Add tests using synthetic `observed_effects_alignment` items.
-6. Only later consider dedicated signal artifacts or Rule Improvement Agent input wiring.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+New alignment statuses require documented review semantics and focused tests
+before they may enter this contract.
 
 ---
 
-## 12. Done Criteria
+## 12. Boundary Acceptance Criteria
 
-This contract is considered established when:
+The alignment-signal boundary remains valid when:
 
-- `attacker_observed_defender_missing` is defined as a reviewable signal
-- attacker-side evidence is explicitly separated from defender-side detection
+- `attacker_observed_defender_missing` remains a reviewable signal
+- attacker-side evidence remains separate from defender-side detection
 - alignment signals do not change `overall_result` or `detected`
-- rule candidates are not auto-generated from alignment gaps
-- review categories are documented
-- future implementation can add the signal additively
+- alignment gaps do not auto-generate rule candidates
+- review categories remain explicit
+- new signal types are introduced additively with documented semantics and
+  focused tests
 
 ---
 

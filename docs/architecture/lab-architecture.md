@@ -1,6 +1,14 @@
 # AI SOC Lab Architecture
 
-This document describes the practical node layout and VM placement for the AI SOC research lab.
+This document describes the practical node layout, VM lifecycle, and logical
+component placement for the AI SOC research lab.
+
+> Document responsibility:
+> This document owns physical node roles, hardware placement, VM lifecycle, and
+> logical component placement. The [Main Roadmap](../roadmap/roadmap.md) owns
+> current implementation status, priorities, validation depth, and Done
+> Criteria. Component or phase placement in this document does not establish
+> that an item is implemented or live-validated.
 
 It reflects the current confirmed hardware:
 
@@ -8,9 +16,17 @@ It reflects the current confirmed hardware:
 - **Node2**: GMKtec NucBox K8 Plus / SOC Core
 - **Node3**: future optional AI node
 
-Goal:
+Target flow:
 
-Attack -> Collect -> Detect -> Correlate -> Build Incident -> Triage -> Investigate -> Improve -> Attack Again
+```text
+Attack -> Collect -> Detect -> Correlate -> Build Incident -> Triage
+  -> pre-case Investigation -> Case -> Action -> Approval / Execution
+  -> Collection Result -> post-action DFIR -> Review / Improve -> Attack Again
+```
+
+See the [System Diagram](soc-lab-system-diagram.md) and
+[Agent Architecture](agent-architecture.md) for stable processing and trust
+boundaries.
 
 ---
 
@@ -34,7 +50,7 @@ Role:
 
 This node is the place where attacks happen and where logs are generated.
 
-### Typical VMs over time
+### Node1 VM Evolution
 
 Phase0-2
 - kali-attacker
@@ -44,7 +60,7 @@ Phase3+
 - ubuntu-victim02
 - windows-victim01
 
-Phase4+
+Phase5+
 - dc01 (optional when AD phase starts)
 
 Phase7+
@@ -77,26 +93,27 @@ Role:
 
 This node is the central SOC platform.
 
-### Typical VMs over time
+### Node2 Deployment Evolution
 
 Phase0-2
-- soc-analyzer
+- VM: `soc-analyzer`
 
 Phase1+
-- log-pipeline (optional split later)
+- optional VM: `log-pipeline`
 
 Phase4+
-- thehive
-- velociraptor
+- VMs: `thehive-vm`, `velociraptor-server`
 
 Phase5+
-- wazuh
+- VM: `wazuh-server`
 
 Phase6+
-- orchestrator
+- logical component: `orchestrator`; no dedicated VM is required by the phase
+  plan
 
 Phase7+
-- deception-controller (can share soc-analyzer early)
+- logical component: `deception-controller`; it can share `soc-analyzer`
+  initially
 
 ### AI usage on Node2
 
@@ -208,28 +225,47 @@ But this is **not required for Phase0**.
 
 ---
 
-# 4. VM Build Plan by Phase
+# 4. Infrastructure and Capability Plan by Phase
+
+This section describes both VM lifecycle changes and capability placement. It
+is not a list of dedicated VMs to create for every item shown under a node.
+
+- **New VMs** are guests first introduced in that phase.
+- **Reused VMs** are existing guests used by that phase and do not require a
+  new build.
+- **Logical components** identify node placement but do not imply a dedicated
+  VM unless explicitly stated.
+- **Capability scope** describes intended functional placement rather than
+  implementation status.
+
+Phase placement describes the intended architecture and does not by itself
+prove that a VM has been provisioned or live-validated.
 
 ## Phase0 — Minimum Viable Lab
 
-### Node1
-#### kali-attacker
+### Phase0 New VMs
+
+#### Phase0 Node1
+
+##### kali-attacker
 - 2 vCPU
 - 4GB RAM
 - 40GB Disk
 
-#### ubuntu-victim01
+##### ubuntu-victim01
 - 2 vCPU
 - 2GB RAM
 - 20GB Disk
 
-### Node2
-#### soc-analyzer
+#### Phase0 Node2
+
+##### soc-analyzer
 - 4 vCPU
 - 8GB RAM
 - 60GB Disk
 
-Purpose:
+### Phase0 Capability Scope
+
 - parser-agent
 - detection-agent
 - basic incident output
@@ -253,14 +289,15 @@ detection hits
 
 ## Phase1 — Detection / Correlation
 
-### Node1
-- kali-attacker
-- ubuntu-victim01
+### Phase1 VM Changes
 
-### Node2
-- soc-analyzer
+- New VMs: none
+- Reused VMs:
+  - Node1: `kali-attacker`, `ubuntu-victim01`
+  - Node2: `soc-analyzer`
 
-Functions added:
+### Phase1 Capability Scope
+
 - correlation-agent
 - incident-builder-agent
 
@@ -268,11 +305,16 @@ Functions added:
 
 ## Phase2 — AI Triage
 
-### Node2
-- soc-analyzer (same VM at first)
-- optional split: ai-triage VM later if needed
+### Phase2 VM Changes
 
-Functions added:
+- Required new VMs: none
+- Reused VM:
+  - Node2: `soc-analyzer`
+- Optional future VM:
+  - Node2: `ai-soc`, if resource or isolation requirements justify a split
+
+### Phase2 Capability Scope
+
 - AI triage
 - report generation
 
@@ -280,11 +322,15 @@ Functions added:
 
 ## Phase3 — Adversary Simulation Expansion
 
-### Node1
-- ubuntu-victim02
-- windows-victim01 (optional, if capacity allows)
+### Phase3 VM Changes
 
-Functions added:
+- New VM:
+  - Node1: `ubuntu-victim02`
+- Optional new VM:
+  - Node1: `windows-victim01`, if capacity allows
+
+### Phase3 Capability Scope
+
 - scenario-agent
 - attacker-agent
 - repeatable multi-host scenarios
@@ -293,30 +339,35 @@ Functions added:
 
 ## Phase4 — Incident Response / Case Workflow
 
-### Node2
-- thehive
-- velociraptor
+### Phase4 VM Changes
 
-### Node1
-- windows-victim01 recommended by this stage
+- Planned new VMs:
+  - Node2: `thehive-vm`, `velociraptor-server`
+- Required availability:
+  - Node1: `windows-victim01` should be available by this phase; add it here if
+    it was deferred in Phase3
 
-Functions added:
-- case workflow
-- artifact collection
-- Linux / Windows investigation
+### Phase4 Capability Scope
+
+- pre-case Investigation and internal Case workflow
+- evidence-gap analysis and collection-request preparation
+- separate external Case and collection integration boundaries
 
 ---
 
 ## Phase5 — Endpoint Telemetry
 
-### Node2
-- wazuh
+### Phase5 VM Changes
 
-### Node1
-- windows-victim01
-- optional dc01
+- Planned new VM:
+  - Node2: `wazuh-server`
+- Reused VM:
+  - Node1: `windows-victim01`
+- Optional new VM:
+  - Node1: `dc01`
 
-Functions added:
+### Phase5 Capability Scope
+
 - Sysmon
 - Wazuh agent
 - auditd
@@ -326,67 +377,62 @@ Functions added:
 
 ## Phase6 — Automated Improvement Loop
 
-### Node2
-- orchestrator
-- rule improvement workflows
+### Phase6 VM Changes
 
-Functions added:
-- scenario-to-triage automation
-- improvement loop experiments
-- Rule Improvement export MVP for reviewed candidate-generation outputs
-- Rule Improvement apply / deploy / promotion remains review-gated and is not
-  automatic
+- Dedicated new VMs: none in the current plan
+- Logical components on Node2:
+  - orchestrator
+  - rule improvement workflows
+- The current architecture does not yet assign these components to a dedicated
+  VM. A separate VM may be introduced later if isolation or capacity requires
+  one.
+
+### Phase6 Capability Scope
+
+- scenario-to-analysis and evaluation-loop orchestration
+- reviewed Rule Improvement proposal, candidate, recommendation, and export
+  artifact flow
+- explicit review and approval gates for Rule Improvement apply, deploy, and
+  promotion operations
 
 ---
 
 ## Phase7 — Deception
 
-### Node1
-- honeypot01 / deception target
+### Phase7 VM Changes
 
-### Node2
-- deception controller (may stay inside SOC analyzer early)
+- Planned new VM:
+  - Node1: `honeypot01` / deception target
+- Logical component on Node2:
+  - deception controller; it may remain inside `soc-analyzer` initially and
+    does not require a dedicated VM
 
-Functions added:
-- Phase7 deception artifact foundation is complete through schemas, local asset
-  generation, trap hit generation, incident bridge, and chain smoke coverage
-- Phase7 deception scenario YAML / runner implementation is intentionally
-  deferred
-- future honeytoken deployment, trap detection, and high-confidence deception
-  alerting remain later implementation work
+### Phase7 Capability Scope
 
-Current scenario expansion status:
+- deception inventory and bounded local-lab asset generation
+- defender-side trap observations and deterministic deception-hit generation
+- deception-hit-to-Incident bridging
+- future high-confidence alerting from validated defender-side trap evidence
+- preservation of the boundary that attacker-side observed effects do not prove
+  defender-side deception hits
 
-- Scenario family expansion policy governs scenario growth after `scenario_008`.
-- Linux scenario family candidates selected `suspicious_archive_staging` as the
-  first broader Linux candidate.
-- `scenario_009_suspicious_archive_staging` is implemented as a local scenario
-  YAML + shell runner slice.
-- `scenario_009` emits attacker-side structured events and observed effects for
-  staging directory creation, synthetic file writing, archive creation, and
-  archive permission change.
-- `scenario_009` has an initial synthetic defender-side endpoint fixture and DSL
-  detection expectation for `suspicious_archive_staging`.
-- `scenario_009` has an initial helper-level observation incident bridge for
-  `suspicious_archive_staging` detection hits.
-- Live auditd / Wazuh / SIEM telemetry collection for `scenario_009` is not
-  complete, and triage / investigation / action coverage for `scenario_009` is
-  not complete.
-
-External framework stance:
-
-- Atomic Red Team is a reference / mapping source only; no Atomic adapter is
-  implemented.
-- CALDERA is later optional integration; no CALDERA integration is implemented.
+Current implementation and validation status are maintained in the
+[Main Roadmap](../roadmap/roadmap.md) and
+[Phase7 Roadmap](../roadmap/phase7.md).
 
 ---
 
 ## Phase8 — Background Activity
 
-### Node1
-- background activity generation on Linux / Windows victims
+### Phase8 VM Changes
 
-Functions added:
+- Dedicated new VMs: none in the current plan
+- Reused VMs:
+  - Node1: existing Linux and Windows victim VMs
+
+### Phase8 Capability Scope
+
+- background activity generation on Linux / Windows victims
 - normal SSH login noise
 - sudo noise
 - apt / cron noise
@@ -401,11 +447,11 @@ Do **not** build the final lab all at once.
 
 Start with only:
 
-## Node1
+## Starting Node1
 - kali-attacker
 - ubuntu-victim01
 
-## Node2
+## Starting Node2
 - soc-analyzer
 
 This is enough to begin:
@@ -430,5 +476,7 @@ And:
 - keep cluster features out for now
 - keep networking simple first
 - only split more VMs when a phase truly needs them
+- keep current status, priorities, validation depth, and Done Criteria in the
+  Main Roadmap and phase documents
 
 This architecture is intentionally practical rather than overengineered.

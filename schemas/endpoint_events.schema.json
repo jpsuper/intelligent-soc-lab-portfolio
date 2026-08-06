@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/endpoint_events.schema.json",
+  "title": "endpoint_events",
+  "description": "Normalized endpoint telemetry artifact for defender-side process, file, network, auth, and platform events.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "events"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "enum": [
+        "endpoint_events.v1"
+      ],
+      "description": "Endpoint events schema version."
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Generation timestamp for this endpoint event artifact."
+    },
+    "source_artifact": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional source artifact used to produce this normalized artifact."
+    },
+    "source_run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional run or collection identifier associated with this artifact."
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional artifact-level metadata."
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/endpointEvent"
+      }
+    }
+  },
+  "$defs": {
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "nullableNumberLike": {
+      "type": [
+        "string",
+        "integer",
+        "number",
+        "null"
+      ]
+    },
+    "nullablePort": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "endpointEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "event_id",
+        "source",
+        "platform",
+        "host",
+        "timestamp",
+        "event_type"
+      ],
+      "properties": {
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Telemetry source, for example auditd, sysmon, windows_security, osquery, velociraptor, wazuh, macos, splunk, elk, or unknown."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "linux",
+            "windows",
+            "macos",
+            "unknown"
+          ]
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "collection_timestamp": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "event_type": {
+          "type": "string",
+          "enum": [
+            "process_exec",
+            "file_write",
+            "file_delete",
+            "file_rename",
+            "persistence_file_change",
+            "network_connection",
+            "dns_query",
+            "auth_success",
+            "auth_failure",
+            "privilege_change",
+            "service_change",
+            "scheduled_task_change",
+            "registry_change",
+            "unknown"
+          ]
+        },
+        "user": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "uid": {
+          "$ref": "#/$defs/nullableNumberLike"
+        },
+        "pid": {
+          "$ref": "#/$defs/nullableNumberLike"
+        },
+        "ppid": {
+          "$ref": "#/$defs/nullableNumberLike"
+        },
+        "process_name": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "exe": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "argv": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "command_line": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "cwd": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "file_path": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "file_action": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "src_ip": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "src_port": {
+          "$ref": "#/$defs/nullablePort"
+        },
+        "dest_ip": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "dest_port": {
+          "$ref": "#/$defs/nullablePort"
+        },
+        "protocol": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "parent_process_name": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "parent_exe": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "parent_command_line": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "raw_ref": {
+          "type": [
+            "string",
+            "object",
+            "null"
+          ],
+          "additionalProperties": true
+        },
+        "source_fields": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

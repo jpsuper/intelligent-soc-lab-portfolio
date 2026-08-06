@@ -1,0 +1,370 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rule_improvement_review_input_schema_v1",
+  "title": "Rule Improvement Review Input Schema",
+  "description": "Review-only, provenance-preserving signals projected from post-action DFIR. This artifact cannot approve candidates, allow promotion, or mutate investigation, case, action, approval, or containment state.",
+  "type": "object",
+  "required": [
+    "review_input_id",
+    "source_stage",
+    "source_result_ref",
+    "human_review_required",
+    "promotion_allowed"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "review_input_id": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "source_stage": {
+      "const": "post_action_dfir"
+    },
+    "source_result_ref": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "case_id": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "scenario_id": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "detection_type": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "observed_facts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/observed_fact"
+      }
+    },
+    "supporting_signals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/supporting_signal"
+      }
+    },
+    "evidence_gaps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence_gap"
+      }
+    },
+    "collection_limitations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/collection_limitation"
+      }
+    },
+    "recommended_review_questions": {
+      "$ref": "#/$defs/non_empty_strings"
+    },
+    "candidate_hints": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/candidate_hint"
+      }
+    },
+    "risk_notes": {
+      "$ref": "#/$defs/non_empty_strings"
+    },
+    "human_review_required": {
+      "const": true
+    },
+    "promotion_allowed": {
+      "const": false
+    }
+  },
+  "allOf": [
+    {
+      "anyOf": [
+        {
+          "required": ["observed_facts"],
+          "properties": {
+            "observed_facts": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": ["supporting_signals"],
+          "properties": {
+            "supporting_signals": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": ["evidence_gaps"],
+          "properties": {
+            "evidence_gaps": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": ["collection_limitations"],
+          "properties": {
+            "collection_limitations": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": ["risk_notes"],
+          "properties": {
+            "risk_notes": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": ["recommended_review_questions"],
+          "properties": {
+            "recommended_review_questions": {
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "required": ["candidate_hints"],
+          "properties": {
+            "candidate_hints": {
+              "minItems": 1
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "$defs": {
+    "non_empty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "string_refs": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/non_empty_string"
+      }
+    },
+    "non_empty_strings": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/string_refs"
+        },
+        {
+          "minItems": 1
+        }
+      ]
+    },
+    "observed_fact": {
+      "type": "object",
+      "required": [
+        "fact_id",
+        "fact_type",
+        "summary",
+        "evidence_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "fact_id": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "fact_type": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "evidence_refs": {
+          "allOf": [
+            {
+              "$ref": "#/$defs/string_refs"
+            },
+            {
+              "minItems": 1
+            }
+          ]
+        },
+        "timestamp": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "host": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "user": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "source_ip": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "evidence_strength": {
+          "const": "weak"
+        },
+        "evidence_characteristics": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "user_controlled",
+              "timing_sensitive"
+            ]
+          }
+        },
+        "interpretation_scope": {
+          "const": "shell_history_entry_not_confirmed_execution"
+        },
+        "observation_scope": {
+          "const": "point_in_time_process_snapshot"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "evidence_strength": {
+              "const": "weak"
+            },
+            "evidence_characteristics": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "enum": [
+                  "user_controlled",
+                  "timing_sensitive"
+                ]
+              }
+            },
+            "interpretation_scope": {
+              "const": "shell_history_entry_not_confirmed_execution"
+            },
+            "observation_scope": {
+              "const": "point_in_time_process_snapshot"
+            }
+          }
+        }
+      }
+    },
+    "supporting_signal": {
+      "type": "object",
+      "required": [
+        "signal_type",
+        "summary",
+        "review_status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "signal_type": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "review_status": {
+          "type": "string",
+          "enum": [
+            "unreviewed",
+            "pending_review"
+          ]
+        },
+        "source_fact_ids": {
+          "$ref": "#/$defs/string_refs"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/string_refs"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "evidence_gap": {
+      "type": "object",
+      "required": [
+        "gap_type",
+        "summary",
+        "related_artifacts",
+        "evidence_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "gap_type": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "related_artifacts": {
+          "$ref": "#/$defs/non_empty_strings"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/string_refs"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "collection_limitation": {
+      "type": "object",
+      "required": [
+        "limitation_type",
+        "summary",
+        "related_artifacts",
+        "evidence_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "limitation_type": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "related_artifacts": {
+          "$ref": "#/$defs/non_empty_strings"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/string_refs"
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "candidate_hint": {
+      "type": "object",
+      "required": [
+        "hint_type",
+        "summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "hint_type": {
+          "const": "review_hypothesis"
+        },
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "source_fact_ids": {
+          "$ref": "#/$defs/string_refs"
+        },
+        "evidence_refs": {
+          "$ref": "#/$defs/string_refs"
+        },
+        "candidate_generation_allowed": {
+          "const": false
+        },
+        "details": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

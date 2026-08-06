@@ -8,12 +8,62 @@
 
 [English](README.md)
 
+> [!NOTE]
+> この文書は英語版`README.md`の参考翻訳です。
+> 英語版を正本とし、内容に差異がある場合は英語版を優先してください。
+>
+> Canonical source: `README.md`
+> Synchronization status: synchronized
+> Last synchronization date: 2026-08-06
+
 セキュリティ運用の未来を実践的に研究するための、個人向けホームラボです。
 
 このプロジェクトでは、AIが攻撃シミュレーション、検知、相関分析、
 トリアージ、調査、対応、DFIR、継続的改善をどのように変え得るかを探ります。
 自動化できる範囲を試すだけでなく、依然として人間の判断が必要な領域や、
 今後生まれ得る新しい運用方法を明らかにすることも目的としています。
+
+## Public Snapshotの収録範囲
+
+このリポジトリは、就職活動向けに選定した公開ポートフォリオsnapshotです。
+次の範囲について、代表的な実装、JSON Schema、合成fixture、focused testsを
+収録しています。
+
+- Linux auditdのパースと正規化から、決定論的検知、Incident構築、
+  Rule Triage、エビデンス境界を守るInvestigationまで
+- Windows Sysmon Event ID 1 Fixture A/B/Cのパース、正規化、決定論的検知、
+  共通Detection-to-Investigation pipeline
+- 共通のdeduplication、correlation、trust boundary
+- prompt input export、schema validation、信頼しないmodel outputのimport、
+  compare、promotion recommendationまでのoffline Rule Improvement経路
+
+環境固有設定、生成物、Labの生テレメトリ、一部integration、開発専用utilityは
+収録していません。Active developmentはPrivateリポジトリで継続しています。
+
+以下の実装状況は、より広いPrivate Lab全体について説明しています。この公開版で
+直接再現できるのは、対応する実装、schema、合成fixture、focused testが本リポジトリに
+存在する範囲です。それ以外の既存文書はarchitecture、設計履歴、Private Labでの作業を
+説明するものであり、対応するruntime integrationが公開版に含まれることを示すものでは
+ありません。
+
+[著作権表示](NOTICE.md) · [セキュリティポリシー](SECURITY.md)
+
+## 5～10分のReview Path
+
+1. **Architecture:**
+   [Defender event processing flow](docs/architecture/defender-event-processing-flow.md)を読む。
+2. **代表的な縦断処理:** Windowsの
+   [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py)、
+   [normalized mapper](scripts/windows/sysmon_event1/map_sysmon_event1_to_endpoint_event.py)、
+   [common defender pipeline](common/defender_pipeline.py)を追う。
+3. **Schema:**
+   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)を確認する。
+4. **Fixture:**
+   [Sysmon Fixture B](tests/fixtures/windows/sysmon_event1/source/sysmon-event1-encoded-flag-001.json)を確認する。
+5. **Test:**
+   [Windows detection test](tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py)と
+   [Detection-to-Investigation composition test](tests/test_common_detection_to_investigation_composition.py)で
+   期待値と共通境界を確認する。
 
 ## 概要
 
@@ -96,152 +146,51 @@ flowchart TD
 
 ## 現在の状況
 
+より広いPrivate Labは、Phase 0からPhase 7までの限定された再現可能な基盤を
+提供します。
+
 ### 実装済みの基盤
 
-- Phase 0からPhase 5までのMVPが完了
-- Phase 6 extended MVPが完了。以下を含む:
-  - 決定論的atomic detectionとCorrelation-firstのIncident entry
-  - 決定論的およびAI-assistedのトリアージ方式
-  - Case前Investigation、Case、Actionの各stage
-  - トリアージ、Investigation、Actionの比較harness
-  - ActionからDFIR collection requestへのhandoff
-  - Action後のDFIR result処理
-  - Rule Improvement candidateのexportとvalidation
-- Scenario Family Expansion Policyを策定済み
-- Linux family mappingの拡張と限定された`scenario_009` pathを実装済み。
-  残るcanonical sourceとlive integrationの作業はdeferred
+- Phase 0からPhase 5までの限定されたMVPが完了しています。
+- Phase 6 extended MVPが完了しています。決定論的検知、Correlation-firstの
+  Incident entry、Triage / Investigation / Actionの各stageと比較harness、
+  ActionからDFIR requestへのhandoff、Action後のDFIR result処理、
+  reviewを前提とするRule Improvement candidate exportを含みます。
+- Phase 7ではartifact-onlyのDeception基盤を実装済みです。Scenario YAML、
+  安全なrunner、canonical detection-output integrationはdeferredです。
+- Linuxの`scenario_004`から`scenario_006`は、再現可能なregression
+  coverageを提供します。`scenario_009_suspicious_archive_staging`には、
+  fixtureに基づく限定されたIncident-to-Action pathがあります。
+  canonical live Wazuh source integrationはdeferredです。
 
-### 検証済みのLinuxシナリオ
+### 現在の主要作業
 
-主要な再現可能Linux regression setでは、共有pipeline上で異なる攻撃形状と
-エビデンス形状を検証します。
+現在の主要作業は、full Common Pipeline v0に向けたWindowsの
+cross-platform expansionです。Windows Fixture A/B/Cでは、source parsing、
+normalization、決定論的検知、shared correlationとIncident構築、
+deterministic Rule Triage、pre-case Investigationを、限定されたfixture
+pathで検証しています。
 
-| シナリオ | 検証対象の挙動 | 主なDefender artifact |
-|---|---|---|
-| `scenario_004` | SSH brute force後の`authorized_keys` persistence設置 | `ssh_failed_login`, `ssh_success_login`, `authorized_keys_modification` |
-| `scenario_005` | SSH public-key persistenceの再利用 | `ssh_key_login` |
-| `scenario_006` | SSH public-key login後のコマンド実行 | `ssh_key_login`, `process_exec` |
+このevidenceは、継続的なruntime automation、live Windows parity、
+live Windows Detection-to-Investigation path、AI modelの品質を
+実証するものではありません。Common Pipeline v0は、full cross-platform
+execution validationが完了するまで未完了です。
 
-これらのシナリオは、決定論的DSL検知、Correlation-firstのIncident entry、
-トリアージ・Investigation・Actionの比較、および攻撃者側で観測された影響と
-Defender artifactの対応付けを含むbatch regressionを支えます。
+### 主な未完了作業
 
-より広範な`scenario_009_suspicious_archive_staging` pathも、
-テスト実行時に実環境からログを取得するのではなく、リポジトリ内に固定した
-検証データ（fixture）を入力し、Incident作成からActionまでの限定的な
-処理経路を検証済みです。
-canonical live Wazuh sourceの選定とlive integrationは引き続きdeferredであり、
-完了済みのruntime coverageとは位置付けません。
+- full cross-platform execution validation、Windows Slice 2、
+  Common Pipeline v1への移行作業
+- live Windows validation、Wazuh retrieval / conversion、追加のWindows
+  telemetry、AD / domain controller coverage
+- Windows Triage / Investigationの品質とAI model validation
+- Linux Scenario 009のcanonical sourceおよびlive integration
+- Rule Improvementのapply、deployment、runtime update、promotion workflow
 
-### Deceptionの研究範囲
-
-Deceptionは、検知、Correlation、Investigation、DFIR、Rule Improvementと
-同等に扱う研究領域の一つです。Phase 7では、Deception inventory、
-local decoy asset生成、決定論的なDefender側Deception hit、Incident bridge、
-fixture、smoke coverageを含むartifact-onlyの基盤を実装済みです。
-限定されたscenario YAMLと安全なrunnerはdeferredです。
-
-攻撃者側の記録にcanary requestの発生が示されていても、
-Defender側のtrap observationで確認されるまではDeception hitではありません。
-確認済みのhitは高信頼度のシグナルですが、封じ込めや
-Rule Improvementのapply/promotionを自動的に承認するものではありません。
-
-### 現在の主要作業: Windowsのクロスプラットフォーム展開
-
-実装済みのWindows fixture parity baselineには、現在以下が含まれます。
-
-- Sysmon Event ID 1 source fixture schema
-- sanitize済みのFixture A/B/C
-- source parserとparsed-event schema
-- Fixture A/B/Cの`expected_parsed` parity
-- native collector adapter、local parity validator、focused test、runbook
-- 2件のEvent ID 1 recordに対する、source shapeとparser parityの限定的な手動検証
-- normalized mapper
-- Fixture A/B/Cの静的な`expected_normalized` exact parity
-- 既存atomic detection DSLを使う決定論的なPowerShell processおよび
-  encoded-command observation rule
-- Fixture A/B/Cの静的な`expected_detection` exact parity
-- 検証済み`endpoint_events.v1`を受け取るplatform-neutralなCommon Pipeline v0
-  detector invocationと、Linux Scenario 009 / Windows Fixture A/B/Cの
-  fixture parity
-- platform-neutralなcanonical detection-to-Incident bridgeと、Windows
-  Fixture A/B/Cのbounded observation-level Incident validation
-- platform-neutralなIncident-to-deterministic-Rule-Triage境界と、Fixture
-  A/B/Cで1件、2件、0件を欠落なく生成するschema-valid Triage validation
-- platform-neutralなIncident/Triage-to-pre-case-Investigation境界と、Fixture
-  A/B/Cで1件、2件、0件を生成するschema-validかつidentity-preservingな
-  Investigation validation
-
-Fixture A/B/Cは決定論的なparity fixtureであり、3つのruntime pipeline
-scenarioではありません。限定的な手動観測は、継続的なruntime automationや
-live normalized parity、live Windows detection-to-Incident pathを実証する
-ものではありません。
-
-```mermaid
-flowchart TD
-    A["現在のWindows正規化"]
-    B["実装済みPowerShell検知parity"]
-    C["Common Pipeline v0 detector spine実装済み"]
-    D["bounded Windows Slice 1 Incident境界を実装済み"]
-    E["bounded deterministic Rule Triage境界を実装済み"]
-    F["bounded evidence-aware pre-case Investigationを実装済み"]
-    G["既存Linux regression成功"]
-    H["bounded v0 fixture slice進捗"]
-    I["残るshared dedupe / correlation"]
-    J["Full Common Pipeline v0"]
-    K["Windows Slice 2 / cross-platform regression"]
-    L["Common Pipeline v1と後続runtime作業"]
-
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> L
-```
-
-実装済みCommon Pipeline v0の範囲には、detector spineと、canonical
-detectionから既存observation-level Incident契約へ渡すbounded Windows
-Slice 1 bridgeが含まれます。Fixture A/B/Cはそれぞれ1件、2件、0件の
-Incidentを生成します。これはfixture-backed schema validationであり、live
-Windows runtime pipelineではありません。Windows固有Incident pathは追加
-していません。続くplatform-neutralなlist境界は、既存のdeterministic Rule
-TriageをIncidentごとに1回再利用し、Fixture A/B/Cからそれぞれ1件、2件、0件の
-schema-validかつidentity-preservingなTriage結果を生成します。これはWindows
-verdict品質やAI modelのvalidationではなく、Windows固有Triage pathも追加
-していません。
-同じidentity-linked Incident/Triage組はplatform-neutralなlist境界から既存の
-evidence-aware pre-case Investigation builderへ渡され、Fixture A/B/Cで
-それぞれ1件、2件、0件のschema-validな結果を生成します。これはboundedな
-boundary mechanicsのvalidationであり、Windows Investigation品質、AI/model
-behavior、live coverageのvalidationではありません。
-architecture Done Criteria上のCommon Pipeline v0全体は未完了です。shared
-dedupe/correlationとfull cross-platform execution validationが残っています。
-
-以下は引き続きplannedまたはunverifiedです。
-
-- live Windows detection-to-Incident validation
-- live normalized parity
-- full Common Pipeline v0のshared dedupe/correlationとcross-platform
-  execution validation
-- WindowsのトリアージとInvestigationの品質
-- AI Triageのbatch/live-model validation
-- AI Investigation/model validation
-- live Windows detection-to-Investigation validation
-- Wazuh Windows retrieval/conversion integration
-- Windows Security Event 4624/4625とSysmon Event ID 3のsupport
-- Active Directoryとdomain controllerのcoverage
-
-2つのPowerShell ruleは、DSLで必須のrule metadataとして既存の最低
-`severity`値を使用します。このmetadataはmalicious verdictでもIncident
-severityでもありません。fixture oracleが固定するのは、matchしたrule IDと
-観測されたbehavior featureだけです。
-
+現在状況、優先順位、未完了作業、実装順序、Done Criteriaの正本は
+[Main Roadmap](docs/roadmap/roadmap.md)です。cross-platform processingの
+責務とtrust boundaryは、
+[Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md)
+を参照してください。
 ## アーキテクチャ境界
 
 - Collector、source parser、normalized mapper、platform/domain固有の
@@ -263,7 +212,7 @@ severityでもありません。fixture oracleが固定するのは、matchし�
 ## Phase概要
 
 詳細なtask、evidence、dependency、Done Criteriaは
-[Roadmap](docs/roadmap/roadmap.md)に記載しています。
+[Roadmap（日本語参考訳）](docs/roadmap/roadmap_ja.md)に記載しています。
 
 | Phase | 範囲 | 状況 |
 |---|---|---|
@@ -279,9 +228,9 @@ severityでもありません。fixture oracleが固定するのは、matchし�
 
 ## ドキュメント
 
-- [Master Guide](docs/AI_SOC_Lab_Master_Guide.md) — プロジェクト設計、
-  実装状況、運用ガイダンスの統合文書
-- [Roadmap](docs/roadmap/roadmap.md) — Phaseの正式な状況、現在の優先事項、
+- [Master Guide（日本語参考訳）](docs/AI_SOC_Lab_Master_Guide_ja.md) — 安定したarchitecture、
+  artifact boundary、evidence rule、operating policy
+- [Roadmap（日本語参考訳）](docs/roadmap/roadmap_ja.md) — Phaseの正式な状況、現在の優先事項、
   実装順序、Done Criteria
 - [Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md)
   — クロスプラットフォームの処理stage、trust boundary、
@@ -314,11 +263,14 @@ severityでもありません。fixture oracleが固定するのは、matchし�
 
 ## Philosophy
 
-構築して学ぶ。  
-攻撃して検証する。  
+構築して学ぶ。
+
+攻撃して検証する。
+
 反復して改善する。
 
 ## 名称
 
-**正式名称:** Intelligent Security Operations Lab  
+**正式名称:** Intelligent Security Operations Lab
+
 **通称:** SOC Lab

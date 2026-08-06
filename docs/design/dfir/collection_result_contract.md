@@ -595,64 +595,52 @@ collection result gap
 
 ---
 
-## 15. Future Schema Direction
+## 15. Schema And Validation Boundary
 
-A future schema should validate:
+[`collection_result.schema.json`](../../../schemas/collection_result.schema.json)
+owns the machine-validatable envelope, required fields, status enums, artifact
+arrays, output references, errors, traceability, and metadata shapes.
 
-- top-level required fields
-- `status` enum
-- item-level status enum
-- collector type enum
-- `collected_artifacts` / `failed_artifacts` / `skipped_artifacts` array item shape
-- `output_refs` item shape
-- error item shape
-- traceability fields
-- metadata fields
-
-Candidate schema path:
-
-```text
-schemas/collection_result.schema.json
-```
-
-Candidate tests:
+Focused schema and request-to-result behavior are guarded by:
 
 ```text
 tests/test_collection_result_schema.py
 tests/test_collection_request_to_result_contract.py
 ```
 
----
-
-## 16. Future Implementation Path
-
-Recommended implementation order:
-
-1. Add this design document.
-2. Add `schemas/collection_result.schema.json`.
-3. Add schema tests with:
-   - completed result
-   - partial result
-   - failed result
-   - skipped result
-4. Add mock collection result generator from `collection_request.json`.
-5. Add Velociraptor adapter output mapping.
-6. Add optional case / investigation enrichment from collection result.
-7. Add executor / DFIR result comparison harness only after collection result contract is stable.
+The schema validates artifact structure. It does not establish that collection
+occurred, that an output is trustworthy, or that a security conclusion follows
+from availability or absence.
 
 ---
 
-## 17. Done Criteria
+## 16. Status And Evidence Ownership
 
-This contract is ready when:
+This document owns the `collection_result.json` semantics, status model,
+traceability, evidence-availability meaning, and non-mutation boundaries.
+Dedicated ingestion and post-action DFIR documents own their downstream
+contracts.
 
-- `collection_result.json` responsibility is separated from `collection_request.json`.
-- Top-level status and per-item status are defined.
-- Collected, failed, and skipped artifacts can be represented.
-- Tool-specific collector metadata can be preserved without leaking into assessment fields.
-- Traceability to request, action, case, and investigation artifacts is preserved.
-- Boundaries against verdict / severity / detection / Rule Improvement mutation are explicit.
-- Future schema and implementation paths are documented.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, supported collectors and parsers, validation
+depth, priorities, and sequencing. A mock generator, adapter, or parser is
+evidence for only its documented boundary.
+
+---
+
+## 17. Contract Acceptance Criteria
+
+The contract remains valid when:
+
+- `collection_result.json` responsibility is separate from
+  `collection_request.json`;
+- top-level and per-item status are explicit;
+- collected, failed, and skipped artifacts can be represented;
+- tool-specific collector metadata cannot leak into assessment fields;
+- request, action, case, and investigation traceability is preserved;
+- output availability and absence remain non-conclusive; and
+- verdict, severity, detection, approval, containment, and Rule Improvement
+  mutation boundaries remain explicit.
 
 ---
 

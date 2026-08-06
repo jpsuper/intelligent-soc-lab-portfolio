@@ -1,0 +1,184 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/sysmon_event1_parsed_event.schema.json",
+  "title": "sysmon_event1_parsed_event",
+  "description": "Source-specific parsed event produced from a validated Sysmon Event ID 1 source fixture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_contract_version",
+    "fixture_id",
+    "source_format",
+    "provider_name",
+    "provider_event_id",
+    "event_record_id",
+    "computer",
+    "channel",
+    "system_time",
+    "utc_time",
+    "process_guid",
+    "process_id",
+    "image",
+    "command_line",
+    "user",
+    "parent_process_id",
+    "parent_image"
+  ],
+  "properties": {
+    "fixture_contract_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^sysmon-event1-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "source_format": {
+      "type": "string",
+      "const": "sysmon_eventlog_json"
+    },
+    "provider_name": {
+      "type": "string",
+      "const": "Microsoft-Windows-Sysmon"
+    },
+    "provider_guid": {
+      "$ref": "#/$defs/bracedGuid"
+    },
+    "provider_event_id": {
+      "type": "integer",
+      "const": 1
+    },
+    "event_version": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_level": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_task": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_opcode": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_keywords": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "event_record_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "computer": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "channel": {
+      "type": "string",
+      "const": "Microsoft-Windows-Sysmon/Operational"
+    },
+    "system_time": {
+      "$ref": "#/$defs/normalizedTimestamp"
+    },
+    "utc_time": {
+      "$ref": "#/$defs/normalizedTimestamp"
+    },
+    "process_guid": {
+      "$ref": "#/$defs/bracedGuid"
+    },
+    "process_id": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "image": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "file_version": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "product": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "original_file_name": {
+      "type": "string"
+    },
+    "command_line": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "current_directory": {
+      "type": "string"
+    },
+    "user": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "logon_guid": {
+      "$ref": "#/$defs/bracedGuid"
+    },
+    "logon_id": {
+      "type": "string",
+      "pattern": "^0x[0-9A-Fa-f]+$"
+    },
+    "terminal_session_id": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "integrity_level": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "hashes": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "patternProperties": {
+        "^[A-Z0-9][A-Z0-9_-]*$": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "parent_process_guid": {
+      "$ref": "#/$defs/bracedGuid"
+    },
+    "parent_process_id": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "parent_image": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "parent_command_line": {
+      "type": "string"
+    },
+    "parent_user": {
+      "type": "string"
+    },
+    "rule_name": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "enum": [
+          "-",
+          "N/A"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "bracedGuid": {
+      "type": "string",
+      "pattern": "^\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\}$"
+    },
+    "normalizedTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    }
+  }
+}

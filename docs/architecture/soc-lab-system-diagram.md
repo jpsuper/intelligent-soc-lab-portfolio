@@ -5,11 +5,17 @@ This document fixes the system view of the AI SOC Lab so implementation does not
 It shows:
 
 - node responsibilities
-- agent responsibilities
-- data flow
-- API boundaries
-- core schemas
-- MVP implementation order
+- system-level agent placement
+- stable data flow and integration boundaries
+- canonical contract and implementation references
+- historical MVP implementation order
+
+> Document responsibility:
+> This document owns the stable conceptual system view, stage responsibilities,
+> and data-flow relationships. The [Main Roadmap](../roadmap/roadmap.md) owns
+> current implementation status, priorities, and Done Criteria. The
+> [Repository Structure](../development/repository_structure.md) owns the
+> current physical repository layout.
 
 ---
 
@@ -22,7 +28,9 @@ It shows:
 - The lab should support the loop:
 
 ```text
-Attack -> Collect -> Detect -> Correlate -> Build Incident -> Triage -> Investigate -> Improve -> Attack Again
+Attack -> Collect -> Detect -> Correlate -> Build Incident -> Triage
+  -> pre-case Investigation -> Case -> Action -> Approval / Execution
+  -> Collection Result -> post-action DFIR -> Review / Improve -> Attack Again
 ```
 
 For the detailed defender-side processing stages, responsibilities, and trust
@@ -94,13 +102,14 @@ Responsibilities:
 - investigation platform
 - rule improvement workflows
 
-Typical VMs:
-- vector or fluentbit pipeline
-- wazuh
-- soc-analyzer
-- thehive
-- velociraptor
-- ai-triage / orchestrator
+Typical deployment units:
+- VM or service: Vector / Fluent Bit pipeline
+- VM: Wazuh
+- VM: `soc-analyzer`
+- VM: TheHive
+- VM: Velociraptor
+- logical components: AI triage and orchestrator; they may share an existing
+  Node2 VM initially and do not imply mandatory dedicated VMs
 
 ## Node3: Future AI Engine
 Future optional node.
@@ -138,9 +147,17 @@ flowchart LR
         DSL1[DSL Detection\nsuspicious_archive_staging]
         E2[Correlation Agent]
         E3[Incident Builder Agent]
-        AI1[AI Triage Agent]
-        C1[Case Agent\nTheHive]
-        I1[Investigation Agent\nVelociraptor]
+        AI1[Triage Agent]
+        I1[Pre-case Investigation Agent]
+        C1[Case Agent]
+        TH1[TheHive / External Case Integration]
+        ACT1[Action Agent]
+        EX1[Executor Agent / Approval Gate]
+        CR1[collection_request.json]
+        CB1[Collection Backend\nVelociraptor / other adapter]
+        RES1[collection_result.json]
+        DFIR1[Post-action DFIR / External Integration]
+        RV1[Reviewed Run Artifacts / Evaluation]
         R1[Rule Improvement Agent]
         O1[Scenario Orchestrator Agent]
         TD1[Trap Detection Agent]
@@ -169,10 +186,19 @@ flowchart LR
     TD1 --> E2
     E2 --> E3
     E3 --> AI1
-    AI1 --> C1
     AI1 --> I1
     I1 --> C1
-    AI1 --> R1
+    C1 --> TH1
+    C1 --> ACT1
+    ACT1 --> EX1
+    EX1 --> CR1
+    CR1 --> CB1
+    CB1 --> RES1
+    RES1 --> DFIR1
+    C1 --> RV1
+    EX1 --> RV1
+    DFIR1 --> RV1
+    RV1 --> R1
     R1 --> O1
     O1 --> A2
     AI1 <--> L1
@@ -189,341 +215,44 @@ The offensive artifacts (`attack_result.json`, `attack_execution_log.json`, and
 They do not prove defender telemetry, detections, alerts, incident status, or
 response approval.
 
-Current `scenario_009` defender-side coverage is an initial synthetic
-`endpoint_events.json` fixture plus a DSL detection expectation for
-`suspicious_archive_staging`, with a helper-level observation incident bridge for the
-detection hit. Live auditd / Wazuh / SIEM collection and triage /
-investigation / action coverage for `scenario_009` remain future work.
+The `scenario_009` fixture nodes illustrate a bounded defender-side path; their
+presence does not establish live or continuously integrated coverage. Current
+Scenario 009 status is maintained in the
+[Main Roadmap](../roadmap/roadmap.md).
 
 ---
 
-# 4. Agent Architecture
+# 4. Agent Architecture Reference
 
-## 4.1 Telemetry Agent
-Purpose:
-- collect raw host telemetry
-- forward logs to the pipeline
+Detailed agent responsibilities, dependency order, artifact ownership, and
+trust boundaries are maintained in the
+[Agent Architecture](agent-architecture.md). This document keeps only the
+system-level placement and flow needed to interpret the diagram above.
 
-Inputs:
-- auth.log
-- syslog
-- auditd
-- Sysmon
-- Windows Security Events
-- Wazuh agent telemetry
+System-view groupings:
 
-Outputs:
-- raw structured events or forwarded raw logs
+- offensive validation: Scenario, Attacker, shell runner, and attacker-side
+  result artifacts
+- defender processing: Telemetry, Parser / Normalization, Detection,
+  Correlation, and Incident Builder
+- analysis and workflow: Triage, pre-case Investigation, Case, Action, and
+  approval-gated Execution
+- post-action evidence: collection request, collection backend,
+  `collection_result.json`, and post-action DFIR / external integration
+- improvement: reviewed run artifacts, Rule Improvement, and Scenario
+  Orchestrator
+- environment realism: Deception, Trap Detection, and Background Activity
 
-MVP:
-- Linux auth.log collection only
-
----
-
-## 4.2 Log Pipeline Agent
-Purpose:
-- receive logs from endpoints
-- buffer / route / forward them
-
-Recommended tools:
-- Vector
-- Fluent Bit
-
-Outputs:
-- normalized stream destination
-- raw archive destination
-
-MVP:
-- single route from Linux host to parser
+Component presence in the diagram describes the target system architecture. It
+does not establish current implementation, live integration, validation depth,
+or a dedicated-VM requirement.
 
 ---
 
-## 4.3 Parser / Normalization Agent
-Purpose:
-- convert raw logs into a common event schema
+# 5. Illustrative Data Flow by Phase
 
-Output schema example:
-
-```json
-{
-  "timestamp": "2026-03-16T10:30:00+09:00",
-  "host": "ubuntu-victim01",
-  "platform": "linux",
-  "log_source": "auth.log",
-  "event_type": "ssh_failed_login",
-  "user": "root",
-  "src_ip": "10.0.0.10",
-  "raw_log": "...",
-  "fields": {}
-}
-```
-
-MVP:
-- normalize auth.log ssh failed / success / sudo
-
----
-
-## 4.4 Detection Agent
-Purpose:
-- evaluate deterministic rules against normalized events
-
-Rule examples:
-- ssh_failed_login
-- ssh_success_login
-- sudo_command
-- invalid_user
-- user_creation
-- authorized_keys_modification
-
-Outputs:
-- rule hits
-
-MVP:
-- single-event detections only
-
----
-
-## 4.5 Correlation Agent
-Purpose:
-- combine multiple rule hits into one incident candidate
-
-Example:
-- failed login x3
-- success login
-- sudo command
-
-Output:
-- correlated incident candidate `ssh_compromise_priv_esc`
-
-MVP:
-- one Linux correlation rule
-
----
-
-## 4.6 Incident Builder Agent
-Purpose:
-- build incident JSON for downstream analysis
-
-Schema example:
-
-```json
-{
-  "incident_id": "INC-20260316-0001",
-  "scenario_name": "ssh_compromise_priv_esc",
-  "severity": "high",
-  "source_hosts": ["ubuntu-victim01"],
-  "source_ips": ["10.0.0.10"],
-  "matched_rules": [
-    "ssh_failed_login",
-    "ssh_success_login",
-    "sudo_command"
-  ],
-  "timeline": [],
-  "raw_events": []
-}
-```
-
-MVP:
-- write JSON to local file
-
----
-
-## 4.7 AI Triage Agent
-Purpose:
-- analyze incidents like a SOC analyst
-- explain severity and attack story
-- suggest response actions and rule improvements
-
-Inputs:
-- incident JSON
-- timeline
-- matched rules
-- optional raw logs
-
-Outputs:
-- incident summary
-- attack story
-- severity explanation
-- recommended response
-- false positive considerations
-- rule improvement suggestions
-
-Important:
-- this agent does **not** decide detection logic
-
-MVP:
-- prompt template + markdown report output
-
----
-
-## 4.8 Case Agent
-Purpose:
-- create or update cases in TheHive
-
-Inputs:
-- triage result
-- incident JSON
-
-Outputs:
-- case record
-- case ID
-
-MVP:
-- local mock file first, then TheHive API
-
----
-
-## 4.9 Investigation Agent
-Purpose:
-- collect endpoint artifacts via Velociraptor
-
-Artifacts:
-- process list
-- network connections
-- cron
-- authorized_keys
-- users
-- bash history
-- Windows process / task / autorun data
-
-MVP:
-- Linux artifact collection only
-
----
-
-## 4.10 Rule Improvement Agent
-Purpose:
-- compare attack scenario results vs detections
-- propose detection gaps and candidate rules
-
-Outputs:
-- rule suggestion markdown
-- gap analysis notes
-
-MVP:
-- offline markdown suggestion only
-
----
-
-## 4.11 Scenario Agent
-Purpose:
-- define repeatable attack scenarios in YAML
-
-Example:
-
-```yaml
-scenario: scenario_001_ssh_bruteforce
-mitre:
-  - T1110
-  - T1078
-  - T1548
-steps:
-  - hydra ssh brute force
-  - successful login
-  - sudo command execution
-```
-
-MVP:
-- one SSH brute force scenario
-
----
-
-## 4.12 Attacker Agent
-Purpose:
-- execute scenario steps using real tools
-
-Examples:
-- Hydra
-- nmap
-- custom shell scripts
-
-MVP:
-- shell execution wrapper only
-
-Current status:
-- local scenario YAML + shell runner model is implemented
-- `scenario_009_suspicious_archive_staging` is implemented as the first broader
-  Linux scenario runner
-- attacker-side structured events and `attack_observed_effects.json` are
-  attacker-side evidence only
-- Atomic Red Team is a reference / mapping source only; no Atomic adapter is
-  implemented
-- CALDERA is later optional integration; no CALDERA integration is implemented
-
----
-
-## 4.13 Deception Agent
-Purpose:
-- deploy deception assets as the lab matures
-
-Examples:
-- honey credential
-- honey user
-- honey share
-- honey file
-- honey host
-
-Current status:
-- Phase7 deception artifact foundation is complete through schemas, local asset
-  generation, trap hit generation, incident bridge, and chain smoke
-- deception scenario YAML / runner implementation is intentionally deferred
-
----
-
-## 4.14 Trap Detection Agent
-Purpose:
-- detect interaction with deception assets
-
-Examples:
-- use of honey credential
-- access to honey share
-- open of honey file
-
-Current status:
-- deterministic deception hit artifacts exist as foundation work
-- live deception runner / trap deployment remains future work
-
----
-
-## 4.15 Background Activity Agent
-Purpose:
-- generate realistic enterprise noise
-
-Examples:
-- normal SSH login
-- sudo admin commands
-- apt update
-- cron execution
-- file access
-- PowerShell admin tasks
-- scheduled task execution
-
-MVP:
-- Linux noise generator only
-
----
-
-## 4.16 Scenario Orchestrator Agent
-Purpose:
-- coordinate the full purple-team loop
-
-Loop:
-1. run scenario
-2. collect logs
-3. run detections
-4. correlate
-5. build incident
-6. triage
-7. investigate
-8. propose improvements
-9. rerun
-
-MVP:
-- simple shell or Python runner
-
----
-
-# 5. Data Flow by Phase
+These phase views summarize the conceptual evolution of the data flow. They do
+not define current completion status or replace the Main Roadmap.
 
 ## Phase0
 ```text
@@ -547,8 +276,9 @@ Scenario YAML -> Attacker Agent -> Victim -> Detection pipeline
 
 ## Phase4
 ```text
-Incident JSON -> Case Agent -> TheHive
-Incident JSON -> Investigation Agent -> Velociraptor
+Incident JSON -> Triage -> pre-case Investigation -> Case -> Action
+Case -> TheHive integration
+Action -> approval / collection request -> collection result -> post-action DFIR
 ```
 
 ## Phase5
@@ -558,7 +288,7 @@ Sysmon / Wazuh / auditd -> Parser -> Detection -> Correlation
 
 ## Phase6
 ```text
-Scenario Orchestrator -> Full Loop -> Rule Improvement
+Reviewed run artifacts -> Rule Improvement review -> Scenario Orchestrator -> rerun
 ```
 
 ## Phase7
@@ -573,8 +303,9 @@ deception_inventory.yaml
   -> incident.json
 ```
 
-Phase7 deception scenario YAML / runner implementation is intentionally
-deferred.
+This Phase7 view illustrates the artifact relationship, not current deployment
+or runtime-validation status. Current Phase7 status is maintained in the Main
+Roadmap.
 
 ## Phase8
 ```text
@@ -583,115 +314,51 @@ Background Activity Agent -> Noise telemetry -> Detection tuning
 
 ---
 
-# 6. Core Data Contracts
+# 6. Artifact Contract References
 
-## 6.1 Normalized Event
+The system view depends on canonical artifacts across the pipeline, including
+normalized events, detection hits, `incident.json`, `triage_result.json`,
+`investigation_result.json`, `case.json`, `action_result.json`, collection
+artifacts, post-action DFIR output, and Rule Improvement review artifacts.
 
-```json
-{
-  "timestamp": "string",
-  "host": "string",
-  "platform": "linux|windows",
-  "log_source": "string",
-  "event_type": "string",
-  "user": "string|null",
-  "src_ip": "string|null",
-  "process": "string|null",
-  "command_line": "string|null",
-  "severity": "low|medium|high|critical|null",
-  "raw_log": "string",
-  "fields": {}
-}
-```
+- validation shapes: [`schemas/`](../../schemas/)
+- artifact semantics and stage contracts: [`docs/design/`](../design/)
+- artifact ownership and trust boundaries:
+  [Agent Architecture](agent-architecture.md)
 
-## 6.2 Detection Hit
-
-```json
-{
-  "rule_id": "string",
-  "rule_name": "string",
-  "timestamp": "string",
-  "host": "string",
-  "event_refs": [],
-  "severity": "low|medium|high|critical",
-  "reason": "string"
-}
-```
-
-## 6.3 Incident
-
-```json
-{
-  "incident_id": "string",
-  "scenario_name": "string|null",
-  "severity": "low|medium|high|critical",
-  "source_hosts": [],
-  "source_ips": [],
-  "matched_rules": [],
-  "timeline": [],
-  "raw_events": [],
-  "mitre_techniques": [],
-  "notes": []
-}
-```
-
-## 6.4 Triage Report
-
-```json
-{
-  "incident_id": "string",
-  "summary": "string",
-  "attack_story": "string",
-  "severity_explanation": "string",
-  "recommended_response": [],
-  "false_positive_analysis": "string",
-  "rule_improvement_suggestions": []
-}
-```
+Examples in an architecture diagram must not be treated as substitutes for the
+canonical schemas or detailed contracts.
 
 ---
 
-# 7. Suggested Internal APIs
+# 7. Integration Boundary Guidance
 
-## Detection Agent
-- `POST /events`
-- `POST /events/batch`
-- `GET /rules`
+The target architecture does not require every stage to expose a network API.
+Local function calls, file-based artifacts, CLI boundaries, and explicit
+external adapters may all implement the same stage contracts.
 
-## Correlation Agent
-- `POST /detections`
-- `GET /incidents/pending`
+Any future API boundary must preserve:
 
-## Incident Builder Agent
-- `POST /build-incident`
+- canonical artifact validation
+- pre-case Investigation versus post-action DFIR separation
+- Action, approval, execution, collection, and interpretation separation
+- explicit human review for external Case updates and Rule Improvement apply,
+  deploy, or promotion operations
 
-## AI Triage Agent
-- `POST /triage`
-- `POST /incident-report`
-- `POST /rule-improvement`
-
-## Case Agent
-- `POST /cases`
-- `PATCH /cases/{id}`
-
-## Investigation Agent
-- `POST /collect/linux`
-- `POST /collect/windows`
-
-## Deception Agent
-- `POST /deception/deploy`
-- `POST /deception/revoke`
-
-## Orchestrator Agent
-- `POST /run-scenario`
-- `POST /run-loop`
-
-MVP note:
-- local function calls are enough at first; API exposure can come later
+API paths and transport choices belong in a dedicated design contract when an
+integration is implemented; this system-view document does not reserve or
+promise endpoint names.
 
 ---
 
-# 8. Recommended Repository Mapping
+# 8. Historical Conceptual Repository Mapping
+
+> [!NOTE]
+> This mapping is retained as an earlier conceptual layout, not as the current
+> repository tree or the source of truth for document ownership. See the
+> [Repository Structure](../development/repository_structure.md) for the current
+> layout and the [Main Roadmap](../roadmap/roadmap.md) for current phase status.
+> Phase8 remains a section in the Main Roadmap; no separate `phase8.md` exists.
 
 ```text
 ai-soc-lab/
@@ -700,6 +367,7 @@ ai-soc-lab/
       system-diagram.md
       agent-architecture.md
     roadmap/
+      roadmap.md  # includes the Phase8 section
       phase0.md
       phase1.md
       phase2.md
@@ -708,7 +376,6 @@ ai-soc-lab/
       phase5.md
       phase6.md
       phase7.md
-      phase8.md
   agents/
     telemetry-agent/
     parser-agent/
@@ -741,7 +408,12 @@ ai-soc-lab/
 
 ---
 
-# 9. MVP Build Order
+# 9. Historical MVP Build Order
+
+> [!NOTE]
+> This ordering records the original conceptual build sequence. It is retained
+> for design history and must not be used as the current work queue or phase
+> status. Use the [Main Roadmap](../roadmap/roadmap.md) for current priorities.
 
 ## Stage 1
 - Telemetry Agent
@@ -776,58 +448,36 @@ ai-soc-lab/
 
 ---
 
-# 10. Definition of Done Per Phase
+# 10. Phase Status and Done Criteria References
 
-## Phase0 done if
-- SSH brute force can be reproduced
-- auth.log is collected
-- at least one rule triggers correctly
+Current status and Done Criteria are maintained outside this system-view
+document:
 
-## Phase1 done if
-- normalized events are generated
-- one correlation rule works
-- incident.json is produced
+- project-wide status, priorities, and Phase8:
+  [Main Roadmap](../roadmap/roadmap.md)
+- detailed phase history and validation evidence:
+  [Phase0](../roadmap/phase0.md),
+  [Phase1](../roadmap/phase1.md),
+  [Phase2](../roadmap/phase2.md),
+  [Phase3](../roadmap/phase3.md),
+  [Phase4](../roadmap/phase4.md),
+  [Phase5](../roadmap/phase5.md),
+  [Phase6](../roadmap/phase6.md), and
+  [Phase7](../roadmap/phase7.md)
 
-## Phase2 done if
-- incident.json produces a triage report
-- report includes summary, severity, and response recommendation
-
-## Phase3 done if
-- one scenario YAML can be executed repeatedly
-
-## Phase4 done if
-- incident can become a case
-- endpoint evidence can be collected
-
-## Phase5 done if
-- endpoint telemetry adds process / file / network visibility
-
-## Phase6 done if
-- a single command can run the implemented scenario-to-triage pipeline for
-  supported scenarios
-
-## Phase7 foundation slice done if
-- artifact foundation exists through schemas, deterministic asset generation,
-  deterministic hit generation, incident bridge, and chain smoke
-- scenario runner deployment and live trap interaction are later follow-on work
-
-## Phase8 done if
-- noise generation changes alert quality and forces rule tuning
+Phase8 remains a section in the Main Roadmap; no separate `phase8.md` exists.
 
 ---
 
-# 11. Recommended First Deliverables
+# 11. Current Implementation Navigation
 
-Create these first:
-- `docs/architecture/system-diagram.md`
-- `docs/roadmap/phase0.md`
-- `schemas/incident_schema.json`
-- `detection/rules/ssh_failed_login.yaml`
-- `detection/rules/ssh_success_login.yaml`
-- `detection/rules/sudo_command.yaml`
-- `agents/parser-agent/src/main.py`
-- `agents/detection-agent/src/main.py`
-- `lab/scenarios/scenario_001_ssh_bruteforce.yaml`
+- current repository layout and ownership:
+  [Repository Structure](../development/repository_structure.md)
+- current status and priorities: [Main Roadmap](../roadmap/roadmap.md)
+- artifact and stage contracts: [`docs/design/`](../design/)
+- validation schemas: [`schemas/`](../../schemas/)
+- current agent implementations: [`agents/`](../../agents/)
+- deterministic detection content: [`detection/`](../../detection/)
 
 ---
 
@@ -837,5 +487,7 @@ To avoid drift:
 - do not build all agents at once
 - keep AI focused on triage and analysis
 - keep detection deterministic
-- update the relevant phase document whenever architecture changes
+- update this document when stable architecture boundaries change
+- record current progress, priorities, and Done Criteria in the Main Roadmap or
+  the relevant phase document
 - only add deception and realistic noise after the detection core is stable

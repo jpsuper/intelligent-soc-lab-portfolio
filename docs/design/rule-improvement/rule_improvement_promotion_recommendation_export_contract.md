@@ -6,7 +6,7 @@ This document defines the export boundary from non-applying Rule
 Improvement concrete candidate bundles into a legacy-compatible promotion
 recommendation artifact.
 
-The future export artifact validation summary boundary is defined separately in
+The export artifact validation summary boundary is defined separately in
 `docs/design/rule-improvement/rule_improvement_export_artifact_validation_summary_contract.md`.
 
 Promotion recommendation export is implemented as a standalone deterministic
@@ -51,13 +51,13 @@ rule_improvement_proposal_review_decisions.json
   -> rule_candidates.yaml / prompt_candidates.yaml
   -> scripts/export_rule_improvement_promotion_recommendation.py, if promotion_review export is needed
   -> promotion_recommendation.yaml
-  -> future human review / promotion workflow
+  -> separate human review / promotion workflow
 ```
 
-The Phase 1 rule/prompt exporter is implemented at
-`scripts/export_rule_improvement_legacy_rule_prompt_candidates.py`. Promotion
-recommendation export is implemented as a separate exporter. Process-pipeline
-wiring is not implemented. The promotion workflow is not implemented.
+Rule and prompt narrowing is handled by
+`scripts/export_rule_improvement_legacy_rule_prompt_candidates.py`.
+Promotion-recommendation narrowing remains a separate exporter so that
+candidate generation cannot be conflated with promotion review or execution.
 
 ## 3. Eligibility
 
@@ -78,8 +78,8 @@ The exporter must not export:
 - candidates with unsafe approval/apply/deploy/promote-like fields
 
 `accept_for_conversion` remains conversion-review-only. `promotion_review`
-means the candidate may be considered for a future recommendation artifact; it
-is not promotion approval.
+means the candidate may be considered for a recommendation artifact; it is not
+promotion approval.
 
 ## 4. Recommendation-Only Semantics
 
@@ -99,8 +99,8 @@ It must not:
 - select a champion by itself
 - update production state
 
-The recommendation artifact must require later explicit human review and a
-separate promotion workflow before any state-changing promotion can occur.
+The recommendation artifact requires explicit human review and a separate
+promotion workflow before any state-changing promotion can occur.
 
 ## 5. Required Provenance
 
@@ -192,47 +192,41 @@ The exporter must fail closed on:
 `scripts/export_rule_improvement_legacy_rule_prompt_candidates.py`
 intentionally does not create `promotion_recommendation.yaml`.
 
-Promotion recommendation export is implemented as a separate exporter.
+Promotion recommendation export remains a separate exporter.
 Rule/prompt export and promotion recommendation export remain separable so
 candidate generation and promotion recommendation do not get conflated.
 
-## 10. Implementation Status
+## 10. Status And Evidence Ownership
 
-Implemented:
+This document owns promotion-review eligibility, required payload fields,
+recommendation-only semantics, provenance handling, output validation, and
+fail-closed behavior. The exporter, output schema, diagnostics, validation
+summary contract, and focused chain smoke named here are evidence for those
+boundaries.
 
-- proposal v2 schema and generator
-- proposal review decisions schema
-- proposal review decisions template exporter
-- proposal review decisions importer / validator
-- concrete candidate bundle v1 schema
-- concrete candidate bundle converter
-- legacy-compatible export contract document
-- Phase 1 legacy-compatible rule/prompt exporter
-- promotion recommendation export contract document
-- promotion recommendation exporter
-- direct generation of recommendation-only `promotion_recommendation.yaml`
-- promotion recommendation export-chain smoke test
-- export artifact validation summary contract document
-- export artifact validation summary script
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+A recommendation artifact must never be treated as evidence that promotion
+execution exists or has been approved.
 
-Not implemented:
+---
 
-- validation summary schema
-- parser legacy export
-- telemetry legacy export
-- correlation legacy export
-- process-pipeline wiring
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
+## 11. Boundary Acceptance Criteria
 
-## 11. One-Line Summary
+The promotion-recommendation export boundary remains valid when:
+
+- only eligible `promotion_review` converted candidates are considered
+- every required promotion payload field is present and schema-compatible
+- non-promotion candidates, skipped decisions, and diagnostics are excluded
+- source bundle and human review provenance remain traceable
+- output is validated before it is written
+- the recommendation requires separate human review and cannot execute
+  promotion
+
+---
+
+## 12. One-Line Summary
 
 ```text
-Promotion recommendation export is a recommendation-only narrowing step from non-applying bundle candidates into promotion_recommendation.yaml; it must not apply, deploy, update baselines, or promote.
+Promotion recommendation export narrows eligible non-applying bundle candidates into recommendation-only promotion_recommendation.yaml; it must not apply, deploy, update baselines, or promote.
 ```

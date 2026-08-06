@@ -17,50 +17,22 @@ The goal is not to make shell scripts the long-term attack planner. The goal is 
 
 ---
 
-## 2. Current Status
+## 2. Contract And Status Ownership
 
-The shell backend is already implemented as part of attacker-agent Phase A.
+This document owns shell-runner selection, path and execution validation,
+timeout and output handling, structured-event preservation, dry-run behavior,
+and state-changing classification. Detailed structured-event semantics belong
+in
+[`structured_runner_output_contract.md`](structured_runner_output_contract.md).
 
-Current capabilities:
+The [Main Roadmap](../../roadmap/roadmap.md) and
+[Phase 6](../../roadmap/phase6.md) own current scenario coverage, validation
+depth, priorities, and sequencing. A schema-backed artifact or runner entry
+does not by itself authorize execution, assessment mode, or an approval bypass.
 
-- scenario loader can read `runner` blocks
-- backend selector can choose `shell`
-- shell backend can execute scenario runner scripts
-- shell backend records execution results
-- shell backend preserves stdout / stderr for review and observed-effects extraction
-- `attack_execution_log.json` includes additive `structured_events` when valid
-  `ATTACK_EVENT_JSON:` lines are present
-- attacker-agent writes:
-  - `attack_result.json`
-  - `attack_execution_log.json`
-  - `attack_observed_effects.json`
-- attacker-agent observed-effects generation prefers structured runner events when present
-- legacy stdout marker / exit-code fallback remains compatible
-- scenario_004 / 005 / 006 emit `ATTACK_EVENT_JSON:` events for current observed-effect mappings
-- shell backend static contract tests enforce runner path shape, executable
-  runner files, positive integer `timeout_seconds`, boolean `state_changing`,
-  and no inline shell fields in runner blocks
-- shell backend runtime validation rejects unsafe runner paths, missing or
-  non-executable runner files, invalid timeout values, and inline shell fields
-  before execution
-- `docs/operations/smoke_runbook.md` documents structured runner and
-  observed-effects smoke checks
-- core attack artifacts validate against current schemas
-
-Current schema-backed artifacts:
-
-- `schemas/attack_result.schema.json`
-- `schemas/attack_execution_log.schema.json`
-- `schemas/attack_observed_effects.schema.json`
-
-Still future / optional:
-
-- shared shell runner wrapper
-- rich stdout / stderr artifact references
-- retry policy
-- human approval workflow for state-changing runners
-- signed runner allowlist or manifest-based runner approval
-- assessment-mode approval enforcement for state-changing runners
+Optional safety extensions such as signed manifests, richer output references,
+retry policy, or approval enforcement must preserve the fail-closed path and
+state-changing boundaries defined below.
 
 ---
 
@@ -647,40 +619,31 @@ Future safety boundary:
 
 ---
 
-## 19. Current Done Criteria
+## 19. Contract Acceptance Criteria
 
-The shell backend contract is considered established when:
+The shell backend contract remains valid when:
 
-- shell runner scenarios can be selected deterministically
-- runner path is explicit in scenario YAML
-- timeout is explicit or defaulted
-- execution produces schema-compatible `attack_result.json`
-- execution produces schema-compatible `attack_execution_log.json`
-- valid `ATTACK_EVENT_JSON:` lines are captured as additive `structured_events`
-- dry-run does not execute runner actions
-- exit code is recorded
-- stdout / stderr are available for review
-- `state_changing` is preserved in `attack_result.json`
-- static contract tests enforce runner path, executable bit,
-  `timeout_seconds`, `state_changing`, and inline shell field boundaries
-- `attack_observed_effects.json` can be derived from shell execution evidence
-- structured runner output is documented and optional
-- scenario_004 / 005 / 006 emit structured runner events for current observed-effect mappings
-- legacy stdout marker / exit-code fallback remains compatible
+- backend selection and runner paths are deterministic and explicit;
+- runtime validation fails closed for unsafe, missing, non-executable, or
+  malformed runner configuration;
+- timeout, exit code, timestamps, stdout, and stderr remain reviewable;
+- dry-run performs no runner action;
+- `state_changing` remains explicit in the resulting artifacts;
+- valid `ATTACK_EVENT_JSON:` records are additive and never replace raw
+  execution evidence;
+- weaker stdout-marker or exit-code fallbacks remain identifiable;
+- generated attack artifacts remain schema-compatible; and
+- attacker-side output cannot become defender detection evidence.
 
 ---
 
-## 20. Next Steps
+## 20. Extension Conditions
 
-Recommended next steps:
-
-1. Keep current shell backend behavior stable
-2. Add tests only for concrete schema, runner-path, or output-regression risks
-3. Maintain scenario_004 / 005 / 006 structured runner event coverage
-4. Extend structured runner events only when new scenario families introduce useful mappings
-5. Maintain additive `structured_events` in `attack_execution_log.json` without replacing raw stdout / stderr
-6. Introduce runtime path allowlist / safety policy when assessment mode becomes relevant
-7. Avoid autonomous execution or TTP composition until artifact contracts remain stable
+Add runner capabilities, structured-event mappings, retry behavior, manifests,
+or approval enforcement only for an evidence-backed scenario or safety need.
+Each extension requires focused validation and must preserve path controls,
+timeouts, dry-run, raw evidence, state-changing classification, and approval
+boundaries. Autonomous planning and TTP composition remain separate contracts.
 
 ---
 

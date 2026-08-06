@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/compare.schema.json",
+  "title": "Comparison Result",
+  "description": "Normalized compare artifact for multi-agent comparison harness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "stage",
+    "source_run_id",
+    "scenario_id",
+    "agents",
+    "rubric_context",
+    "common_items",
+    "agent_only_items",
+    "missing_items",
+    "overclaimed_items"
+  ],
+  "properties": {
+    "stage": {
+      "type": "string",
+      "enum": [
+        "triage",
+        "investigation",
+        "case",
+        "action"
+      ]
+    },
+    "source_run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scenario_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "harness_run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 2,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "rubric_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primary_artifacts_expected",
+        "scenario_focus"
+      ],
+      "properties": {
+        "primary_artifacts_expected": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "expected_enriched_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "uniqueItems": true
+        },
+        "scenario_focus": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "common_items": {
+      "type": "object",
+      "description": "Facts or normalized outputs shared across all agents.",
+      "additionalProperties": true
+    },
+    "agent_only_items": {
+      "type": "object",
+      "description": "Items unique to each agent after normalization.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/agentComparisonDetail"
+      }
+    },
+    "missing_items": {
+      "type": "object",
+      "description": "Important expected items absent from each agent output.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "overclaimed_items": {
+      "type": "object",
+      "description": "Claims made without enough evidence or beyond incident scope.",
+      "propertyNames": {
+        "type": "string",
+        "minLength": 1
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "field_comparisons": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/fieldComparison"
+      }
+    },
+    "normalization_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "$defs": {
+    "agentComparisonDetail": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "captured_items": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "notable_strengths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "notable_enriched_features": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "notable_weaknesses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_present": {
+          "type": "boolean"
+        },
+        "raw_output_ref": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_level": {
+          "type": "string",
+          "enum": [
+            "none",
+            "limited",
+            "moderate",
+            "strong"
+          ]
+        },
+        "notable_missing_pivots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notable_recommended_pivots": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notable_unsupported_claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "notable_actions": {
+          "type": "array",
+          "description": "For Action stage: Planned or recommended mitigations/playbook steps.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "safety_decisions": {
+          "type": "array",
+          "description": "For Action stage: Identified state-changing or high-risk execution constraints.",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fieldComparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "values_by_agent"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "values_by_agent": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "minLength": 1
+          },
+          "additionalProperties": true
+        },
+        "comparison_note": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

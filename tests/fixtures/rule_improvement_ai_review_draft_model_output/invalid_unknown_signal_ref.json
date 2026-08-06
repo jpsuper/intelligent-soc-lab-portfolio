@@ -1,0 +1,22 @@
+{
+  "draft_id": "ri-ai-review-draft-unknown-signal",
+  "source_stage": "post_action_dfir",
+  "source_review_input_ref": "data/runs/run-import/rule_improvement_review_input.json",
+  "source_review_input_id": "ri-review-model-output-import-001",
+  "ai_assistance_only": true,
+  "human_review_required": true,
+  "classification_decision_allowed": false,
+  "candidate_generation_started": false,
+  "promotion_allowed": false,
+  "suggestions": [
+    {
+      "source_signal_ref": "/supporting_signals/99",
+      "suggested_label": "insufficient_evidence",
+      "suggested_rationale": "Human review is required.",
+      "suggested_next_step": "Review the source context.",
+      "evidence_caveats": ["Evidence is limited."],
+      "review_questions": ["What evidence is available?"],
+      "confidence_rationale": "Context is limited."
+    }
+  ]
+}

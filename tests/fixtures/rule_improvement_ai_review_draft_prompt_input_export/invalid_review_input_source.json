@@ -1,0 +1,8 @@
+{
+  "review_input_id": "ri-review-invalid-prompt-export",
+  "source_stage": "post_action_dfir",
+  "source_result_ref": "post_action_dfir_investigation_result.json",
+  "risk_notes": ["Invalid because promotion is enabled."],
+  "human_review_required": true,
+  "promotion_allowed": true
+}

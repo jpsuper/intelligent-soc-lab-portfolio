@@ -1,8 +1,8 @@
 # AI-Assisted Rule Improvement Review Draft Contract
 
-## 1. Purpose and status
+## 1. Purpose And Boundary
 
-This document defines a future, optional AI-assisted drafting stage for
+This document defines an optional AI-assisted drafting stage for
 `rule_improvement_review_input.json`.
 
 The stage may help a human inspect review signals, evidence caveats, and missing
@@ -79,7 +79,7 @@ remains the sole acceptance boundary.
 rule_improvement_review_input.json
   ↓ scripts/export_ai_review_draft_prompt_input.py
 rule_improvement_ai_review_draft_prompt_input.json
-  ↓ future prompt/model step
+  ↓ explicit manual prompt/model step (optional)
 rule_improvement_ai_review_draft.json          (suggestions only)
   ↓ human review and independent judgment
 human-authored decisions JSON
@@ -89,7 +89,7 @@ rule_improvement_signal_classification.json    (human decision record)
 ```
 
 The AI draft is an optional sidecar. The human-operated classification helper
-remains the only path to `rule_improvement_signal_classification.json` for now.
+remains the only path to `rule_improvement_signal_classification.json`.
 The draft must never be passed directly to candidate generation or promotion.
 
 The deterministic local
@@ -339,7 +339,7 @@ the human reviewer in the classification record.
 
 ## 11. Provenance and auditability
 
-The future draft should preserve its draft ID, source review input path and ID,
+Each draft must preserve its draft ID, source review input path and ID,
 source signal refs, assistant or model identity and configuration, creation time
 if defined, warnings, and errors. Regeneration should create a new draft ID or
 version rather than silently overwrite a human-reviewed draft.
@@ -348,7 +348,7 @@ version rather than silently overwrite a human-reviewed draft.
 
 ## 12. Failure behavior
 
-A future implementation should fail closed:
+Draft generation and import must fail closed:
 
 - invalid source review input: do not emit a usable draft
 - unknown signal ref: reject or record an error; do not fabricate provenance
@@ -362,54 +362,23 @@ promotion, or any state mutation.
 
 ---
 
-## 13. Implementation status and next steps
+## 13. Status And Evidence Ownership
 
-Implemented:
+This document owns the suggestions-only artifact, model-execution gates,
+deterministic import boundary, provenance requirements, and separation from
+human decisions, candidate generation, promotion, and state mutation. The
+schemas, fixtures, prompts, exporters, importers, manual runners, and focused
+tests named in this document are the evidence references for those boundaries.
 
-1. Draft 2020-12 schema for `rule_improvement_ai_review_draft.json`.
-2. Required suggestion fields, evidence caveats, review questions, and locked
-   safety invariants.
-3. Strict rejection of human-decision, eligibility, candidate, promotion, and
-   state-mutation fields.
-4. Valid and unsafe synthetic fixtures and focused schema tests, including
-   BashHistory weak-evidence and ProcessList point-in-time caveats.
-5. Deterministic prompt-evaluation fixture pairs under
-   `tests/fixtures/rule_improvement_ai_review_draft_prompt_eval/`, with offline
-   checks for grounding, caveats, untrusted instructions, missing evidence, and
-   boundary safety. They do not execute a model or generate runtime artifacts.
-6. Deterministic `scripts/export_ai_review_draft_prompt_input.py` export of
-   minimized, schema-valid prompt context. This is context preparation only: it
-   neither executes the versioned prompt or a model nor produces the AI review
-   draft artifact.
-7. Deterministic mock `scripts/generate_mock_ai_review_draft.py` generation for
-   schema, boundary, and downstream-review testing. It produces suggestions
-   from fixed rules without executing the versioned prompt or calling a model,
-   API, network, subprocess, or human classification helper.
-8. Deterministic Markdown worksheet export with
-   `scripts/export_ai_review_draft_human_worksheet.py`. It displays suggestions
-   and blank reviewer fields without creating or submitting human decisions.
-9. Deterministic `scripts/export_ai_review_draft_prompt_bundle.py` export for
-   local inspection of the future model request boundary. It embeds only the
-   schema-valid normalized prompt input and versioned prompt, locks execution
-   and network off, and creates no response or downstream review artifact.
-10. Deterministic `scripts/import_ai_review_draft_model_output.py` acceptance of
-    already-produced model JSON. It validates schema, provenance, locked flags,
-    known signal refs, and forbidden fields without executing a model or
-    repairing unsafe output.
-11. Manual local/private-LAN LM Studio execution through
-    `scripts/run_ai_review_draft_lmstudio_model.py`, gated by explicit execution
-    and endpoint opt-ins. Candidate output remains untrusted until imported.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+The presence of a manual runner does not make model execution automatic,
+pipeline-default, trusted, or decision-authoritative.
 
-Next:
-
-1. Real model integration remains later and must be explicit and default-off;
-   current pipeline integration is limited to the deterministic local exporter
-   and mock generator.
-2. Define any later UI or workflow around the implemented worksheet without
-   auto-submitting decisions.
-
-Candidate generation and promotion are outside this sequence and require their
-own later contracts and review gates.
+Any additional provider, UI, or workflow integration must remain explicit and
+default-off, preserve minimized input and fail-closed import, and must not
+auto-submit human decisions. Candidate generation and promotion require their
+own contracts and review gates.
 
 ---
 

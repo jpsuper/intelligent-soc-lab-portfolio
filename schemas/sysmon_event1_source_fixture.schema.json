@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/sysmon_event1_source_fixture.schema.json",
+  "title": "sysmon_event1_source_fixture",
+  "description": "Sanitized provider-like source fixture for Sysmon Event ID 1 process creation telemetry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_contract_version",
+    "fixture_id",
+    "source_format",
+    "system",
+    "event_data"
+  ],
+  "properties": {
+    "fixture_contract_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^sysmon-event1-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "source_format": {
+      "type": "string",
+      "const": "sysmon_eventlog_json"
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_name",
+        "provider_event_id",
+        "system_time",
+        "event_record_id",
+        "channel",
+        "computer"
+      ],
+      "properties": {
+        "provider_name": {
+          "type": "string",
+          "const": "Microsoft-Windows-Sysmon"
+        },
+        "provider_guid": {
+          "$ref": "#/$defs/bracedGuid"
+        },
+        "provider_event_id": {
+          "type": "integer",
+          "const": 1
+        },
+        "event_version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_level": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_task": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_opcode": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_keywords": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "system_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "event_record_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channel": {
+          "type": "string",
+          "const": "Microsoft-Windows-Sysmon/Operational"
+        },
+        "computer": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "event_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "UtcTime",
+        "ProcessGuid",
+        "ProcessId",
+        "Image",
+        "CommandLine",
+        "User",
+        "ParentProcessId",
+        "ParentImage"
+      ],
+      "properties": {
+        "RuleName": {
+          "type": "string"
+        },
+        "UtcTime": {
+          "$ref": "#/$defs/sysmonUtcTime"
+        },
+        "ProcessGuid": {
+          "$ref": "#/$defs/bracedGuid"
+        },
+        "ProcessId": {
+          "$ref": "#/$defs/integerString"
+        },
+        "Image": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "FileVersion": {
+          "type": "string"
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Product": {
+          "type": "string"
+        },
+        "Company": {
+          "type": "string"
+        },
+        "OriginalFileName": {
+          "type": "string"
+        },
+        "CommandLine": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "CurrentDirectory": {
+          "type": "string"
+        },
+        "User": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "LogonGuid": {
+          "$ref": "#/$defs/bracedGuid"
+        },
+        "LogonId": {
+          "type": "string",
+          "pattern": "^0x[0-9A-Fa-f]+$"
+        },
+        "TerminalSessionId": {
+          "$ref": "#/$defs/integerString"
+        },
+        "IntegrityLevel": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "Hashes": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "ParentProcessGuid": {
+          "$ref": "#/$defs/bracedGuid"
+        },
+        "ParentProcessId": {
+          "$ref": "#/$defs/integerString"
+        },
+        "ParentImage": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "ParentCommandLine": {
+          "type": "string"
+        },
+        "ParentUser": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "bracedGuid": {
+      "type": "string",
+      "pattern": "^\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\}$"
+    },
+    "integerString": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "sysmonUtcTime": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3,7}$"
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "triage_id": { "type": "string" },
+    "incident_id": { "type": "string" },
+    "attack_id": { "type": ["string", "null"] },
+
+    "verdict": {
+      "type": "string",
+      "enum": ["malicious", "suspicious", "benign"]
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "priority": {
+      "type": "string",
+      "enum": ["P1", "P2", "P3"]
+    },
+    "risk_score": { "type": "number" },
+
+    "summary": { "type": "string" },
+
+    "attack_story": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+
+    "key_observations": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+
+    "derived_features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "download_and_execute_chain": { "type": "boolean" },
+        "high_risk_execution_flow": { "type": "boolean" },
+        "external_payload_source": { "type": "boolean" }
+      },
+      "required": [
+        "download_and_execute_chain",
+        "high_risk_execution_flow",
+        "external_payload_source"
+      ]
+    },
+
+    "derived_features_extra": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+
+    "mitre_attack": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+
+    "recommended_actions": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+
+  "required": [
+    "triage_id",
+    "incident_id",
+    "attack_id",
+    "verdict",
+    "confidence",
+    "priority",
+    "risk_score",
+    "summary",
+    "attack_story",
+    "key_observations",
+    "derived_features",
+    "derived_features_extra",
+    "mitre_attack",
+    "recommended_actions"
+  ]
+}

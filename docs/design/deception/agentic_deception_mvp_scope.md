@@ -1,23 +1,31 @@
 # Agentic Deception MVP Scope
 
+> [!IMPORTANT]
+> This document originated as the docs-only scope for the first Phase7
+> deception MVP. The deterministic artifact foundation it proposed is now
+> implemented. Historical planning sections are labeled explicitly; current
+> status and active priority are maintained in
+> [Phase7](../../roadmap/phase7.md) and the
+> [main Roadmap](../../roadmap/roadmap.md).
+
 ## 1. Purpose
 
 This document defines the Phase7 agentic deception MVP scope.
 
-Phase7 starts with defender-side agentic deception for high-confidence SOC
-signals. The MVP is a defensive simulation layer that creates local-lab lures,
-records deterministic trap observations, and produces reviewable defender-side
+Phase7 uses defender-side agentic deception for high-confidence SOC signals.
+The MVP is a defensive simulation layer that creates local-lab lures, records
+deterministic trap observations, and produces reviewable defender-side
 deception hit artifacts.
 
-This is a docs-only scope document. It does not add schemas, scripts, tests,
-fixtures, scenarios, runners, or generated run artifacts.
+This document preserves the original MVP scope and its durable design and
+safety boundaries. It is not the canonical source for current implementation
+status or active sequencing.
 
 ## 2. Why this fits Phase7
 
 Phase6 completed the Rule Improvement export MVP for the current
-candidate-generation boundary. The next useful direction is to widen
-defender-side signal quality before adding state-changing update or promotion
-workflows.
+candidate-generation boundary. At the start of Phase7, the next useful direction was to widen defender-side
+signal quality before adding state-changing update or promotion workflows.
 
 Deception is a good Phase7 starting point because a confirmed interaction with
 a canary, decoy credential, decoy service, or decoy file can be a
@@ -41,9 +49,10 @@ bounded to lab-only deception assets.
 - Generated run artifacts remain local and are not committed unless a later PR
   explicitly documents them as test fixtures.
 
-## 4. MVP scope
+## 4. Historical MVP implementation plan
 
-The MVP should define a small, local-lab deception path:
+At the initial docs-only stage, the MVP proposed a small local-lab deception
+path:
 
 ```text
 deception_inventory.yaml
@@ -54,11 +63,13 @@ deception_inventory.yaml
   -> triage / investigation / case
 ```
 
-The first canonical artifact should be a dedicated `deception_hits.json`
-artifact. Canonical detection output integration can come later after the
-deception hit contract is stable.
+The initial plan made `deception_hits.json` the first canonical deception
+artifact and deferred canonical detection output integration until that
+contract stabilized.
 
-The incident bridge is future work. It is not implemented in this docs-only PR.
+At that stage, the incident bridge was future work. The deterministic artifact
+foundation and deception-hit-to-Incident bridge are now implemented. Canonical
+detection output integration remains future work.
 
 ## 5. Non-goals
 
@@ -106,14 +117,14 @@ deception hit artifact confirms the interaction.
 
 ## 7. Deception asset model
 
-Future `deception_inventory.yaml` should describe local-lab deception assets.
-The future schema should be:
+`deception_inventory.yaml` describes local-lab deception assets. Its canonical
+schema is:
 
 ```text
 schemas/deception_inventory.schema.json
 ```
 
-The inventory should be able to describe:
+The inventory can describe:
 
 - lure identity
 - lure type
@@ -125,13 +136,14 @@ The inventory should be able to describe:
 - scenario-family association
 - cleanup expectations
 
-Future generation should be handled by:
+Deterministic generation is handled by:
 
 ```text
 scripts/generate_deception_assets.py
 ```
 
-That script is future work and is not created by this PR.
+The schema-backed fixture and deterministic generator are implemented. This
+artifact model does not assign or implement a deception scenario runner.
 
 ## 8. Agent-readable lures vs defender-observable traps
 
@@ -154,28 +166,31 @@ Reading a lure is not enough by itself unless the read is captured by a
 defender-side trap observation. A runner claiming that it requested a canary URL
 is attacker-side context until the defender-side canary request is observed.
 
-## 9. Proposed artifact contracts
+## 9. Artifact contracts
 
-Future `deception_hits.json` should record deterministic defender-side trap
-observations. The future schema should be:
+`deception_hits.json` records deterministic defender-side trap observations.
+Its canonical schema is:
 
 ```text
 schemas/deception_hits.schema.json
 ```
 
-Future hit generation should be handled by:
+Deterministic hit generation is handled by:
 
 ```text
 scripts/generate_deception_hits.py
 ```
 
-Future incident bridging should be handled by:
+Incident bridging is handled by:
 
 ```text
 scripts/build_incident_from_deception_hits.py
 ```
 
-These schemas and scripts are future work and are not created by this PR.
+These schemas, scripts, fixture-backed artifacts, and the
+deception-hit-to-Incident bridge are implemented. Scenario YAML / runner
+integration and canonical detection output integration remain separate future
+work.
 
 ## 10. Event and artifact naming
 
@@ -194,30 +209,31 @@ Scenario-family names should be used until existing scenario IDs are checked:
 - `attacker_agent_untrusted_artifact_safety`
 - `agentic_db_extortion_simulation`
 
-No scenario number is assigned in this docs-only PR. Future scenario numbers
-must be chosen only after existing scenario IDs are checked.
+The initial docs-only scope assigned no scenario number. No deception scenario
+number is currently assigned. A future implementation must select one only
+after checking the existing scenario IDs.
 
 ## 11. Pipeline position
 
-The MVP should sit on the defender side of the artifact pipeline:
+The implemented artifact foundation sits on the defender side of the pipeline:
 
 ```text
 local deception assets
   -> defender-observable trap interaction
   -> deception_hits.json
-  -> future incident bridge
-  -> triage / investigation / case
+  -> incident.json
+  -> future triage / investigation / case
   -> optional future Rule Improvement review signal
 ```
 
-`deception_hits.json` should be a dedicated artifact first. Later canonical
+`deception_hits.json` remains a dedicated source artifact. Future canonical
 detection output integration may map deception hits into the normal detection
-or incident path, but the first contract should preserve the trap source.
+path, but it must preserve the deterministic trap source.
 
 Future scenario YAML and runner implementation is governed separately by
 `docs/design/deception/deception_scenario_contract.md`. That contract preserves
-the artifact-only chain here while documenting scenario numbering, runner
-behavior, output locations, and safety boundaries for the first scenario PR.
+the artifact-only chain while documenting scenario numbering, runner behavior,
+output locations, and safety boundaries for a future scenario PR.
 
 ## 12. Rule Improvement relationship
 
@@ -238,32 +254,41 @@ If a deception hit identifies a detection gap, that gap should become a
 reviewable signal first. Human review should decide whether it enters the Rule
 Improvement candidate workflow.
 
-## 13. Acceptance criteria
+## 13. Durable acceptance criteria
 
-The Phase7 agentic deception MVP should be considered ready for implementation
-only when future PRs can show:
+The original implementation-readiness criteria remain durable requirements for
+the artifact foundation and any future Phase7 extension:
 
-- `deception_inventory.yaml` has a schema-backed fixture
-- `deception_hits.json` has a schema-backed fixture
+- `deception_inventory.yaml` uses a schema-backed fixture
+- `deception_hits.json` uses a schema-backed fixture
 - local decoy asset generation is deterministic
 - trap hit generation is deterministic
-- canary endpoints are local-lab only
+- canary endpoints remain local-lab only
 - attacker-side observed effects are not counted as defender-side hits
 - deception hits can be reviewed without bypassing approval gates
-- no generated `data/runs/**` artifacts are committed unless explicitly added
+- generated `data/runs/**` artifacts are not committed unless explicitly added
   as fixtures
 
-## 14. Follow-on work
+These criteria do not claim live deception scenario execution or runtime
+validation. Current validation status is maintained in the Phase7 and main
+Roadmap documents.
 
-Follow-on tracks:
+## 14. Implemented foundation and follow-on work
 
-- define `schemas/deception_inventory.schema.json`
-- define `schemas/deception_hits.schema.json`
-- add deterministic fixtures
-- add `scripts/generate_deception_assets.py`
-- add `scripts/generate_deception_hits.py`
-- add `scripts/build_incident_from_deception_hits.py`
-- add a scenario-family smoke after contracts stabilize
+The implemented deterministic artifact foundation includes:
+
+- `schemas/deception_inventory.schema.json`
+- `schemas/deception_hits.schema.json`
+- deterministic fixtures
+- `scripts/generate_deception_assets.py`
+- `scripts/generate_deception_hits.py`
+- `scripts/build_incident_from_deception_hits.py`
+- artifact-chain smoke coverage
+
+Remaining follow-on tracks are:
+
+- add a scenario-family smoke only when a future scenario YAML / runner is
+  intentionally resumed
 - use `docs/design/deception/deception_scenario_contract.md` before adding
   scenario YAML or runner files
 - separately define attacker-agent untrusted artifact safety

@@ -16,6 +16,49 @@ correlation, triage, investigation, response, DFIR, and continuous improvement.
 The goal is not only to test what can be automated, but also to understand what
 still requires human judgment and what new operating methods may emerge.
 
+## Public Snapshot Scope
+
+This repository is a curated public portfolio snapshot. It includes selected
+implementation code, JSON Schemas, synthetic fixtures, and focused tests for:
+
+- Linux auditd parsing and normalization through deterministic detection,
+  Incident construction, Rule Triage, and evidence-bounded Investigation
+- Windows Sysmon Event ID 1 Fixture A/B/C parsing, normalization, deterministic
+  detection, and the shared Detection-to-Investigation pipeline
+- common deduplication, correlation, and trust boundaries
+- an offline Rule Improvement path for prompt-input export, schema validation,
+  untrusted model-output import, comparison, and promotion recommendations
+
+Environment-specific configuration, generated artifacts, raw lab telemetry,
+some integrations, and development-only utilities are not included. Active
+development continues in a private repository.
+
+The implementation status described below reflects the broader private lab.
+In this public snapshot, a claim is directly reproducible only when its
+implementation, schema, synthetic fixture, and focused test are present here.
+Other retained documents describe architecture, design history, or private-lab
+work and should not be read as proof that the corresponding runtime integration
+is included in this repository.
+
+[Copyright notice](NOTICE.md) · [Security policy](SECURITY.md)
+
+## 5–10 Minute Review Path
+
+1. **Architecture:** read the
+   [defender event processing flow](docs/architecture/defender-event-processing-flow.md).
+2. **Representative path:** follow the Windows
+   [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py),
+   [normalized mapper](scripts/windows/sysmon_event1/map_sysmon_event1_to_endpoint_event.py),
+   and [common defender pipeline](common/defender_pipeline.py).
+3. **Schema:** inspect the
+   [normalized endpoint-event contract](schemas/endpoint_events.schema.json).
+4. **Fixture:** inspect
+   [Sysmon Fixture B](tests/fixtures/windows/sysmon_event1/source/sysmon-event1-encoded-flag-001.json).
+5. **Test:** trace the expected output in the
+   [Windows detection test](tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py)
+   and the shared
+   [Detection-to-Investigation composition test](tests/test_common_detection_to_investigation_composition.py).
+
 ## Overview
 
 The lab treats security operations as an evidence-driven improvement loop
@@ -100,153 +143,50 @@ alerts, and they cannot create an incident by themselves.
 
 ## Current Status
 
+The broader private lab provides a bounded, reproducible foundation across
+Phase 0 through Phase 7.
+
 ### Implemented foundation
 
-- Phase 0 through Phase 5 MVPs are complete
-- Phase 6 extended MVP is complete, including:
-  - deterministic atomic detection and correlation-first incident entry
-  - deterministic and AI-assisted Triage variants
-  - pre-case Investigation, Case, and Action stages
-  - triage, investigation, and action comparison harnesses
-  - Action to DFIR collection-request handoff
-  - post-action DFIR result handling
-  - Rule Improvement candidate export and validation
-- Scenario Family Expansion Policy is defined
-- Broader Linux family mapping and the bounded `scenario_009` path are
-  implemented; remaining canonical-source and live-integration work is deferred
+- Phase 0 through Phase 5 bounded MVPs are complete.
+- Phase 6 extended MVP is complete. It includes deterministic detection,
+  correlation-first Incident entry, Triage / Investigation / Action stages and
+  comparison harnesses, Action-to-DFIR request handoff, post-action DFIR result
+  handling, and review-oriented Rule Improvement candidate export.
+- Phase 7 has an artifact-only Deception foundation. Scenario YAML, a safe
+  runner, and canonical detection-output integration remain deferred.
+- Linux `scenario_004` through `scenario_006` provide repeatable regression
+  coverage. `scenario_009_suspicious_archive_staging` has a bounded,
+  fixture-backed Incident-to-Action path; canonical live Wazuh source
+  integration remains deferred.
 
-### Validated Linux scenario coverage
+### Current active workstream
 
-The primary repeatable Linux regression set exercises different attack and
-evidence shapes across the shared pipeline:
+The active workstream is Windows cross-platform expansion toward full Common
+Pipeline v0. Windows Fixture A/B/C currently validate source parsing,
+normalization, deterministic detection, shared correlation and Incident
+construction, deterministic Rule Triage, and pre-case Investigation through
+bounded, fixture-backed paths.
 
-| Scenario | Behavior under validation | Primary defender artifacts |
-|---|---|---|
-| `scenario_004` | SSH brute force followed by `authorized_keys` persistence installation | `ssh_failed_login`, `ssh_success_login`, `authorized_keys_modification` |
-| `scenario_005` | SSH public-key persistence reuse | `ssh_key_login` |
-| `scenario_006` | SSH public-key login followed by post-login command execution | `ssh_key_login`, `process_exec` |
+This evidence does not establish continuous runtime automation, live Windows
+parity, a live Windows Detection-to-Investigation path, or AI-model quality.
+Common Pipeline v0 remains incomplete until full cross-platform execution
+validation is complete.
 
-These scenarios support batch regression across deterministic DSL detection,
-correlation-first Incident entry, Triage/Investigation/Action comparison, and
-attacker-observed-effect versus defender-artifact alignment.
+### Major incomplete work
 
-The broader `scenario_009_suspicious_archive_staging` path is also validated
-through a bounded incident-to-action chain that uses version-controlled test
-fixtures rather than retrieving logs from the live environment at test time.
-Its canonical live Wazuh source selection and live integration remain deferred
-and are not claimed as completed runtime coverage.
+- full cross-platform execution validation, Windows Slice 2, and Common
+  Pipeline v1 entry work
+- live Windows validation, Wazuh retrieval and conversion, additional Windows
+  telemetry, and AD / domain-controller coverage
+- Windows Triage / Investigation quality and AI-model validation
+- Linux Scenario 009 canonical-source and live-integration work
+- Rule Improvement apply, deployment, runtime-update, and promotion workflows
 
-### Deception research coverage
-
-Deception remains one research area alongside detection, correlation,
-investigation, DFIR, and Rule Improvement. Phase 7 has an implemented
-artifact-only foundation covering deception inventory, local decoy asset
-generation, deterministic defender-side deception hits, an Incident bridge,
-fixtures, and smoke coverage. A bounded scenario YAML and safe runner remain
-deferred.
-
-An attacker-side record that reports a canary request does not establish a
-deception hit until a defender-side trap observation confirms it. A confirmed
-hit is a high-confidence signal, but it does not automatically authorize
-containment or Rule Improvement apply/promotion.
-
-### Current active workstream: Windows cross-platform expansion
-
-The implemented Windows fixture-parity baseline currently includes:
-
-- Sysmon Event ID 1 source fixture schema
-- sanitized Fixture A/B/C
-- source parser and parsed-event schema
-- Fixture A/B/C `expected_parsed` parity
-- native collector adapter, local parity validator, focused tests, and runbook
-- bounded manual validation of two Event ID 1 records through source-shape and
-  parser parity
-- normalized mapper
-- Fixture A/B/C static `expected_normalized` exact parity
-- deterministic PowerShell process and encoded-command observation rules using
-  the existing atomic detection DSL
-- Fixture A/B/C static `expected_detection` exact parity
-- platform-neutral Common Pipeline v0 detector invocation for validated
-  `endpoint_events.v1`, with Linux Scenario 009 and Windows Fixture A/B/C
-  fixture parity
-- a platform-neutral canonical detection-to-Incident bridge, with bounded
-  observation-level Incident validation for Windows Fixture A/B/C
-- a platform-neutral Incident-to-deterministic-Rule-Triage boundary, with
-  lossless Fixture A/B/C validation producing 1, 2, and 0 schema-valid Triage
-  results
-- a platform-neutral Incident-and-Triage-to-pre-case-Investigation boundary,
-  with Fixture A/B/C producing 1, 2, and 0 schema-valid, identity-preserving
-  Investigation results
-
-Fixture A/B/C are deterministic parity fixtures, not three runtime pipeline
-scenarios. The bounded manual observation does not establish continuous runtime
-automation, live normalized parity, or a live Windows detection-to-Incident
-path.
-
-```mermaid
-flowchart TD
-    A["Current Windows normalization"]
-    B["Implemented PowerShell detection parity"]
-    C["Implemented Common Pipeline v0 detector spine"]
-    D["Implemented bounded Windows Slice 1 Incident boundary"]
-    E["Implemented bounded deterministic Rule Triage boundary"]
-    F["Implemented bounded evidence-aware pre-case Investigation"]
-    G["Existing Linux regression passed"]
-    H["Bounded v0 fixture slice progress"]
-    I["Remaining shared dedupe / correlation"]
-    J["Full Common Pipeline v0"]
-    K["Windows Slice 2 / cross-platform regression"]
-    L["Common Pipeline v1 and later runtime work"]
-
-    A --> B
-    B --> C
-    C --> D
-    D --> E
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> L
-```
-
-The implemented Common Pipeline v0 scope now includes the detector spine and a
-bounded Windows Slice 1 bridge from canonical detections to the existing
-observation-level Incident contract. Fixture A/B/C produce 1, 2, and 0
-Incidents respectively. A platform-neutral list boundary then reuses the
-existing deterministic Rule Triage implementation once per Incident and
-produces 1, 2, and 0 schema-valid, identity-preserving Triage results. This is
-fixture-backed execution validation, not Windows verdict-quality or AI-model
-validation, and no Windows-specific Incident or Triage path was added.
-The same identity-linked Incident/Triage pairs now pass through a
-platform-neutral list boundary that reuses the existing evidence-aware
-pre-case Investigation builder and produces 1, 2, and 0 schema-valid results.
-This validates bounded boundary mechanics, not Windows Investigation quality,
-AI/model behavior, or live coverage.
-Common Pipeline v0 overall remains incomplete under the architecture Done
-Criteria because shared dedupe/correlation and full cross-platform execution
-validation remain incomplete.
-
-The following remain planned or unverified:
-
-- live Windows detection-to-Incident validation
-- live normalized parity
-- full Common Pipeline v0 shared dedupe/correlation and cross-platform
-  execution validation
-- Windows Triage and Investigation quality
-- AI Triage batch/live-model validation
-- AI Investigation/model validation
-- live Windows detection-to-Investigation validation
-- Wazuh Windows retrieval/conversion integration
-- Windows Security Event 4624/4625 and Sysmon Event ID 3 support
-- Active Directory and domain-controller coverage
-
-The two PowerShell rules use the DSL-required lowest existing `severity`
-metadata value. That metadata is neither a malicious verdict nor Incident
-severity; the fixture oracle records only matched rule IDs and observed
-behavior features.
-
+For authoritative current status, priorities, incomplete work, sequencing, and
+Done Criteria, see the [Main Roadmap](docs/roadmap/roadmap.md). For
+cross-platform processing responsibilities and trust boundaries, see the
+[Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md).
 ## Architecture Boundaries
 
 - Collectors, source parsers, normalized mappers, and platform/domain-specific
@@ -287,8 +227,8 @@ The detailed tasks, evidence, dependencies, and Done Criteria live in the
 
 ## Documentation
 
-- [Master Guide](docs/AI_SOC_Lab_Master_Guide.md) — consolidated project
-  design, implementation status, and operating guidance
+- [Master Guide](docs/AI_SOC_Lab_Master_Guide.md) — stable architecture,
+  artifact boundaries, evidence rules, and operating policy
 - [Roadmap](docs/roadmap/roadmap.md) — authoritative phase status, current
   priority, implementation sequence, and Done Criteria
 - [Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md)
@@ -322,11 +262,14 @@ The lab is designed for learning, experimentation, and iterative validation.
 
 ## Philosophy
 
-Learn by building.  
-Validate by attacking.  
+Learn by building.
+
+Validate by attacking.
+
 Improve by iterating.
 
 ## Name
 
-**Formal name:** Intelligent Security Operations Lab  
+**Formal name:** Intelligent Security Operations Lab
+
 **Common name:** SOC Lab

@@ -1,5 +1,10 @@
 # Phase 4 — Case Agent and Integration Preparation
 
+> [!NOTE]
+> This document preserves Phase4-specific implementation history and
+> validation context. The [main Roadmap](roadmap.md) is authoritative for current
+> status, active priority, incomplete work, and Done Criteria.
+
 ## Overview
 
 Phase 4 focuses on converting the outputs of the attack simulation and evaluation pipeline into a structured SOC-style case record.
@@ -15,7 +20,8 @@ allowing case creation and observable attachment based on the generated `case.js
 - external platform integration
 - automated response preparation
 
-This phase does **not** aim to fully automate enterprise-grade case management yet.  
+This phase does **not** aim to fully automate enterprise-grade case management yet.
+
 Instead, it establishes the internal data model and agent flow required for future integrations such as TheHive and Velociraptor.
 
 ---

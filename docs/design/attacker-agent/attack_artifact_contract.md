@@ -2,53 +2,43 @@
 
 ## 1. Purpose
 
-This document defines the current attacker-side artifact contract used by the lab.
+This document defines the common attacker-side run artifact boundaries used by
+the lab:
 
-The immediate goal is to make attacker-side outputs schema-backed and comparable without prematurely introducing autonomous attack behavior or rich observed-effects modeling.
+- `attack_result.json` summarizes the run outcome;
+- `attack_execution_log.json` records execution activity and provenance; and
+- `attack_observed_effects.json` records attacker-side observations without
+  becoming defender telemetry or detection evidence.
 
-Current scope:
-
-- `attack_result.json`
-- `attack_execution_log.json`
-
-Future scope:
-
-- `attack_observed_effects.json`
-- `attack_request.json`
-- `attack_plan.json`
+`attack_request.json`, `attack_plan.json`, TTP catalogs, and autonomous
+planning require separate contracts before they can enter this boundary.
 
 The key design rule is:
 
 ```text
-stabilize current artifacts first
+execute a bounded scenario
   ↓
-validate existing outputs
+record traceable attacker-side artifacts
   ↓
-then introduce richer observed effects
+compare attacker observations with independent defender evidence
 ```
 
 ---
 
-## 2. Current Status
+## 2. Contract And Status Ownership
 
-The current Phase C-1 status is complete.
+This document owns the shared identity, status, traceability, and separation
+rules for attacker-side run artifacts. Detailed observed-effects semantics
+belong in
+[`attack_observed_effects_contract.md`](attack_observed_effects_contract.md),
+and shell execution boundaries belong in
+[`shell_backend_contract.md`](shell_backend_contract.md).
 
-Implemented:
-
-- `schemas/attack_result.schema.json`
-- `schemas/attack_execution_log.schema.json`
-- attacker-agent `attack_result.json` validation
-- attacker-agent `attack_execution_log.json` validation
-- process pipeline minimal `attack_result.json` alignment with `attack_result.schema.json`
-
-Not implemented yet:
-
-- `attack_observed_effects.json`
-- `attack_request.json`
-- `attack_plan.json`
-- shell backend formal contract
-- TTP catalog
-- autonomous planner / supervisor
+The [Main Roadmap](../../roadmap/roadmap.md) and
+[Phase 6](../../roadmap/phase6.md) own current implementation status, validation
+depth, priorities, and sequencing. The presence of an artifact in this contract
+does not authorize autonomous planning or make attacker-side evidence a
+defender-side result.
 
 ---
 
@@ -67,7 +57,7 @@ It answers:
 - what scenario metadata was attached
 - what steps were attempted at a high level
 
-Current producers:
+Defined producers:
 
 - attacker-agent
 - process pipeline minimal artifact generation
@@ -84,25 +74,29 @@ It answers:
 - whether the runner completed
 - what exit code was observed
 
-Current producers:
+Defined producers:
 
 - attacker-agent
 
-The process pipeline does not need to generate `attack_execution_log.json` at this stage.
+`attack_execution_log.json` is owned by the execution boundary. Other pipeline
+stages must not synthesize it unless a separate producer contract defines
+equivalent provenance and validation.
 
-### 3.3 Future `attack_observed_effects.json`
+### 3.3 `attack_observed_effects.json`
 
-`attack_observed_effects.json` will eventually represent attacker-side observed facts.
+`attack_observed_effects.json` represents attacker-side observed facts.
 
-It should answer:
+It records:
 
-- what the attacker side believes succeeded
-- what evidence supports that belief
-- which expected effects were observed
-- which expected effects were not observed
-- how attacker-side observations compare with defender telemetry
+- what the attacker side believes succeeded;
+- what attacker-side evidence supports that belief;
+- which expected effects were or were not observed; and
+- stable references used for later comparison with independent defender
+  evidence.
 
-This artifact is intentionally not introduced in Phase C-1.
+It does not record defender detection, evaluation coverage, or an Incident
+conclusion. Detailed fields and derivation rules belong in the dedicated
+observed-effects contract.
 
 ---
 
@@ -288,36 +282,26 @@ It may use attack metadata for context, but it should not treat attacker-side cl
 
 ---
 
-## 8. Why `attack_observed_effects.json` Is Not First
+## 8. Observed-Effects Separation
 
-`attack_observed_effects.json` is useful, but introducing it too early creates ambiguity.
+The artifact model must keep these meanings distinct:
 
-Potential ambiguity:
+- attacker-side observed success;
+- defender-side telemetry and detection;
+- scenario expected artifacts;
+- evaluation coverage; and
+- synthetic or fixture-generated evidence.
 
-- attacker-side observed success
-- defender-side observed detection
-- scenario expected artifact
-- evaluation coverage
-- process pipeline synthetic artifact
-
-Phase C-1 intentionally avoids this ambiguity by first stabilizing:
-
-```text
-attack_result.json
-attack_execution_log.json
-```
-
-Only after those are stable should the project introduce:
-
-```text
-attack_observed_effects.json
-```
+`attack_result.json`, `attack_execution_log.json`, and
+`attack_observed_effects.json` therefore remain separate artifacts with
+separate schemas and provenance. No attacker-side artifact proves that a
+defender observed or detected an effect.
 
 ---
 
 ## 9. Validation Policy
 
-Current validation policy:
+The validation boundary is:
 
 ```text
 attack_result.schema.json
@@ -335,42 +319,42 @@ Manual validation of generated artifacts is useful during development, but tests
 
 ---
 
-## 10. Out of Scope
+## 10. Out Of Scope
 
-The following are out of scope for the current contract:
+This contract does not define or authorize:
 
-- autonomous attack planning
-- automatic TTP composition
-- Atomic Red Team backend
-- Caldera backend
-- attack-side success scoring
-- first-class observed effects
-- multi-host attacker orchestration
-- approval workflow for offensive actions
-- shell runner environment contract
+- autonomous attack planning;
+- automatic TTP composition;
+- Atomic Red Team or Caldera backends;
+- attack-side security scoring;
+- multi-host attacker orchestration;
+- approval workflows for offensive actions;
+- defender detection or Incident conclusions;
+- detailed observed-effects evaluation; or
+- shell-runner environment and execution policy.
 
-These should be introduced only after the current artifact contracts remain stable.
+The final two responsibilities remain in their dedicated attacker-agent
+contracts rather than being duplicated here.
 
 ---
 
-## 11. Next Steps
+## 11. Extension Conditions
 
-Recommended next steps:
+Extend the common artifact boundary only when a new attacker-side artifact:
 
-1. Keep validating current `attack_result.json` and `attack_execution_log.json`
-2. Add more tests only if scenario_004 / 005 / 006 expose schema gaps
-3. Decide whether the next implementation target is:
-   - shell backend contract, or
-   - first-class `attack_observed_effects.json`
-4. Add `attack_observed_effects.schema.json` only after its contract is clear
-5. Avoid autonomous planning until scenario, artifact, and safety contracts are stable
+1. has a dedicated schema or explicit validation contract;
+2. preserves run, scenario, and execution provenance;
+3. remains distinguishable from defender telemetry and detection;
+4. has bounded fixture and runner validation;
+5. does not authorize planning, execution, or state change by its presence; and
+6. has its priority and completion tracked in the Roadmap.
 
 ---
 
 ## 12. One-Line Summary
 
 ```text
-attack_result.json summarizes the attack run;
+attack_result.json summarizes the run;
 attack_execution_log.json records attacker-agent execution;
-attack_observed_effects.json remains a future attacker-side evidence artifact.
+attack_observed_effects.json records attacker-side observations only.
 ```

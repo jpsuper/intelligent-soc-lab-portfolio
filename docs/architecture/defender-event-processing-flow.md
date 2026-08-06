@@ -12,6 +12,13 @@ investigation do not collapse into one ambiguous step.
 This is a cross-platform architecture view. Source-specific contracts such as
 Sysmon Event ID 1 remain under `docs/design/`.
 
+> Document responsibility:
+> This document owns stable defender-side processing stages, handoff contracts,
+> and trust boundaries. The [Main Roadmap](../roadmap/roadmap.md) owns current
+> implementation status, priorities, validation depth, sequencing, and Done
+> Criteria. A component or version described here must not be treated as
+> implemented or runtime-validated without Roadmap evidence.
+
 ## Runtime Processing Flow
 
 ```mermaid
@@ -27,7 +34,7 @@ flowchart LR
     I[Correlation / Incident Builder]
     J[Incident]
     K[Triage]
-    L[Investigation]
+    L[Pre-case Investigation]
 
     A --> B
     B --> C
@@ -54,7 +61,7 @@ flowchart LR
 | Deterministic detector | Normalized event | Evaluate explicit deterministic conditions | Detection result or rule hit | Attack intent, full incident truth, or response approval |
 | Correlation / incident builder | Detection results and supporting observations | Relate events across time, host, user, process, or scenario context and construct an analysis unit | Incident candidate or incident artifact | That every correlated event is malicious or that evidence is complete |
 | Triage | Incident, timeline, rule hits, and available evidence | Assess priority, summarize the current story, identify uncertainty, and select the next analysis path | Triage result | Unverified facts, final attribution, or unsupported conclusions |
-| Investigation | Incident plus additional evidence sources | Test hypotheses, collect additional evidence, confirm or reject explanations, and identify remaining gaps | Investigation result and evidence set | Conclusions not supported by collected evidence |
+| Pre-case Investigation | Incident, Triage, and available defender-side evidence | Test hypotheses, examine evidence, enrich context, and identify gaps and recommended pivots | `investigation_result.json` and evidence references | Collection execution, post-action DFIR conclusions, or conclusions unsupported by available evidence |
 
 ## Runtime Evidence And Fixtures
 
@@ -123,11 +130,11 @@ Normalization is telemetry shaping only. It does not establish:
 - containment approval; or
 - response authorization.
 
-## Detection, Triage, And Investigation Boundary
+## Detection, Triage, And Pre-case Investigation Boundary
 
 Detection is deterministic rule evaluation against normalized observations.
-Triage and investigation interpret the resulting incident context, but they
-must remain evidence-aware.
+Triage and pre-case Investigation interpret the resulting incident context,
+but they must remain evidence-aware.
 
 ```text
 normalized event
@@ -135,16 +142,18 @@ normalized event
   -> detection result
   -> correlation / incident construction
   -> triage
-  -> investigation
+  -> pre-case investigation
 ```
 
 A detection result states that a rule condition matched. It does not by itself
 prove an attacker objective, successful compromise, or the need for
 containment.
 
-Triage prioritizes and explains the current evidence. Investigation gathers or
-examines additional evidence to test the triage hypotheses. Missing evidence
-must remain visible instead of being converted into a confident conclusion.
+Triage prioritizes and explains the current evidence. Pre-case Investigation
+examines available defender-side evidence to test the triage hypotheses and
+records evidence gaps and recommended pivots. It does not execute a collection
+request or consume `collection_result.json`. Missing evidence must remain
+visible instead of being converted into a confident conclusion.
 
 ## Expected Artifacts And Exact Parity
 
@@ -240,95 +249,16 @@ event expresses that observation in the lab-wide endpoint vocabulary. Only the
 detector evaluates whether a defined condition matched, and later stages decide
 how the detection should be interpreted using available evidence.
 
-## Cross-Platform Current State
+## Cross-Platform Status Reference
 
-The Linux pipeline is the current runtime baseline. In particular, the existing
-process pipeline supports the `scenario_004`, `scenario_005`, and
-`scenario_006` family through source-specific Linux parsing and detection,
-dedupe/correlation, incident construction, triage, pre-case investigation, and
-later handoffs. This baseline must remain working while the common pipeline is
-introduced.
+Current Linux, Windows, fixture, live, and cross-platform validation status is
+maintained in the [Main Roadmap](../roadmap/roadmap.md). Evidence qualifiers
+such as fixture-backed, bounded native observation, focused-test validated,
+live, and runtime-validated must remain distinct.
 
-Windows is currently a fixture-first, Sysmon Event ID 1 mapping and
-deterministic detection slice. Its verified repository status is:
-
-| Capability | Status | Evidence and boundary |
-|---|---|---|
-| Sysmon Event ID 1 source fixture/schema | Implemented | Sanitized Fixture A/B/C source JSON, source schema, and focused validation exist. These are test representations, not live evidence. |
-| Source parser | Implemented | The Sysmon Event ID 1 parser validates provider routing and produces source-specific parsed events. |
-| Parsed-event schema / expected parsed parity | Implemented | A parsed-event schema, static Fixture A/B/C `expected_parsed` artifacts, and exact parity tests exist. |
-| Native collector/parity tooling | Implemented tooling; bounded native parity manually observed | A PowerShell collector adapter, local parity validator, tests, and runbook exist. A bounded 2-record source/parser parity run was observed without committing live artifacts. This is not continuous collection. |
-| Normalized mapper | Implemented | The versioned Sysmon Event ID 1 mapper produces one schema-valid normalized event for each schema-valid parsed event. |
-| `endpoint_events.v1` / expected normalized parity | Implemented for Fixture A/B/C | Static `expected_normalized` objects and exact parser/mapper parity exist. Live normalized parity has not been established. |
-| Deterministic PowerShell observation/detection | Implemented through Fixture A/B/C parity | Two Windows/Sysmon-specific rules reuse the existing atomic DSL and evaluator. Static `expected_detection` artifacts fix the reviewed positive/negative outcomes; this is not live runtime evidence or a malicious verdict. |
-| Common Pipeline v0 detector-invocation spine | Implemented for normalized endpoint fixtures | One platform-neutral entry point validates `endpoint_events.v1` and atomic rules, orders rules deterministically, reuses the existing evaluator, and validates the established canonical detection-list shape. Linux Scenario 009 and Windows Fixture A/B/C prove fixture connection and parity only. |
-| Shared canonical-detection dedupe-to-correlation execution boundary | Implemented and fixture-validated | A platform-neutral in-memory entry point validates and deduplicates canonical detections, invokes the existing `auth → authorized_keys` and `key login → process execution` policies in fixed order, deterministically validates correlation results, and preserves non-correlating Linux Scenario 009 and Windows Fixture A/B/C parity. |
-| Correlation-result-to-Incident execution boundary | Implemented and focused-test validated | A platform-neutral in-memory bridge revalidates deterministic dedupe output and correlation results, builds one schema-valid correlation-level Incident per result with correlation-derived identity, and preserves defender evidence and ordering. |
-| Correlation/no-correlation Incident selection policy | Implemented and focused-test validated | Exact validated supporting-detection IDs take precedence: correlation-covered detections produce correlation-level Incidents only, while uncovered detections produce observation-level fallbacks. Correlation Incidents are not merged or suppressed. |
-| Canonical Detection-to-Investigation composition | Implemented and focused-test validated | The platform-neutral, in-memory, run-local entry point reuses dedupe/correlation, exact-ID Incident selection, Rule Triage, and pre-case Investigation list boundaries. Linux Scenario 009 and Windows Fixture A/B/C provide focused connection coverage; full cross-platform execution validation remains incomplete. |
-| Detection-to-Incident boundary | Implemented for bounded Windows fixtures | A platform-neutral list entry point validates canonical detections, orders them deterministically, reuses the existing observation-level Incident builder once per detection, and validates every result against `incident_schema.json`. Fixture A/B/C produce 1, 2, and 0 Incidents. This is not live runtime validation. |
-| Windows Triage/Investigation | Bounded boundary mechanics implemented for Fixture A/B/C | Shared list boundaries produce identity-preserving 1, 2, and 0 Triage and pre-case Investigation results. Windows Investigation quality, AI/model validation, and live runtime validation remain unconfirmed. |
-| Wazuh Windows integration | Not implemented | Wazuh remains a future retrieval/search path whose records require a retrieval/conversion adapter before the Windows parser. It is not the Windows semantic or detection source of truth. |
-
-The following diagram intentionally separates implemented repository-fixture
-parity, bounded boundary mechanics, and in-memory composition from full
-cross-platform execution validation and runtime integration.
-
-```mermaid
-flowchart TD
-    subgraph Implemented
-        A[Source fixtures A/B/C]
-        B[Source parser]
-        C[Expected parsed parity]
-        D[Native parity tooling]
-        E[Normalized mapper]
-        F[Expected normalized parity]
-        G[PowerShell detection]
-        H[Expected detection parity]
-        I[Common Pipeline v0 detector spine]
-        ID[Shared canonical detection dedupe-to-correlation boundary]
-        K[Correlation-result-to-Incident boundary]
-        S[Exact-ID Incident selection and observation suppression]
-        J[Bounded Windows Slice 1 Incident]
-        FC[Canonical Detection-entry in-memory composition]
-        T[Bounded deterministic Rule Triage]
-        V[Bounded pre-case Investigation]
-    end
-
-    subgraph NotImplemented[Not implemented]
-        X[Full cross-platform execution validation]
-        L[Wazuh Windows records]
-        M[Retrieval and conversion adapter]
-    end
-
-    subgraph OptionalFuture[Optional future policy]
-        CM[Correlation-to-correlation merge or suppression]
-    end
-
-    A --> B
-    B --> C
-    C --> E
-    D --> B
-    E --> F
-    F --> G
-    G --> H
-    H --> I
-    I -. canonical list .-> ID
-    I --> J
-    J --> T
-    T --> V
-    ID -. correlation result .-> K
-    ID -. deduped detections .-> S
-    K --> S
-    S -. combined Incident list .-> FC
-    FC --> T
-    S -. optional future extension .-> CM
-    L --> M
-    M --> B
-```
-
-Fixture A/B/C are parser/mapper/detector parity fixtures. They are not three
-pipeline scenarios, and their parity does not prove a live Windows pipeline.
+The architecture below defines where source-specific processing converges and
+which stages may be shared. It does not claim that every source family,
+validation slice, or runtime integration has reached that target.
 
 ## Source-Specific And Common Responsibilities
 
@@ -338,15 +268,14 @@ the common endpoint-telemetry boundary for Linux auditd, Windows Sysmon, and
 future endpoint sources. It is not the normalization contract for every
 defender source family.
 
-The existing SSH and Wazuh FIM paths currently retain their source-family
-artifacts because they have not migrated to `endpoint_events.v1`. They are not
-classified as inherently non-endpoint sources. If their underlying endpoint
-telemetry can later be mapped safely without losing source meaning or
-provenance, they may migrate to the endpoint event contract.
+SSH and Wazuh FIM paths may retain source-family artifacts until an intentional
+migration to `endpoint_events.v1` can preserve source meaning and provenance.
+They are not classified as inherently non-endpoint sources merely because they
+use a retained artifact contract.
 
 Zeek network telemetry, deception, and other sources that do not use
 `endpoint_events.v1` retain their own normalized artifacts. Both these paths
-and the current, not-yet-migrated SSH/Wazuh FIM paths join the common downstream
+and retained SSH/Wazuh FIM paths join the common downstream
 at the canonical detection result boundary. The goal is not to make every
 detection rule identical. The goal is to run platform/domain-specific rule
 content and match conditions through a common execution contract and hand the
@@ -357,7 +286,7 @@ validated results to a common pipeline engine.
 | Collection and adaptation | auditd, Sysmon, Windows Event Log, or future retrieval adapters; source routing and acquisition provenance | Run isolation, bounded artifact placement, and validation outcome handling |
 | Parsing | auditd multi-record interpretation; Sysmon provider/Event ID interpretation; source-native timestamps and identifiers | Basic fail-closed behavior and explicit skip/error reporting |
 | Parsed contract | Source-specific parsed schemas and source provenance | No common parsed schema is required |
-| Normalization | One mapper per source/domain; source-to-canonical field policy; current SSH/Wazuh FIM paths retain not-yet-migrated source-family artifacts; Zeek and deception retain non-`endpoint_events.v1` artifacts | Validated `endpoint_events.v1` handoff for mapped endpoint telemetry; canonical detection result handoff across all source families |
+| Normalization | One mapper per source/domain; source-to-canonical field policy; retained SSH/Wazuh FIM paths use source-family artifacts; Zeek and deception retain non-`endpoint_events.v1` artifacts | Validated `endpoint_events.v1` handoff for mapped endpoint telemetry; canonical detection result handoff across all source families |
 | Detection | Platform/domain-specific rule content, match conditions, and feature logic | Rule selection, detector invocation, deterministic execution, output validation, and canonical detection result handoff |
 | Incident entry | No parser- or mapper-owned incident conclusions | Dedupe, correlation engine, incident builder, and canonical incident handoff |
 | Analysis and handoff | Platform-aware evidence interpretation where required | Triage, pre-case investigation/enrichment, initial case, and action handoff |
@@ -368,7 +297,7 @@ artifacts, select explicitly registered rules for the event platform/domain,
 invoke them deterministically, and validate their output before emitting
 canonical detection results or an explicit skip/failure. Rule content and match
 conditions remain source/platform-specific. Endpoint detectors consume
-`endpoint_events.v1`; the current SSH/Wazuh FIM paths consume their retained
+`endpoint_events.v1`; retained SSH/Wazuh FIM paths consume their
 source-family artifacts unless intentionally migrated; Zeek and deception
 detectors consume their own normalized artifacts. Downstream of canonical
 detection results, common code must not parse auditd, Sysmon, or another
@@ -379,7 +308,7 @@ skip, but must not be presented as successful detection.
 ## Target Runtime Architecture
 
 Linux and Windows endpoint telemetry retain independent front ends and converge
-at the implemented normalized endpoint event contract. Existing SSH/Wazuh FIM
+at the normalized endpoint event contract. Existing SSH/Wazuh FIM
 paths remain separate until an intentional migration, while Zeek network
 telemetry and deception keep their own contracts. All paths converge reliably
 at canonical detection results.
@@ -402,7 +331,7 @@ flowchart TD
 
     subgraph Existing[Existing endpoint-related paths]
         ES[SSH / Wazuh FIM]
-        EA[Current source-family artifacts]
+        EA[Retained source-family artifacts]
         EL[Source-specific rule content and match]
 
         ES --> EA
@@ -462,174 +391,31 @@ workflow, which consumes an approved/executed collection path and writes
 `post_action_dfir_investigation_result.json`. Post-action results must not be
 fed back into or overwrite the pre-case artifact.
 
-## Staged Common-Pipeline Introduction
+## Common-Pipeline Version Boundaries
 
-Commonization is fixed in two evidence-driven stages. v0 is being introduced as
-the shared spine that connects Windows Slice 1 through the Incident boundary
-and bounded deterministic Rule Triage into evidence-aware pre-case
-Investigation; it is not a refactor deferred until after a separate Windows
-incident path exists.
+The v0 and v1 labels define architecture and validation boundaries, not current
+implementation status. Consult the [Main Roadmap](../roadmap/roadmap.md) before
+making an implementation or completion claim.
 
-```mermaid
-flowchart TD
-    V0I[Implement v0 spine]
-    S1[Slice 1 reaches Incident]
-    BT[Bounded deterministic Rule Triage]
-    BI[Bounded evidence-aware pre-case Investigation]
-    DC[Shared canonical detection dedupe-to-correlation boundary]
-    CI[Correlation-result-to-Incident boundary]
-    IS[Exact-ID Incident selection boundary]
-    LR[Existing Linux regression]
-    VR[Remaining downstream composition and full cross-platform execution validation]
-    V0D[Full Common Pipeline v0 complete]
-    S2[Windows Slice 2]
-    XR[Cross-platform regression]
-    V1[Common Pipeline v1]
+### Common Pipeline v0 Boundary
 
-    V0I --> S1
-    S1 --> BT
-    BT --> BI
-    BI --> LR
-    V0I --> DC
-    DC --> CI
-    DC --> IS
-    CI --> IS
-    IS --> VR
-    LR --> VR
-    VR --> V0D
-    V0D --> S2
-    S2 --> XR
-    XR --> V1
-```
+v0 is the smallest shared execution spine that can:
 
-### Common Pipeline v0
+- receive validated Linux and Windows `endpoint_events.v1` artifacts;
+- accept canonical detection results from retained source-family paths;
+- invoke registered deterministic detection content;
+- validate and deduplicate canonical detections;
+- invoke fixed correlation policies;
+- construct correlation and observation Incidents using exact supporting-ID
+  selection;
+- perform deterministic Triage and pre-case Investigation handoffs; and
+- fail closed on invalid required input or output.
 
-v0 is designed to connect the first Windows atomic detection to an
-Incident. It is the smallest shared execution spine that can receive Linux and
-Windows normalized endpoint events, accept canonical detection results from
-other retained source-family paths, and invoke detection, dedupe/correlation,
-incident, triage, and pre-case investigation stages.
-
-The detector-invocation portion of this spine is now implemented for
-`endpoint_events.v1`. It validates the existing normalized contract, validates
-and deterministically orders existing atomic rules, calls the existing atomic
-evaluator, and checks the established canonical detection-list structure. It
-does not create a new persistent artifact or schema. Repository tests establish
-exact fixture parity for Linux Scenario 009 and Windows Sysmon Event ID 1
-Fixture A/B/C. They do not establish live Windows collection, live normalized
-parity, or a live Windows Incident path.
-
-The shared canonical-detection dedupe-to-correlation execution boundary is
-also implemented as a platform-neutral in-memory entry point. It validates
-canonical input before dedupe, rejects duplicate detection IDs and invalid
-timestamps, preserves rule-distinct observations, and reuses the existing
-deterministic dedupe helper. It then invokes the existing Linux/SSH domain
-policies for `auth → authorized_keys` and `key login → process execution` in a
-fixed order, validates the current correlation result shape fail closed, and
-orders results, supporting detections, evidence references, and raw-event
-references deterministically. Focused characterization tests preserve the
-existing identity and inclusive-window semantics. Linux Scenario 009 and
-Windows Fixture A/B/C retain their expected deduped detections and produce no
-spurious correlation. This stage remains an in-memory boundary and is not wired
-into the detector runtime.
-
-The correlation-result-to-Incident execution boundary is now implemented as a
-separate platform-neutral in-memory bridge. It revalidates that its canonical
-detection input exactly matches deterministic dedupe output, reuses the current
-correlation-result validator, orders correlations and supporting detections by
-the shared policies, and creates one schema-valid Incident with
-`inc-<correlation_id>` identity per result. It preserves correlation metadata,
-evidence references, raw-event references, time windows, behavior features,
-and supporting-detection linkage. Focused tests cover both current correlation
-policies, input-order independence, fail-closed input/output validation, Linux
-Scenario 009, and Windows Fixture A/B/C parity. It creates no observation-level
-fallback Incident and is not connected to Triage or Investigation.
-
-The correlation/no-correlation Incident selection boundary is also implemented
-as a platform-neutral in-memory adapter. It reuses the validated deterministic
-dedupe and correlation input contract, retains every correlation Incident, and
-suppresses an observation-level Incident only when that exact canonical
-detection ID appears in validated correlation support. Every uncovered
-detection produces one observation fallback. The selected list fixes
-correlation Incidents first and observation Incidents second, then revalidates
-schema, identities, counts, coverage, suppression, and ordering. Shared
-detections may remain in multiple correlation Incidents; correlation-to-
-correlation merge or suppression is not implemented. It is an optional future
-policy, not a gap in the current selection boundary and not a Common Pipeline
-v0 completion requirement. Linux Scenario 009 and Windows Fixture A/B/C retain
-all non-correlating detections as observation Incidents.
-
-The bounded detection-to-Incident portion is also implemented for Fixture
-A/B/C. It accepts only validated canonical detections, applies deterministic
-ordering and IDs, builds one observation-level Incident per detection through
-the existing generic builder, and validates the existing Incident schema.
-Top-level and timeline `evidence_refs` use the shared string-array Incident
-contract. The bounded Incident policy explicitly uses `low` severity for this
-Windows slice; it does not infer maliciousness from atomic rule metadata. No
-multi-hit grouping, Windows-specific Incident schema, or Sysmon-native
-downstream parsing was added.
-
-The bounded Incident-to-Triage portion is also implemented for Fixture A/B/C.
-It validates and deterministically orders the canonical Incident list, reuses
-the existing deterministic Rule Triage `build_output()` once per Incident,
-validates each result against the shared Triage schema, and preserves exact
-Incident-to-Triage identity. Fixture A/B/C produce 1, 2, and 0 Triage results.
-This in-memory list execution adds no aggregate artifact or Windows-specific
-schema. It validates boundary mechanics only: current Linux-oriented fallback
-verdicts are not Windows quality approval, AI model validation, or a
-benignness/maliciousness oracle.
-
-The bounded Triage-to-pre-case-Investigation portion is also implemented for
-Fixture A/B/C. It validates complete one-to-one Incident/Triage linkage before
-execution, orders pairs by `incident_id`, reuses the existing evidence-aware
-`build_investigation_result()` once per pair, and validates each result against
-the existing Investigation schema. Fixture A/B/C produce 1, 2, and 0
-identity-preserving Investigation results. It adds no aggregate artifact,
-Windows-specific path, or Investigation policy. The result demonstrates
-boundary mechanics only, not Windows Investigation quality, AI/model
-validation, or live telemetry coverage.
-
-This bounded slice does not complete Common Pipeline v0 under the full Done
-Criteria below. The detector spine, shared canonical-detection
-dedupe-to-correlation execution boundary, correlation-result-to-Incident
-boundary, Windows Slice 1 Incident boundary, and bounded deterministic Rule
-Triage and pre-case Investigation boundaries are implemented with repository
-Linux regression. Exact-ID observation-vs-correlation duplicate suppression is
-implemented. Selected-Incident-to-Triage-to-Investigation composition
-is now implemented as a canonical-Detection-entry in-memory boundary and is
-focused-test validated for Linux Scenario 009 and Windows Fixture A/B/C. Full
-cross-platform execution validation remains incomplete.
-Correlation-to-correlation merge or suppression remains an optional future
-policy and is not required for Common Pipeline v0 completion. v0 explicitly
-excludes platform-specific collectors, parsers, mappers, and rule content.
-
-Repository status for this slice:
-
-```text
-Shared canonical-detection dedupe-to-correlation execution boundary:
-implemented and fixture-validated
-
-Correlation-result-to-Incident execution boundary:
-implemented and focused-test validated
-
-Correlation/no-correlation Incident selection policy:
-implemented and focused-test validated
-
-Observation-vs-correlation duplicate suppression:
-implemented by exact validated supporting-detection ID precedence
-
-Correlation-to-correlation merge or suppression:
-not implemented
-
-Canonical Detection → dedupe → correlation → selected Incident → Triage → Investigation composition:
-implemented and focused-test validated
-
-Full cross-platform execution validation:
-not complete
-
-Full Common Pipeline v0:
-not complete
-```
+Collectors, source parsers, normalized mappers, and rule content remain
+source/domain-specific. The composition is in-memory and run-local and does not
+define persistent identity across reprocessing. Live Wazuh integration,
+continuous collection, and correlation-to-correlation merge or suppression are
+not required architectural properties of v0.
 
 ```mermaid
 flowchart LR
@@ -645,72 +431,35 @@ flowchart LR
     T --> I
 ```
 
-This composition is in-memory and run-local. It does not define stable identity
-across reprocessing, changed selection results, or persistent storage. It calls
-the existing detector-downstream list boundaries without adding Detection,
-correlation, Incident, Triage, or Investigation policy. The detector spine that
-produces canonical Detections from `endpoint_events.v1` remains a separate
-existing boundary.
-Correlation-to-correlation merge or suppression is an optional future policy
-and is not required for Common Pipeline v0 completion.
+### Common Pipeline v1 Boundary
 
-Perfect abstraction, continuous live
-collection, and live Wazuh integration are not completion requirements.
+v1 extends the shared spine only after validation includes a second Windows
+multi-event correlation slice and cross-platform regression. Incident and later
+stages must not read auditd, Sysmon, or another source-native shape, and
+downstream processing must not accumulate scenario-ID-specific branches.
 
-The target runtime diagram represents the steady-state execution contract,
-not a requirement to migrate every existing source-family input during v0.
-For v0, Windows `endpoint_events.v1` must pass through the common detector
-invocation contract. Existing SSH, Wazuh FIM, Zeek, and deception paths may
-continue using their current validated artifacts and either use the same
-invocation contract or hand canonical detection results to the common
-downstream boundary. Migrating those inputs into `endpoint_events.v1` is not
-a v0 completion requirement.
+Reusable run artifacts must preserve fixture-versus-runtime evidence labels and
+consistent validation, skip, and fail-closed behavior across platforms.
 
-### Common Pipeline v1
+### Validation Slice Examples
 
-v1 is fixed only after a second Windows validation slice requiring correlation
-across multiple events passes through the spine. At that point Linux and
-Windows cross-platform regression must show that Incident and later stages do
-not read auditd or Sysmon native shapes, and downstream processing must not
-accumulate scenario-ID-specific branches.
-
-v1 also distinguishes fixture evidence from runtime evidence and reuses a
-common harness/run-artifact contract across both platforms.
-
-### Done Criteria
-
-| Criterion | Common Pipeline v0 | Common Pipeline v1 |
-|---|---|---|
-| Current status | **Not complete.** Implemented subset: detector spine, shared canonical-detection dedupe-to-correlation execution boundary, correlation-result-to-Incident bridge, exact-ID Incident selection/observation suppression, and canonical Detection-to-selected-Incident-to-Triage-to-pre-case-Investigation in-memory composition, focused-tested with Linux Scenario 009 and Windows Fixture A/B/C. Full cross-platform execution validation is not complete. Correlation-to-correlation merge/suppression is an optional future policy and is not required for v0 completion. | Not started |
-| Completion evidence | Windows Slice 1 creates identity-linked Incident, deterministic Rule Triage, and evidence-aware pre-case Investigation results through v0; existing Linux `scenario_004`/`005`/`006` regression succeeds; and every shared-execution stage below is connected and validated | A second Windows multi-event correlation validation slice reaches Incident and downstream analysis, followed by cross-platform regression |
-| Accepted input | Valid Linux and Windows `endpoint_events.v1` artifacts plus canonical detection results from retained source-family paths | Same boundaries with cross-platform regression coverage |
-| Shared execution | Rule selection, detector invocation, deterministic execution, output validation, canonical result, dedupe/correlation, incident, triage, and pre-case investigation spine | v0 spine stabilized as the reusable common harness/runtime contract |
-| Source isolation | Collectors, parsers, mappers, and rule content remain source/domain-specific | Incident and later stages have no direct auditd/Sysmon native-shape dependency |
-| Compatibility | Existing Linux `scenario_004`/`005`/`006` behavior remains intact | Linux and Windows regressions pass without new downstream scenario-ID branches |
-| Evidence labeling | Fixture-backed and runtime-backed inputs are identified | Fixture and runtime evidence remain distinguishable in reusable run artifacts |
-| Failure behavior | Schema-invalid input/output fails closed; optional absence is an explicit skip | Cross-platform validation, skip, and fail-closed behavior is consistent |
-| External integration | Live Wazuh integration is not required | Wazuh may remain optional; it is not the DSL or semantic source of truth |
-
-## Recommended Windows Validation Slices
-
-These slices are safe architecture examples and are not implementation-status
-claims.
+These examples illustrate safe validation progression and do not claim current
+completion.
 
 1. **Windows Slice 1 — atomic flow:** map one Sysmon Event ID 1 process
-   observation into `endpoint_events.v1`, emit a deterministic
-   PowerShell-compatible observable/detection, and cross the Incident boundary.
-   A process observation alone does not claim maliciousness.
+   observation into `endpoint_events.v1`, emit a deterministic observable or
+   detection, and cross the Incident boundary. A process observation alone does
+   not claim maliciousness.
 2. **Windows Slice 2 — correlation flow:** correlate multiple process-execution
-   observations using PID/PPID and bounded time relationships to represent a
-   process chain. Correlation belongs after canonical detection/observation
-   output, not inside the Sysmon parser.
+   observations using PID/PPID and bounded time relationships. Correlation
+   belongs after canonical detection output, not inside the Sysmon parser.
 3. **Later slice — multiple telemetry sources:** correlate a future Security
    4624/4625 authentication mapping or Sysmon Event ID 3 network mapping with
-   process telemetry. Each source requires its own parser/mapper contract before
-   entering the common spine.
+   process telemetry. Each source requires its own parser and mapper contract
+   before entering the common spine.
 
-The examples use sanitized placeholders and bounded lab observations only.
-They add no attack implementation, operational payload, containment action, or
+The examples use sanitized placeholders and bounded lab observations only. They
+add no attack implementation, operational payload, containment action, or
 host-changing behavior.
 
 ## Cross-Platform Non-Goals
@@ -736,8 +485,8 @@ This architecture does not require or authorize:
 - [Normalized Endpoint Event Contract](../design/defender/normalized_endpoint_event_contract.md)
   defines the common endpoint event contract.
 - [Windows Telemetry MVP Contract](../design/windows/windows_telemetry_contract.md)
-  defines the Windows telemetry boundary and current implementation status.
+  defines the Windows telemetry boundary.
 - [Sysmon Event ID 1 Fixture Contract](../design/windows/sysmon_event1_fixture_contract.md)
   defines the sanitized fixture and transformation boundaries.
 - [Sysmon Event ID 1 Normalized Mapper Contract](../design/windows/sysmon_event1_normalized_mapper_contract.md)
-  defines the implemented normalization policy.
+  defines the normalization and parity boundary.

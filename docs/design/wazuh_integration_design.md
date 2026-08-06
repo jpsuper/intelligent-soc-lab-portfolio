@@ -1,347 +1,404 @@
-# Wazuh 導入方針（Lab 基盤統合案）
+# Wazuh Integration Contract
 
-## 1. 目的
+## 1. Purpose
 
-Wazuh は **lab の土台（baseline collection / decoding / basic detection / search UI / API）** として導入し、既存の Python / AI パイプラインは置き換えずに上位へ載せる。
+This document defines the architectural contract for using Wazuh as an
+additional collection, alert, search, and evidence source in the lab.
 
-この導入の目的は以下。
+Wazuh may provide endpoint collection, source-native decoding, basic native
+alerts, File Integrity Monitoring (FIM), vulnerability information, and
+bounded search through its API or indexer. It does not replace the lab-owned
+deterministic detection, canonical artifact, Triage, Investigation, Case,
+Action, or Rule Improvement boundaries.
 
-1. endpoint telemetry の収集基盤を強化する
-2. baseline の decoding / basic detection を安定化する
-3. alert / searchable alert data を investigation の検索ソースとして活用する
-4. 既存の `behavior_features` / `triage` / `investigation` / `case` 設計は維持する
-5. 将来的な Windows / Sysmon / FIM / TheHive 連携の足場を作る
-
----
-
-## 2. 全体方針
-
-### 2.1 役割分担
-
-#### Wazuh
-- endpoint telemetry 収集
-- baseline の decoding / field extraction
-- 基本検知
-- alert source
-- search UI / API
-- dashboard
-- FIM
-- vulnerability detection
-
-#### 既存の Python / AI 側
-- `behavior_features`
-- `derived_features`
-- `enriched_features`
-- `assessment`
-- `investigation_result`
-- `case`
-- `action`
-- `rule improvement`
-
-### 2.2 重要な考え方
-
-- **Wazuh に全部やらせない**
-- **今の auditd / process chain detection は残す**
-- **Wazuh は置き換えではなく、基盤として追加する**
-- **detect は deterministic のまま**
-- **AI は triage / investigation / planning に使う**
-- **Wazuh の alert / search result は lab 側の canonical model に変換して使う**
-
----
-
-## 3. 設計の中核
-
-### 3.1 Wazuh の位置づけ
-
-Wazuh は以下を担当する。
-
-- Linux endpoint agent
-- auth / sudo / syslog / application logs 収集
-- FIM
-- vulnerability detection
-- 基本ルールによる alerting
-- dashboard / API / search source
-
-### 3.2 既存パイプラインとの関係
-
-既存の流れは維持する。
+The intended relationship is:
 
 ```text
-Attack
-→ endpoint telemetry
-→ detection
-→ incident
-→ triage
-→ investigation
-→ case
-→ action
-→ execution / approval
-→ DFIR / external integrations
-```
-
-ここで Wazuh は主に以下の役割を持つ。
-
-- telemetry source
-- baseline detection source
-- investigation 用の alert / search source
-
----
-
-## 4. behavior_features との関係
-
-### 4.1 基本方針
-
-`behavior_features` の最初の付与は今までどおり detection 側で行う。
-
-### 4.2 3層設計
-
-- `behavior_features` = 生の観測特徴
-- `derived_features` = triage の意味付け
-- `enriched_features` = investigation の文脈補強
-- `assessment` = 最終判断
-
-### 4.3 Wazuh を使う時のルール
-
-- Wazuh 側では **観測事実ベース** の field / alert を出す
-- 結論寄りの意味付けは triage / investigation 側へ回す
-
-#### detection / Wazuh で扱うもの
-- `remote_download`
-- `temporary_path_execution`
-- `execution_after_download`
-- `direct_ip_download`
-
-#### triage / investigation で扱うもの
-- `download_and_execute_chain`
-- `high_risk_execution_flow`
-- `payload_path_confirmed`
-- `same_parent_process_chain`
-
----
-
-## 5. investigation の設計
-
-### 5.1 役割
-
-Wazuh 導入後も investigation は **case 前の lightweight investigation** として扱う。
-
-```text
-incident
-→ triage
-→ investigation
-→ case
-```
-
-### 5.2 input
-
-#### required
-- `incident.json`
-- `triage_result.json`
-
-#### optional
-- `process_events.json`
-- `process_chain_hits.json`
-- `Wazuh alert`
-- `Wazuh API / WQL result`
-- `Wazuh indexer search result`
-
-### 5.3 output
-- `investigation_result.json`
-
-### 5.4 investigation でやること
-
-- incident / triage から pivot 抽出
-  - host
-  - user
-  - src_ip
-  - dst_ip
-  - filepath
-  - filename
-  - hash（あれば）
-  - process / parent process
-- Wazuh API / indexer で検索
-- evidence を整理
-- `enriched_features` を生成
-- `case.json` に統合しやすい summary / notes を出す
-
-### 5.5 調査時間窓（MVP）
-- short window: ±15分
-- medium window: 24時間
-
-### 5.6 検索の優先 pivot
-- host
-- user
-- src_ip / dst_ip
-- filepath / filename
-- hash
-- process / parent process
-
----
-
-## 6. Wazuh の検索ソースの扱い
-
-### 6.1 MVP では alerts を中心に使う
-
-Wazuh を search backend として使うが、MVP では以下を中心に扱う。
-
-- Wazuh alerts
-- Wazuh API / WQL result
-- dashboard 上で検索可能な alert data
-
-### 6.2 archives は後段で導入する
-
-raw event search は有用だが、MVP の必須要件にはしない。  
-archives は必要になった段階で段階的に有効化する。
-
-### 6.3 search backend の意味
-
-本設計における `search backend` は、まず以下を指す。
-
-- alert source
-- searchable alert data
-- API / WQL による検索対象
-
-raw archives を常時フル活用することは MVP の前提にしない。
-
-Scenario 009 の bounded validation では temporary `logall_json` により
-manager receipt と five operations は確認できたが、core serial ごとに
-`SYSCALL` だけが残り、`PATH` / `CWD` / `EXECVE` / `PROCTITLE` の complete
-grouping は維持されなかった。したがって、この observed
-`archives.json` は supporting observability であり、canonical source には
-しない。詳細は
-[Scenario 009 Wazuh Raw Archive Validation Result](scenarios/scenario009/wazuh_raw_archive_validation.md)
-を参照する。
-
----
-
-## 7. 導入スコープ（MVP）
-
-### 7.1 今回やること
-
-1. Node2 に Wazuh manager / indexer / dashboard を置く
-2. Ubuntu victim に Wazuh agent を入れる
-3. baseline の Linux logs を Wazuh に入れる
-4. FIM を最小構成で有効化する
-5. vulnerability detection を有効化する
-6. Wazuh API / search を確認する
-7. 既存の detection / triage / investigation パイプラインとは並走させる
-
-### 7.2 今回やらないこと
-
-- 既存の Python detection 全置き換え
-- full EDR 的な全部入り
-- Windows / AD まで一気に展開
-- fully autonomous response
-- Wazuh alert だけで case 生成まで完結させること
-- archives 前提の full raw event investigation
-
----
-
-## 8. FIM の最小対象
-
-最初は以下だけでよい。
-
-- `/etc`
-- `/var/spool/cron`
-- `authorized_keys`
-- persistence に関係する service / config
-- 必要なら `/tmp` は後から追加検討
-
----
-
-## 9. lab での理想的な使い方
-
-### Step 1: baseline
-Wazuh を baseline collection / decoding / basic detection に使う
-
-### Step 2: alert / search source
-Wazuh を investigation の alert / API 検索ソースとして使う
-
-### Step 3: integration
-Wazuh alert / search result を既存の `incident → triage → investigation` に接続する
-
-### Step 4: 将来拡張
-- TheHive 連携
-- RAG enrichment
-- high severity alert のみ AI に渡す
-- playbook / event-driven 実行
-- raw archives 活用
-
----
-
-## 10. 今の lab に一番合うデータフロー
-
-### 10.1 Wazuh alert を流す場合
-
-```text
-Wazuh Agent
-→ Wazuh Manager / Indexer
-→ alert / searchable alert data
-→ custom normalizer / incident builder
-→ triage
-→ investigation
-→ case
-→ action
-```
-
-### 10.2 investigation 側だけ Wazuh を使う場合
-
-```text
-custom incident
-→ triage
-→ investigation
-   ├─ process_events.json
-   ├─ process_chain_hits.json
-   ├─ optional: Zeek enrichment
-   └─ Wazuh alert / WQL result / search result
-→ investigation_result.json
-→ case
+Wazuh = collection, source-native processing, alerting, and search capability
+Lab pipeline = canonical semantics, deterministic decisions, and reviewable handoffs
 ```
 
 ---
 
-## 11. 実装タスク
+## 2. Contract And Status Ownership
 
-### Phase A: 基盤
-- Wazuh server 構築
-- Ubuntu victim agent 導入
-- dashboard で event / alert 確認
-- FIM / vulnerability detection 有効化
+This document owns:
 
-### Phase B: lab 接続
-- Wazuh の alert / search を参照できるようにする
-- Python 側から Wazuh API または index 検索できるようにする
-- Wazuh alert / search result を canonical event / canonical alert に変換する
-- Wazuh 固有の処理は `wazuh_enricher` 方向で切り出す
-- `investigation-agent` に Wazuh search optional input を追加する
+- the role boundary between Wazuh and the lab pipeline;
+- admissible collection, alert, and investigation-enrichment paths;
+- adapter, validation, provenance, and fail-closed requirements;
+- the boundary between Wazuh-native data and canonical lab artifacts; and
+- the conditions for adding a new Wazuh-backed source or mapping.
 
-### Phase C: 統合
-- Wazuh alert を incident 生成に活用する
-- `behavior_features` と Wazuh field の対応整理
-- TheHive / action / rule improvement へつなげる
+The [Main Roadmap](../roadmap/roadmap.md) and
+[Phase 6](../roadmap/phase6.md) own current implementation status, priorities,
+sequencing, and validation depth. The
+[Defender Event Processing Flow](../architecture/defender-event-processing-flow.md)
+owns the common detector and downstream pipeline architecture.
 
----
-
-## 12. 実装時の判断基準
-
-### OK
-- Wazuh は baseline / alert / search / UI / API に使う
-- 既存の lab ロジックは維持する
-- feature 設計は自前で持つ
-- AI は後段で使う
-- Wazuh 固有の field は canonical model に変換して使う
-
-### NG
-- 先に Wazuh に完全移行する
-- custom detection / behavior_features を捨てる
-- investigation を全部 Wazuh dashboard 手作業前提にする
-- Wazuh 固有 field をそのまま investigation-agent 本体へ増やし続ける
+Scenario-specific evidence and source-selection decisions belong in the
+corresponding scenario documents. A deployed Wazuh component, searchable
+record, native alert, or successful manager receipt does not by itself prove
+canonical-source suitability, source parity, deterministic detection, or
+Incident consumption.
 
 ---
 
-## 13. 一言でまとめると
+## 3. Design Principles
 
-**Wazuh = baseline SIEM / EDR 土台**  
-**既存 agents = 意味づけ・調査・ケース化・対応**
+### 3.1 Additive Integration
 
-この分担で進める。
+Wazuh is an additional source and operational capability. Existing parsers,
+source-family artifacts, deterministic rules, and canonical downstream
+contracts remain valid unless an intentional migration preserves their
+semantics and provenance.
+
+### 3.2 Lab-Owned Semantics
+
+Wazuh fields and native alerts describe source-native observations. The lab
+owns the canonical interpretation used by deterministic detection, deduplication,
+correlation, Incident creation, Triage, Investigation, Case, and Action.
+
+### 3.3 Explicit Canonicalization
+
+Wazuh-native payloads must cross an explicit adapter or evidence-reference
+boundary before downstream use. Product-specific field shapes must not spread
+through shared pipeline stages.
+
+### 3.4 Evidence-Bounded Claims
+
+Every claim must stay within the retained evidence. Manager receipt is not
+equivalent to complete record grouping. A native alert is not automatically a
+canonical detection. Absence from an alert store does not prove collection
+loss.
+
+### 3.5 Fail-Closed Processing
+
+Unsupported schemas, incomplete required fields, invalid mappings, ambiguous
+source identity, or invalid adapter output must produce an explicit skip or
+failure. They must not be silently repaired into a successful detection.
+
+---
+
+## 4. Responsibility Boundaries
+
+### 4.1 Wazuh Responsibilities
+
+Wazuh may provide:
+
+- endpoint and log collection;
+- source-native decoding and field extraction;
+- native rules and alerts;
+- FIM observations;
+- vulnerability information;
+- dashboard and bounded search capability;
+- API or indexer retrieval; and
+- source-specific operational metadata.
+
+These capabilities are evidence sources. They do not define the lab's
+canonical semantic model.
+
+### 4.2 Lab Pipeline Responsibilities
+
+The lab retains responsibility for:
+
+- source adapters and schema validation;
+- canonical or retained source-family artifacts;
+- behavior-feature and detection semantics;
+- deterministic rule execution;
+- canonical detection results;
+- deduplication and fixed correlation policy;
+- Incident, Triage, and pre-case Investigation handoffs;
+- Case and Action artifacts;
+- approval and execution boundaries; and
+- review-only Rule Improvement candidate workflows.
+
+### 4.3 Prohibited Boundary Collapse
+
+The integration must not:
+
+- make Wazuh the lab detection DSL or semantic source of truth;
+- forward product-native fields throughout downstream agents;
+- treat a Wazuh alert as sufficient evidence for a Case or Action;
+- treat a dashboard view as a reproducible pipeline artifact;
+- let optional Wazuh evidence change an existing verdict without a separate
+  reviewed contract; or
+- bypass human approval for state-changing actions or candidate application.
+
+---
+
+## 5. Supported Integration Paths
+
+### 5.1 Collection And Adaptation
+
+A source-specific collector or adapter may retrieve Wazuh data and write a
+bounded run artifact. The adapter must preserve source identity, retrieval
+context, timestamps, and limitations.
+
+Endpoint telemetry may map to `endpoint_events.v1` only when the mapping
+preserves source meaning and satisfies the normalized endpoint event contract.
+Existing SSH and Wazuh FIM paths may retain source-family artifacts until an
+intentional migration is justified. Not every Wazuh source must map to
+`endpoint_events.v1`.
+
+### 5.2 Native Alert Path
+
+A Wazuh-native alert may become lab evidence or a canonical detection input
+only through an explicit mapping:
+
+```text
+Wazuh alert or source record
+  -> source-specific adapter
+  -> validated lab artifact or evidence reference
+  -> registered deterministic detector or reviewed alert mapping
+  -> canonical detection result
+  -> common downstream pipeline
+```
+
+An alert must not be forwarded unchanged as a canonical detection. Mapping
+logic must state which source fields support each lab-owned observation and
+which source limitations remain.
+
+### 5.3 Investigation Enrichment Path
+
+Wazuh search may be added as optional, bounded evidence enrichment after
+Incident and Triage:
+
+```text
+incident.json + triage_result.json
+  -> bounded query request
+  -> Wazuh API or indexer search
+  -> validated evidence references and limitations
+  -> investigation_result.json
+```
+
+A Wazuh query result may support factual pivots such as host, user, address,
+path, hash, process, or source event identity. It must not independently
+change detection, severity, approval, containment, or promotion state.
+
+Missing optional Wazuh input must remain an explicit absence or skip. It must
+not invalidate an otherwise supported non-Wazuh path.
+
+---
+
+## 6. Feature And Assessment Boundary
+
+Detection and source adapters own observable facts. Triage and Investigation
+own progressively richer interpretation.
+
+```text
+source observation
+  -> behavior feature or source-family fact
+  -> derived feature in Triage
+  -> enriched feature in Investigation
+  -> evidence-grounded assessment
+```
+
+Wazuh-native fields, rule IDs, groups, and alert levels may contribute source
+context, but they are not substitutes for lab-owned behavior semantics.
+Source adapters must not infer intent, campaign attribution, compromise, or
+response priority from a product field alone.
+
+Specific feature mappings belong in the relevant source, detector, or scenario
+contract rather than this integration-wide document.
+
+---
+
+## 7. Search And Evidence Boundary
+
+### 7.1 Alert Search
+
+Alert data may be used when the retained alert fields support the intended
+query or evidence claim. An alert-store search must record the query window,
+pivots, source identity, and result limitations.
+
+No matching alert means only that no matching retained alert was found under
+the stated configuration and query. It does not prove that the agent or manager
+failed to receive the underlying source event.
+
+### 7.2 Raw Archive Search
+
+Raw archive collection is an operationally sensitive, source-specific option,
+not a universal prerequisite. Enabling archive storage may change data volume,
+retention, and exposure. It requires a bounded operational plan and explicit
+cleanup or restoration checks.
+
+An archive representation must not be selected as canonical merely because it
+contains more text than an alert. Canonical selection requires deterministic
+identity, complete semantics for the use case, stable retrieval, provenance,
+deduplication policy, and focused validation.
+
+### 7.3 Scenario 009 Evidence Constraint
+
+Scenario 009 currently provides a bounded evidence constraint for this
+contract:
+
+- the inspected `alerts.json` path exposed no matching Scenario 009 alert
+  evidence under the observed configuration;
+- a temporary `archives.json` validation confirmed manager receipt and semantic
+  presence of all five expected operations;
+- the retained historical summaries did not establish deterministic complete
+  multi-record grouping or canonical-source suitability;
+- a later controlled `full_log` experiment demonstrated preservation for one
+  separate bounded event but did not recover or upgrade the historical run;
+  and
+- the centralized auditd fixture remains canonical until source selection,
+  parity, normalization, detection, and Incident consumption are separately
+  reviewed and implemented.
+
+See:
+
+- [Wazuh Alerts Inspection](scenarios/scenario009/wazuh_alerts_inspection.md)
+- [Wazuh Raw Archive Validation](scenarios/scenario009/wazuh_raw_archive_validation.md)
+- [Wazuh Audit Transformation Investigation](scenarios/scenario009/wazuh_audit_transformation_investigation.md)
+
+Cross-path Wazuh and auditd observations are parity or supporting evidence, not
+automatically additive evidence. Duplicate paths must not inflate event,
+detection, or Incident counts.
+
+---
+
+## 8. Adapter And Provenance Requirements
+
+A Wazuh adapter or search-export artifact must preserve enough metadata to
+review the transformation. At minimum, the design must account for:
+
+- source product and version when relevant;
+- manager, agent, or source identity;
+- source artifact or query reference;
+- event time and retrieval time;
+- query window and pivots for search results;
+- source-native identifiers used for grouping or deduplication;
+- adapter or mapper version;
+- output schema version;
+- validation outcome; and
+- known omissions, transformations, or confidence limitations.
+
+Raw or source-native evidence should remain separately reviewable when safe and
+necessary. Canonical output must not overwrite the only retained source
+representation.
+
+Credentials, API tokens, private keys, passwords, and sensitive raw payloads
+must not appear in generated evidence, logs, fixtures, or documentation.
+
+---
+
+## 9. Deduplication And Identity
+
+Wazuh may expose the same underlying activity through alert, archive, indexer,
+FIM, journald, syslog, or other paths. These records must not be counted as
+independent facts without an evidence-backed identity policy.
+
+A deduplication design must identify:
+
+- stable source identifiers;
+- event or group boundaries;
+- timestamp precision and clock assumptions;
+- transformations between collection stages;
+- cross-path equivalence rules; and
+- the behavior when identity is incomplete.
+
+Do not invent a deduplication key before stable identity fields are confirmed.
+Ambiguous records remain separate, explicitly limited evidence rather than
+being silently merged.
+
+---
+
+## 10. FIM Boundary
+
+Wazuh FIM may provide source-family observations about file creation, change,
+permission, ownership, or deletion. The watched paths and operational settings
+belong in environment-specific configuration and runbooks, not this general
+contract.
+
+A FIM observation establishes the recorded file-system fact only. It does not
+by itself establish persistence, maliciousness, actor intent, or incident
+severity. Those interpretations require deterministic rules and downstream
+evidence.
+
+---
+
+## 11. Operational And Security Requirements
+
+Wazuh-backed retrieval and validation must:
+
+- use read-only, least-privilege access where possible;
+- obtain credentials from approved runtime configuration rather than artifacts;
+- bound queries by time, host, agent, or another explicit pivot;
+- avoid unbounded raw-log export;
+- record partial results, timeouts, and retrieval failures explicitly;
+- validate outputs before downstream consumption;
+- isolate run artifacts and avoid overwriting canonical evidence;
+- require a separate operational change for persistent manager, agent, decoder,
+  rule, archive, or indexer configuration; and
+- preserve approval boundaries for any state-changing response.
+
+Documentation or fixture work does not authorize a live configuration change.
+A temporary collection change must define exact scope, restoration, and
+verification before execution.
+
+---
+
+## 12. Non-Goals
+
+This contract does not require or authorize:
+
+- replacing the lab's Python detection or canonical artifacts with Wazuh;
+- treating Wazuh as a universal parser or event schema;
+- direct Wazuh-alert-to-Case or Wazuh-alert-to-Action automation;
+- continuous ingestion as a Common Pipeline v0 requirement;
+- full EDR behavior, automatic containment, or autonomous response;
+- simultaneous Linux, Windows, Active Directory, and every Event ID rollout;
+- a Wazuh parity claim without a selected canonical source and focused
+  evidence;
+- creation of a parity fixture from incomplete historical evidence; or
+- automatic Rule Improvement application, deployment, or promotion.
+
+---
+
+## 13. Contract Acceptance Criteria
+
+The Wazuh integration contract remains valid when:
+
+- Wazuh and lab-owned responsibilities remain explicit;
+- every consumed Wazuh input crosses a documented adapter or evidence boundary;
+- product-native fields do not leak into common downstream stages;
+- source provenance and transformation limitations remain reviewable;
+- unsupported or invalid input fails closed or produces an explicit skip;
+- optional Wazuh evidence cannot silently change an existing verdict;
+- alert absence is not misrepresented as collection loss;
+- canonical-source and parity claims remain evidence-backed;
+- duplicate source paths cannot inflate canonical results;
+- generated artifacts exclude credentials and sensitive payloads; and
+- Action, containment, and Rule Improvement application retain separate
+  approval boundaries.
+
+---
+
+## 14. Extension Conditions
+
+Add a Wazuh source, adapter, native-alert mapping, or investigation query only
+when a concrete evidence or operational need identifies:
+
+1. the source artifact and retrieval boundary;
+2. the canonical or retained source-family output contract;
+3. provenance and source-identity fields;
+4. deterministic mapping and validation behavior;
+5. deduplication or ambiguity handling;
+6. focused fixtures or bounded live evidence;
+7. failure, absence, timeout, and partial-result semantics;
+8. credential, retention, and data-volume controls; and
+9. downstream consumers that remain within existing approval boundaries.
+
+Implementation and validation status must be recorded in the Main Roadmap or
+the relevant phase and scenario documents rather than duplicated here.
+
+---
+
+## 15. One-Line Summary
+
+```text
+Wazuh supplies bounded source evidence and search capability; explicit adapters,
+lab-owned deterministic semantics, canonical handoffs, and approval boundaries
+control how that evidence enters the SOC pipeline.
+```

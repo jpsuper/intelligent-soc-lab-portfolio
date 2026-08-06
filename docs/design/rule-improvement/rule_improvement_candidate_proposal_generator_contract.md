@@ -227,24 +227,34 @@ input before generating proposals and validates the output before writing or
 reporting success. Diagnostics output does not turn fail-closed errors into
 success.
 
-## 10. Implementation Status
+## 10. Status And Evidence Ownership
 
-Implemented:
+This document owns deterministic proposal generation, source hashing, explicit
+candidate-type mapping, human decision provenance, diagnostics semantics, and
+fail-closed behavior. The generator, schema, CLI, and focused tests named in
+this contract are evidence for those boundaries.
 
-- standalone generator script
-- focused generator tests
-- v2 proposal JSON Schema
-- generator contract and cross-references from existing Rule Improvement design
-  docs
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+This generator remains standalone and proposal-only; any pipeline integration
+or state-changing workflow requires a separate reviewed contract.
 
-Not implemented:
+---
 
-- process-pipeline wiring
-- apply, deployment, baseline update, prompt update, parser update, telemetry
-  update, correlation update, or promotion behavior
-- generated sample artifacts
+## 11. Boundary Acceptance Criteria
 
-## 11. One-line Summary
+The generator boundary remains valid when:
+
+- only schema-valid canonical candidate-creation input is authoritative
+- exact source bytes determine the recorded SHA-256
+- candidate-type mapping and human decision provenance remain deterministic
+- unsupported schema-valid types can produce diagnostics but not proposals
+- invalid or unsafe input fails closed before output is written
+- proposal output cannot apply, deploy, mutate, or promote state
+
+---
+
+## 12. One-line Summary
 
 ```text
 The standalone generator converts reviewed candidate-creation input into v2 proposal-only artifacts, but it must not apply, deploy, promote, or mutate state.

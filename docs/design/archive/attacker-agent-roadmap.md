@@ -1,5 +1,20 @@
 # Attacker Agent Roadmap
 
+> [!IMPORTANT]
+> This document is an archived attacker-agent planning snapshot from an earlier
+> stage of the project. It is retained for historical design context and is not
+> the current source of truth for implementation status, priorities, sequencing,
+> or Done Criteria.
+>
+> Refer to [the main Roadmap](../../roadmap/roadmap.md) for current status and
+> priorities, and to [the current attacker-agent design documents](../attacker-agent/)
+> for current contracts and design boundaries.
+>
+> The Phase A-I labels in this document are historical attacker-subsystem phases,
+> not the canonical project-wide Phase 0-8 roadmap.
+>
+> Archived: 2026-08-03
+
 ## 1. Goal
 
 The attacker-agent evolves the lab from manually triggered scenario execution into a common attack execution foundation that can support:
@@ -584,7 +599,7 @@ Assessment Mode should support:
 Existing:
 
 ```text
-docs/roadmap/attacker-agent-roadmap.md
+docs/design/archive/attacker-agent-roadmap.md
 docs/design/attacker-agent/scenario_schema.md
 docs/design/attacker-agent/attack_artifact_contract.md
 docs/design/attacker-agent/attack_observed_effects_contract.md

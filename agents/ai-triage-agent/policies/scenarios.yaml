@@ -1,0 +1,8 @@
+ssh_compromise_priv_esc:
+  verdict_bias: malicious
+  risk_base: 80
+  priority: P1
+  guidance: >
+    Multiple failed SSH logins followed by a successful login from the same source
+    and rapid sudo execution strongly indicate compromise and privilege escalation
+    unless explicitly proven otherwise.

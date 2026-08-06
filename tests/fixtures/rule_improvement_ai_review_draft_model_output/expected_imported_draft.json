@@ -1,0 +1,41 @@
+{
+  "ai_assistance_only": true,
+  "assistant_info": {
+    "configuration_ref": "fixture-config-v1",
+    "model": "fixture-model",
+    "provider": "fixture-model-provider"
+  },
+  "candidate_generation_started": false,
+  "classification_decision_allowed": false,
+  "draft_id": "ri-ai-review-draft-model-import-001",
+  "errors": [],
+  "human_review_required": true,
+  "promotion_allowed": false,
+  "source_review_input_id": "ri-review-model-output-import-001",
+  "source_review_input_ref": "data/runs/run-import/rule_improvement_review_input.json",
+  "source_stage": "post_action_dfir",
+  "suggestions": [
+    {
+      "confidence_rationale": "The suggestion is limited by point-in-time collection scope.",
+      "evidence_caveats": [
+        "Linux.ProcessList is a point-in-time snapshot; process absence does not prove non-execution."
+      ],
+      "review_questions": [
+        "Could collection timing explain activity outside the snapshot?"
+      ],
+      "source_signal_ref": "/supporting_signals/0",
+      "suggested_label": "timing_or_scope_limit",
+      "suggested_missing_requirements": [
+        {
+          "requirement_type": "collection_timing",
+          "summary": "Independent execution telemetry is needed for the surrounding interval."
+        }
+      ],
+      "suggested_next_step": "Have a human review collection timing and independent telemetry.",
+      "suggested_rationale": "The point-in-time snapshot limits conclusions outside collection time."
+    }
+  ],
+  "warnings": [
+    "Human review is required."
+  ]
+}

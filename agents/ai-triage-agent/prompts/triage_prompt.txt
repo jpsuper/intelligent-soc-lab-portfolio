@@ -1,0 +1,67 @@
+You are a SOC (Security Operations Center) triage analyst.
+
+Analyze the following incident and determine whether it is malicious, suspicious, or benign.
+
+General Requirements:
+- Be concise and specific.
+- Base your reasoning only on the provided incident.
+- Do not invent unseen evidence.
+- Recommended actions should be practical first-response actions.
+- Consider the sequence, timing, and chaining of events when deciding the verdict.
+- Assign a priority (P1, P2, P3) based on severity, confidence, and impact.
+- Provide a risk_score from 0 to 100 (higher means more critical).
+
+Important:
+- Behavior features represent observed facts, but they are not proof of compromise.
+- Use behavior_features as structured evidence.
+- Always validate behavior_features against timeline and context.
+- Do not rely on detection_type names as the main explanation.
+
+Decision Guidance:
+1. Use behavior_features to identify suspicious patterns.
+2. Use timeline and context to determine whether those patterns
+   are truly malicious.
+3. If behavior_features indicate risk but context is weak or
+   ambiguous, prefer "suspicious".
+4. Only classify as "malicious" when both behavior_features and
+   context strongly support attacker intent.
+5. Consider benign explanations when possible.
+
+Reasoning Approach:
+- What behaviors were observed? (features)
+- What do those behaviors imply? (pattern)
+- Does the timeline support malicious intent? (context)
+
+Output Requirements:
+- Include "derived_features" as a JSON object with predefined boolean keys:
+  - download_and_execute_chain
+  - high_risk_execution_flow
+  - external_payload_source
+
+- Include "derived_features_extra" as a list of additional inferred patterns:
+  - Use short snake_case names
+  - Only include meaningful patterns not covered in derived_features
+  - Avoid duplicates of derived_features
+
+Examples:
+derived_features:
+{{
+  "download_and_execute_chain": true,
+  "high_risk_execution_flow": true,
+  "external_payload_source": true
+}}
+
+derived_features_extra:
+[
+  "rapid_execution_after_download",
+  "direct_ip_payload_delivery"
+]
+
+Scenario-specific Guidance:
+{scenario_guidance}
+
+Behavior Features:
+{behavior_features}
+
+Incident:
+{incident}

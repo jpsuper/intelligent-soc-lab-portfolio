@@ -51,26 +51,17 @@ missing_pivots / recommended_pivots
 - Prefer consistent field names over source-native naming when a field has a clear cross-source meaning.
 - Keep attacker-side structured runner events separate from defender-side endpoint telemetry.
 
-## Current Implementation Status
+## Contract Scope And Status Ownership
 
-The contract is now implemented for the Linux auditd-backed path and Sysmon
-Event ID 1 mapping.
+This document owns the stable `endpoint_events.json` envelope, common event
+vocabulary, source-mapping requirements, provenance rules, and downstream trust
+boundaries. Source-specific mapper contracts and fixtures own evidence that a
+particular source satisfies this contract.
 
-Implemented:
-
-- `endpoint_events.schema.json`
-- auditd-to-endpoint-events conversion
-- versioned Sysmon Event ID 1 parsed-event-to-endpoint-event mapping
-- optional `endpoint_events.json` input in investigation
-- optional `endpoint_events.json` input in investigation harness
-- endpoint observed facts and supporting signals
-- endpoint-derived enriched features for concrete command / path / URL evidence
-- endpoint-derived investigation pivots for payload and command context
-- deterministic judge scoring improvements for:
-  - `evidence_specificity`
-  - `enriched_feature_quality`
-  - `missing_pivot_detection`
-
+The [Main Roadmap](../../roadmap/roadmap.md) and its phase documents own current
+implementation status, validation depth, priorities, and sequencing. A source
+being listed in an example or extension condition below does not mean that its
+mapper, collection path, or end-to-end validation is complete.
 
 ## Implemented Event Shape
 
@@ -240,21 +231,18 @@ This document does not:
 - Change current auditd parser or investigation behavior.
 - Treat endpoint-derived enriched features or pivots as automatically promotable rule candidates.
 
-## Implementation Path
+## Extension Conditions
 
-Completed:
+A new source mapping or consumer should be added only when it:
 
-1. Design contract.
-2. Add schema for normalized endpoint events.
-3. Add auditd to endpoint events conversion.
-4. Update investigation to optionally consume `endpoint_events.json`.
-5. Add endpoint-derived investigation features and pivots.
-   - Derive command / path / URL enriched features from concrete endpoint process telemetry.
-   - Derive `inspect_payload_or_command_context` when endpoint payload chain evidence is present.
-   - Do not derive endpoint features or pivots from generic endpoint supporting-signal text alone.
-6. Add Sysmon Event ID 1 mapping.
+1. has a source-specific contract or documented mapping boundary;
+2. validates mapped events through
+   [`endpoint_events.schema.json`](../../../schemas/endpoint_events.schema.json);
+3. preserves source identity, timestamp semantics, and reviewable provenance;
+4. uses deterministic fixtures or bounded validation evidence;
+5. remains additive when `endpoint_events.json` is absent; and
+6. does not move detection, assessment, response, or promotion decisions into
+   normalization.
 
-Future:
-
-7. Add osquery and Velociraptor mapping.
-8. Optionally add SIEM-backed endpoint event importer.
+Priorities and implementation order for additional sources belong in the
+[Main Roadmap](../../roadmap/roadmap.md), not in this contract.

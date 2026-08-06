@@ -1,12 +1,25 @@
 # Attacker Scenario Schema v1
 
+> [!IMPORTANT]
+> This document originated with the Phase B schema-introduction plan. Sections
+> describing the first schema PR, migration order, or Phase C / D planning are
+> retained as historical context and are not authoritative for current status,
+> coverage, priorities, or sequencing.
+>
+> The [Main Roadmap](../../roadmap/roadmap.md) and
+> [Phase 6](../../roadmap/phase6.md) own those changing claims. This document
+> owns the maintained `attack_scenario_v1` field, validation, compatibility,
+> and execution-boundary contract. Scenario-to-artifact mappings are maintained
+> in the [Attacker Artifact Catalog](artifact_catalog.md).
+
 ## 1. Purpose
 
-`attack_scenario.schema.json` defines the first explicit scenario contract for attacker-agent Phase B.
+`attack_scenario.schema.json` defines the explicit scenario contract used by
+the attacker-agent.
 
-The goal is not to migrate every existing scenario immediately. The goal is to fix the contract that future scenario YAMLs and migration work should converge on.
-
-This schema follows the attacker-agent roadmap direction:
+The contract originated in Phase B to unify shell runner and legacy step-based
+scenario metadata. Current scenario coverage and validation depth are maintained
+in the Main Roadmap and Phase 6.
 
 ```text
 Scenario Mode
@@ -15,12 +28,12 @@ unified scenario contract
   ↓
 backend selection
   ↓
-attack_result / attack_execution_log
-  ↓
-future rich attack artifacts
+attack_result.json / attack_execution_log.json / attack_observed_effects.json
 ```
 
-The schema is designed to preserve the current Scenario-first approach while making attacker-side artifacts easier to compare with detection, triage, investigation, action, and evaluation artifacts.
+The schema preserves the Scenario-first approach while making attacker-side
+artifacts easier to compare with detection, triage, investigation, action, and
+evaluation artifacts.
 
 ---
 
@@ -73,15 +86,13 @@ In this style, the attack logic lives in a shell script and the scenario YAML ac
 
 ### 2.3 Why schema v1 is needed
 
-The current attacker-agent Phase A dispatcher can already normalize, validate, and select a backend for step-based or shell runner-based scenarios.
-
-However, before introducing richer attack artifacts, TTP catalogs, or autonomous modes, the scenario contract should be fixed.
-
-Schema v1 provides that contract.
+The attacker-agent dispatcher normalizes, validates, and selects a backend for
+step-based or shell runner-based scenarios. Schema v1 fixes the shared contract for
+those execution styles and for compatible extensions.
 
 ---
 
-## 3. Scope
+## 3. Historical Schema-Introduction Scope
 
 ### In scope
 
@@ -114,7 +125,8 @@ Schema v1 provides that contract.
 
 The schema is designed for reproducible scenario execution first.
 
-Autonomous planning is a later extension. It should reuse the same attack contract rather than replacing it.
+Autonomous planning is an extension boundary. It must reuse the same attack
+contract rather than replace it.
 
 ## 4.2 One contract, multiple execution styles
 
@@ -147,11 +159,12 @@ The schema therefore includes:
 * `runner.state_changing`
 * future-compatible `requires_approval`
 
-## 4.5 Runtime behavior should not change in the schema PR
+## 4.5 Historical schema-PR boundary
 
-The first schema PR should only add the schema and documentation.
-
-Scenario migration and runtime validation should be done in follow-up PRs.
+The first schema PR added only the schema and documentation. Scenario migration
+and runtime validation were intentionally handled in follow-up work. This
+constraint describes the original introduction PR, not the current
+implementation state.
 
 ---
 
@@ -516,8 +529,8 @@ type: shell
 
 Policy:
 
-* Defaults to `shell` in the current loader when runner path is present
-* Future backend types may be added separately
+* The loader defaults to `shell` when a runner path is present
+* Additional backend types require separate contract changes
 
 ### `runner.path`
 
@@ -533,7 +546,7 @@ Policy:
 
 * Required for shell runner scenarios
 * Runtime validator should enforce allowlisted paths
-* Current implementation allows runners under `attacks/runners`
+* The runtime validator allows runners only under `attacks/runners`
 
 ### `runner.timeout_seconds`
 
@@ -548,7 +561,7 @@ timeout_seconds: 120
 Policy:
 
 * Must be greater than 0
-* Current validator caps it at 3600 seconds
+* The runtime validator caps it at 3600 seconds
 * Default should remain conservative
 
 ### `runner.state_changing`
@@ -788,7 +801,7 @@ steps:
 
 Backend selection should remain deterministic.
 
-During migration, the policy is:
+The current deterministic policy is:
 
 ```text
 1. If runner.path exists, use shell backend.
@@ -796,14 +809,15 @@ During migration, the policy is:
 3. Else validation error.
 ```
 
-This matches the current attacker-agent dispatcher behavior.
+This matches the attacker-agent dispatcher behavior.
 
-If both `runner` and `steps` are present, shell runner should take precedence.
+If both `runner` and `steps` are present, the shell runner takes precedence.
 
 Reason:
 
 * `runner` represents the newer scenario execution style
-* shell runner scenarios are the current operational path for scenario_004 / 005 / 006
+* shell runner scenarios are the current operational path for scenario_004
+  through scenario_009
 * deterministic priority avoids ambiguous backend selection
 
 ---
@@ -902,30 +916,19 @@ Policy:
 
 ## 12. Relationship to Attack Artifacts
 
-Schema v1 does not make rich attack artifacts mandatory.
-
-However, it prepares for them.
-
-Future artifacts:
+Schema v1 provides scenario metadata for the implemented attacker-side runtime
+artifacts:
 
 ```text
-attack_request.json
-attack_plan.json
 attack_result.json
 attack_execution_log.json
 attack_observed_effects.json
 ```
 
-Current Phase A / early Phase B artifacts:
+`attack_request.json` and `attack_plan.json` remain separate future planning
+artifacts.
 
-```text
-attack_result.json
-attack_execution_log.json
-```
-
-Future Phase C will make `attack_observed_effects.json` first-class.
-
-Schema v1 supports that future by introducing:
+Schema v1 supports the implemented artifact relationship through:
 
 * `primary_artifact`
 * `artifacts_expected`
@@ -998,9 +1001,10 @@ mitre_attack:
 
 This allows incremental migration.
 
-## 14.2 Migration target
+## 14.2 Canonical schema-v1 shape
 
-Long-term target:
+The original migration target is the maintained canonical shape for schema-v1
+shell runner scenarios:
 
 ```yaml
 schema_version: attack_scenario_v1
@@ -1020,29 +1024,29 @@ constraints: ...
 success_conditions: ...
 ```
 
-## 14.3 Recommended migration order
+## 14.3 Historical migration order
 
-1. Add schema and documentation
-2. Add schema validation helper or test
-3. Migrate `scenario_006`
-4. Migrate `scenario_005`
-5. Migrate `scenario_004`
-6. Keep legacy step scenarios compatible through loader normalization
+The original Phase B migration order was:
 
-Reason:
+1. Add schema and documentation.
+2. Add schema validation helper or test.
+3. Migrate `scenario_006`.
+4. Migrate `scenario_005`.
+5. Migrate `scenario_004`.
+6. Keep legacy step scenarios compatible through loader normalization.
 
-* `scenario_006` exercises both SSH key login and post-login process execution
-* `scenario_005` is simpler and validates key reuse only
-* `scenario_004` includes installation / persistence context and is slightly broader
-* Step-based scenarios can remain legacy until needed
+The migration established schema-v1 YAML and retained legacy step-based
+compatibility through loader normalization. Current scenario coverage and
+validation depth belong in the Main Roadmap and Phase 6; schema compatibility
+alone does not establish live defender telemetry or end-to-end validation.
 
-## 14.4 What not to do in the schema PR
+## 14.4 Historical schema-PR guardrails
 
-Do not migrate all scenarios in the same PR as schema introduction.
+The initial schema PR intentionally did not:
 
-Do not add runtime validation and scenario migration in the same PR.
-
-Do not introduce rich attack artifacts in the schema PR.
+* migrate all scenarios in the schema-introduction change
+* combine runtime validation with scenario migration
+* introduce rich attack artifacts
 
 ---
 
@@ -1088,26 +1092,18 @@ print("attack_scenario schema validation: OK")
 PY
 ```
 
-## 15.3 Runtime validation
+## 15.3 Validation boundary
 
-Runtime validation is a follow-up.
+Schema loading, validation helpers, deterministic backend selection, and shell
+runner contract tests provide repository evidence for this contract. The Main
+Roadmap and Phase 6 own current scenario coverage and validation depth.
 
-Recommended follow-up:
-
-```text
-feat: validate attack scenario schema
-```
-
-That PR can add:
-
-* schema validation helper
-* tests for schema-v1 scenario YAMLs
-* clearer validation errors
-* compatibility handling for legacy fields
+Schema and runner contract coverage must not be described as equivalent to live
+defender telemetry or full end-to-end execution validation.
 
 ---
 
-## 16. Example: scenario_006 Migration Target
+## 16. Schema-v1 Example: scenario_006
 
 ```yaml
 schema_version: attack_scenario_v1
@@ -1181,7 +1177,7 @@ success_conditions:
 
 ---
 
-## 17. Example: scenario_005 Migration Target
+## 17. Schema-v1 Example: scenario_005
 
 ```yaml
 schema_version: attack_scenario_v1
@@ -1242,7 +1238,7 @@ success_conditions:
 
 ---
 
-## 18. Example: scenario_004 Migration Target
+## 18. Schema-v1 Example: scenario_004
 
 ```yaml
 schema_version: attack_scenario_v1
@@ -1322,53 +1318,53 @@ success_conditions:
 
 ---
 
-## 19. Relationship to Future Phases
+## 19. Historical Phase Relationship And Extension Boundaries
 
-## 19.1 Phase C: Rich Attack Artifacts
+The original plan treated rich attack artifacts and shell backend
+formalization as later Phase C and D work. Those items now define maintained
+contract foundations. Current implementation status and extension priorities
+belong in the Main Roadmap and Phase 6.
 
-This schema prepares for Phase C but does not implement it.
+## 19.1 Rich Attack Artifact Foundation
 
-Phase C will introduce richer artifacts such as:
+The maintained artifact foundation includes:
 
 * `attack_result.schema.json`
 * `attack_execution_log.schema.json`
 * `attack_observed_effects.schema.json`
+* `attack_observed_effects.json` runtime generation
 
-The most important future artifact is:
+`attack_observed_effects.json` represents attacker-side observed facts. It
+does not replace defender telemetry or prove that an expected artifact was
+detected.
 
-```text
-attack_observed_effects.json
-```
+## 19.2 Shell Backend Foundation
 
-This will represent attacker-side observed facts and help compare attack-side claims against defensive telemetry.
+The maintained shell backend and runner contracts cover:
 
-## 19.2 Phase D: Shell Backend Formalization
-
-The schema already has a `runner` contract. Phase D can formalize:
-
-* shell runner environment variables
+* runner environment and path boundaries
 * stdout / stderr capture
-* observed effects output path
-* runner wrapper behavior
+* structured runner events
+* observed-effects derivation
+* timeout and `state_changing` validation
 * shell backend safety policy
 
-## 19.3 Phase E: TTP Catalog
+## 19.3 TTP Catalog Extension Boundary
 
-The `techniques` field is intentionally compatible with future TTP catalog work.
+The `techniques` field remains compatible with TTP catalog extensions.
+Scenario references to catalog entries require a separately reviewed contract
+change.
 
-Later scenarios may reference catalog entries instead of embedding all details.
+## 19.4 Autonomous And Composition Extension Boundary
 
-## 19.4 Phase G and later
-
-Autonomous and composition modes should not bypass this scenario contract.
-
-They should generate or consume compatible attack plans and attack artifacts.
+Autonomous and composition modes must not bypass this scenario contract. They
+must generate or consume compatible attack plans and attack artifacts.
 
 ---
 
-## 20. Done Criteria for This Contract
+## 20. Historical Initial Contract Acceptance Record
 
-This contract is considered established when:
+The initial contract met the following establishment criteria:
 
 * `schemas/attack_scenario.schema.json` exists
 * `docs/design/attacker-agent/scenario_schema.md` exists
@@ -1383,6 +1379,6 @@ This contract is considered established when:
 
 ```text
 attack_scenario_schema_v1 fixes the attacker-side scenario contract so static
-scenario execution, future rich attack artifacts, and later autonomous modes can
-share the same evaluation pipeline.
+scenario execution, rich attack artifacts, and later autonomous modes can share
+the same evaluation pipeline.
 ```

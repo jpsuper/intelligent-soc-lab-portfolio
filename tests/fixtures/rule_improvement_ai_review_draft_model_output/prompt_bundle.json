@@ -1,0 +1,55 @@
+{
+  "bundle_id": "ri-ai-review-draft-prompt-bundle-import-001",
+  "source_stage": "post_action_dfir",
+  "source_prompt_input_id": "ri-ai-review-draft-prompt-input-import-001",
+  "source_prompt_input_ref": "data/runs/run-import/rule_improvement_ai_review_draft_prompt_input.json",
+  "source_review_input_id": "ri-review-model-output-import-001",
+  "source_review_input_ref": "data/runs/run-import/rule_improvement_review_input.json",
+  "prompt_template_ref": "prompts/rule-improvement/ai_review_draft_v1.md",
+  "expected_response_schema_ref": "schemas/rule_improvement_ai_review_draft.schema.json",
+  "model_execution_allowed": false,
+  "model_execution_performed": false,
+  "network_allowed": false,
+  "human_review_required": true,
+  "classification_decision_allowed": false,
+  "candidate_generation_started": false,
+  "promotion_allowed": false,
+  "prompt_input": {
+    "source_context": {
+      "source_review_input_id": "ri-review-model-output-import-001",
+      "case_id": "case-model-output-import-001",
+      "scenario_id": "scenario_006"
+    },
+    "signals": [
+      {
+        "source_signal_ref": "/supporting_signals/0",
+        "summary": "Review a point-in-time process snapshot observation.",
+        "source_fact_ids": ["fact-process-import-001"],
+        "evidence_refs": ["forensics/mock/Linux.ProcessList.json"]
+      }
+    ],
+    "observed_fact_summaries": [
+      {
+        "fact_id": "fact-process-import-001",
+        "fact_type": "process_snapshot_observation",
+        "summary": "A relevant process was observed at collection time.",
+        "evidence_refs": ["forensics/mock/Linux.ProcessList.json"],
+        "observation_scope": "point_in_time_process_snapshot",
+        "evidence_caveats": [
+          "Linux.ProcessList is point-in-time; process absence does not prove non-execution."
+        ]
+      }
+    ],
+    "output_contract": {
+      "schema": "schemas/rule_improvement_ai_review_draft.schema.json",
+      "ai_assistance_only": true,
+      "human_review_required": true,
+      "classification_decision_allowed": false,
+      "candidate_generation_started": false,
+      "promotion_allowed": false
+    }
+  },
+  "prompt_text": "Fixture prompt text.",
+  "response_instructions": ["Return schema-valid suggestions only."],
+  "safety_boundaries": ["AI suggestions are not human decisions."]
+}

@@ -1,33 +1,39 @@
-# Phase0 — SOC Pipeline Baseline
+# Phase0 — Lab Stabilization and SOC Pipeline Baseline
+
+> [!NOTE]
+> This document preserves Phase0-specific implementation history and
+> validation context. The [main Roadmap](roadmap.md) is authoritative for current
+> status, active priority, incomplete work, and Done Criteria.
 
 ## Goal
-Attack → Log → Forward → Parse → Detect → Incident の最小パイプライン構築
+Build the minimal Attack → Log → Forward → Parse → Detect → Incident pipeline
 
 ## What was implemented
 
 ### Attack
-- Kali から SSH brute force 実施（hydra）
+- Run an SSH brute-force attack from Kali (Hydra)
 
 ### Log Collection
-- victim (Ubuntu) の auth.log を取得
+- Collect auth.log from the victim (Ubuntu)
 
 ### Log Forwarding
-- rsyslog により soc-analyzer へ転送
+- Forward the logs to soc-analyzer with rsyslog
 
 ### Parsing
-- parser-agent により sshd ログを正規化
-- normalized_events.json を生成
+- Normalize sshd logs with parser-agent
+- Generate normalized_events.json
 
 ### Detection
-- ssh_failed_login ルール実装
-- detection_hits.json を生成
+- Implement the ssh_failed_login rule
+- Generate detection_hits.json
 
 ### Incident
-- detection を元に incident-builder-agent で
-- INC-0001.json を生成
+- Build an incident from detections with incident-builder-agent
+- Generate INC-0001.json
 
 ## Data Flow
 
+```text
 Kali
 ↓
 SSH brute force
@@ -43,6 +49,7 @@ parser-agent
 detection-agent
 ↓
 incident-builder-agent
+```
 
 ## Output
 
@@ -52,9 +59,9 @@ incident-builder-agent
 
 ## Result
 
-- 最小SOCパイプライン構築完了
-- 攻撃からインシデント生成まで自動化成功
+- Completed the minimal SOC pipeline
+- Successfully automated the flow from attack execution to incident generation
 
-## Next
+## Historical Next
 
 - Phase1: Correlation Agent

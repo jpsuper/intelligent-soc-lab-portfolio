@@ -2,7 +2,8 @@
 
 ## 1. Purpose
 
-This document defines how `attack_observed_effects.json` should be used by future evaluation logic.
+This document defines how evaluation logic may use
+`attack_observed_effects.json`.
 
 The goal is to compare attacker-side observed effects with defender-side observed artifacts without confusing the two.
 
@@ -12,9 +13,8 @@ The key rule is:
 attacker-side observed effect != defender-side observed artifact
 ```
 
-This document originally defined the design contract. The first additive implementation is now present in the minimal process-pipeline evaluation result.
-
-The implementation adds `observed_effects_alignment` without changing existing evaluation verdict behavior.
+`observed_effects_alignment` is an additive comparison boundary. It must not
+change existing evaluation verdict behavior.
 
 ---
 
@@ -43,9 +43,10 @@ These observations are useful for evaluation, but they are not defender-side det
 
 ---
 
-## 3. Current Coverage
+## 3. Mapping Examples
 
-Current observed-effects runtime coverage exists for scenario_004 / 005 / 006.
+The following scenario mappings illustrate the comparison contract. Current
+coverage and validation status belong in the Roadmap.
 
 ### scenario_004
 
@@ -147,7 +148,7 @@ Attacker-side observed effects can support evaluation context, but they must not
 
 ---
 
-## 6. Implemented Evaluation Output Shape
+## 6. Evaluation Output Shape
 
 The minimal process-pipeline evaluation now adds an `observed_effects_alignment` section.
 
@@ -196,7 +197,7 @@ Recommended alignment states:
 
 ## 8. Example Matrix
 
-### scenario_006
+### scenario_006 Alignment Example
 
 ```text
 expected_artifact: ssh_key_login
@@ -296,26 +297,26 @@ A future evaluator may compute an alignment confidence, but it should preserve s
 
 ---
 
-## 12. First Implementation Status
+## 12. Evaluation Boundary
 
-The first implementation is complete for the minimal process-pipeline evaluation path.
+Evaluation may load `attack_observed_effects.json` when present, group
+attacker-side effects by mapped artifact, and compare them with independently
+derived defender-side observed artifacts. The result is an additive
+`observed_effects_alignment` section.
 
-Implemented scope:
+This comparison must not:
 
-1. Load `attack_result.json`
-2. Load `attack_observed_effects.json` if present in the run directory
-3. Use existing defender-side observed artifacts from current evaluation inputs
-4. Build an additive `observed_effects_alignment` section
-5. Preserve existing pass/fail behavior
+- change the final evaluation verdict;
+- modify the Case timeline;
+- treat attacker observations as defender detections;
+- trigger autonomous remediation;
+- collapse attacker and defender confidence;
+- perform TTP scoring; or
+- infer multi-host effect relationships without a separate contract.
 
-Still out of scope:
-
-- changing final evaluation verdict
-- modifying case timeline
-- treating attacker observations as defender detections
-- autonomous remediation
-- TTP scoring
-- multi-host effect graphs
+The [Main Roadmap](../../roadmap/roadmap.md) and
+[Phase 6](../../roadmap/phase6.md) own implementation status, scenario coverage,
+validation depth, priorities, and sequencing.
 
 ---
 
@@ -423,59 +424,32 @@ Avoid these failure modes:
 
 ---
 
-## 18. Done Criteria for First Implementation
+## 18. Contract Acceptance Criteria
 
-Completed:
+The comparison contract remains valid when:
 
-- evaluation can load `attack_observed_effects.json`
-- evaluation can produce `observed_effects_alignment`
-- scenario_004 / 005 / 006 can be represented
-- attacker-only observations do not count as defender coverage
-- defender-only observations remain distinguishable
-- existing evaluation behavior remains backward compatible
-- tests cover:
-  - attacker and defender both observed
-  - attacker observed but defender missing
-  - defender observed but attacker missing
-  - neither side observed
-  - scenario_004 all-observed alignment
-
-Confirmed runtime smoke check:
-
-```text
-scenario_004:
-  ssh_failed_login             -> attacker_and_defender_observed
-  ssh_success_login            -> attacker_and_defender_observed
-  authorized_keys_modification -> attacker_and_defender_observed
-
-scenario_005:
-  ssh_key_login                -> attacker_and_defender_observed
-
-scenario_006:
-  ssh_key_login -> attacker_and_defender_observed
-  process_exec  -> attacker_and_defender_observed
-```
+- attacker and defender observations retain separate provenance;
+- all four alignment states remain representable;
+- missing attacker or defender evidence is not silently repaired;
+- attacker-side confidence remains separate from defender-side confidence;
+- alignment remains additive to the existing evaluation result;
+- `overall_result`, `detected`, Case, Action, and approval state are
+  unchanged; and
+- Rule Improvement receives only reviewable signals.
 
 ---
 
-## 19. Recommended Next PR
+## 19. Extension Conditions
 
-The additive `observed_effects_alignment` implementation is complete.
+Add mappings, confidence logic, or Rule Improvement consumers only when new
+scenario evidence requires them. Each extension must preserve the four-state
+alignment model, source-specific confidence, backward-compatible absence
+handling, and the prohibition against treating attacker observations as
+defender detections.
 
-Recommended next PR:
-
-```text
-docs: update observed effects evaluation alignment progress
-```
-
-Possible future implementation follow-ups:
-
-```text
-- add structured runner output convention if stdout parsing becomes fragile
-- feed attacker_observed_defender_missing into Rule Improvement Agent as a reviewable signal
-- keep case/action integration out of scope until alignment semantics are stable
-- extend smoke checks only when new scenario families introduce new artifact mappings
-```
+Structured runner parsing belongs in its dedicated contract. Case and Action
+integration remain out of scope unless a separate reviewed design changes that
+boundary.
 
 ---
 

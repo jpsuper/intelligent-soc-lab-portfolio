@@ -1,0 +1,26 @@
+{
+  "ai_assistance_only": true,
+  "candidate_generation_started": false,
+  "classification_decision_allowed": false,
+  "draft_id": "ri-ai-review-draft-invalid-comparison-001",
+  "human_review_required": true,
+  "promotion_allowed": true,
+  "source_review_input_id": "ri-review-comparison-001",
+  "source_review_input_ref": "data/runs/run-comparison/rule_improvement_review_input.json",
+  "source_stage": "post_action_dfir",
+  "suggestions": [
+    {
+      "confidence_rationale": "Invalid fixture should fail schema validation.",
+      "evidence_caveats": [
+        "This candidate intentionally violates promotion_allowed."
+      ],
+      "review_questions": [
+        "Was the invalid candidate recorded?"
+      ],
+      "source_signal_ref": "/supporting_signals/0",
+      "suggested_label": "insufficient_evidence",
+      "suggested_next_step": "Reject invalid candidate.",
+      "suggested_rationale": "The safety invariant is intentionally wrong."
+    }
+  ]
+}

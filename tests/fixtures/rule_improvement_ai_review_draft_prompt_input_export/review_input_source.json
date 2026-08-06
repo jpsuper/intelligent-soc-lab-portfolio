@@ -1,0 +1,105 @@
+{
+  "review_input_id": "ri-review-prompt-export-001",
+  "source_stage": "post_action_dfir",
+  "source_result_ref": "data/runs/run-prompt-export/post_action_dfir_investigation_result.json",
+  "case_id": "case-prompt-export-001",
+  "scenario_id": "scenario_006",
+  "observed_facts": [
+    {
+      "fact_id": "process-snapshot-export-001",
+      "fact_type": "process_snapshot_observation",
+      "summary": "A relevant process was observed at collection time.",
+      "evidence_refs": ["forensics/mock/Linux.ProcessList.json"],
+      "observation_scope": "point_in_time_process_snapshot",
+      "details": {
+        "command_line": "/tmp/scenario_006_payload.sh",
+        "observation_scope": "point_in_time_process_snapshot"
+      }
+    },
+    {
+      "fact_id": "shell-history-export-001",
+      "fact_type": "shell_history_observation",
+      "summary": "A relevant command appeared in collected shell history; this does not establish execution.",
+      "evidence_refs": ["forensics/mock/Linux.BashHistory.json"],
+      "evidence_strength": "weak",
+      "evidence_characteristics": ["user_controlled", "timing_sensitive"],
+      "interpretation_scope": "shell_history_entry_not_confirmed_execution",
+      "details": {
+        "command_line": "/tmp/scenario_006_payload.sh",
+        "evidence_strength": "weak",
+        "evidence_characteristics": ["user_controlled", "timing_sensitive"],
+        "interpretation_scope": "shell_history_entry_not_confirmed_execution"
+      }
+    },
+    {
+      "fact_id": "unreferenced-export-001",
+      "fact_type": "ssh_key_login",
+      "summary": "This valid fact is not referenced by a supporting signal.",
+      "evidence_refs": ["forensics/mock/Linux.Syslog.SSHLogin.json"]
+    }
+  ],
+  "supporting_signals": [
+    {
+      "signal_type": "post_action_observation_for_review",
+      "summary": "Review the point-in-time process observation.",
+      "review_status": "unreviewed",
+      "source_fact_ids": ["process-snapshot-export-001"],
+      "evidence_refs": ["forensics/mock/Linux.ProcessList.json"],
+      "details": {
+        "raw_log": "must not be projected"
+      }
+    },
+    {
+      "signal_type": "post_action_observation_for_review",
+      "summary": "Review the weak shell-history observation.",
+      "review_status": "unreviewed",
+      "source_fact_ids": ["shell-history-export-001"],
+      "evidence_refs": ["forensics/mock/Linux.BashHistory.json"]
+    }
+  ],
+  "evidence_gaps": [
+    {
+      "gap_type": "missing_corroboration",
+      "summary": "Independent execution telemetry is unavailable.",
+      "related_artifacts": ["Linux.ProcessList", "Linux.BashHistory"],
+      "evidence_refs": [],
+      "details": {
+        "collector_output": "must not be projected"
+      }
+    }
+  ],
+  "collection_limitations": [
+    {
+      "limitation_type": "collection_timing",
+      "summary": "ProcessList covers only the collection instant.",
+      "related_artifacts": ["Linux.ProcessList"],
+      "evidence_refs": ["forensics/mock/Linux.ProcessList.json"]
+    }
+  ],
+  "recommended_review_questions": [
+    "Does independent telemetry corroborate the observations?"
+  ],
+  "candidate_hints": [
+    {
+      "hint_type": "review_hypothesis",
+      "summary": "Review whether timing or correlation explains the available observations.",
+      "source_fact_ids": [
+        "process-snapshot-export-001",
+        "shell-history-export-001"
+      ],
+      "evidence_refs": [
+        "forensics/mock/Linux.ProcessList.json",
+        "forensics/mock/Linux.BashHistory.json"
+      ],
+      "candidate_generation_allowed": false,
+      "details": {
+        "secret": "must not be projected"
+      }
+    }
+  ],
+  "risk_notes": [
+    "Missing or limited evidence does not prove non-execution or a benign state."
+  ],
+  "human_review_required": true,
+  "promotion_allowed": false
+}

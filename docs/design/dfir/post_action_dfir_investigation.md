@@ -591,38 +591,33 @@ The exporter does not feed either DFIR artifact into pre-case `investigation_res
 
 ---
 
-## 10. Implementation phases
+## 10. Status And Evidence Ownership
 
-### Phase A — Contract documentation — completed by this document
+This document owns the post-action DFIR artifact, factual parser semantics,
+evidence inventory, limitation handling, review boundary, and separation from
+pre-case Investigation. The schema, controlled fixtures, run-based workflow,
+result-quality harness, and Rule Improvement review-input exporter named here
+are evidence references for those boundaries.
 
-- Define output artifact name, ownership, required fields, and safety boundaries.
-- Fix the separation from `investigation_result.json`.
-- Define the first parser scope and review requirement.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, parser breadth, live collector integration,
+priorities, and sequencing. Fixture-backed parser support does not imply
+arbitrary archive parsing or Velociraptor API execution.
 
-### Phase B — Schema and mock output fixtures — MVP complete
+### Extension Conditions
 
-- `post_action_dfir_investigation_result.schema.json` is implemented.
-- Controlled `Linux.Syslog.SSHLogin`, point-in-time `Linux.ProcessList`, and weak-evidence `Linux.BashHistory` fixtures and parser tests are implemented.
-- Run-based mock collection writes controlled outputs for all three supported artifacts under `forensics/mock/` and records their relative paths in the collected artifacts' `output_refs`.
-- Broader mock collector output generation, additional artifact parsers, and real Velociraptor output ingestion remain deferred.
+An additional parser, collector mapping, or case/external update proposal must:
 
-### Phase C — Workflow MVP — complete
+1. preserve the collected artifact and output-reference provenance;
+2. state source-specific timing, completeness, and trust limitations;
+3. emit factual observations, gaps, and pivots without a clean-host or
+   non-execution inference;
+4. remain separate from pre-case `investigation_result.json`;
+5. keep case or external updates reviewable and non-applying by default; and
+6. avoid candidate generation, promotion, approval, containment, and other
+   state mutation.
 
-- The run-based workflow builds evidence inventory and checks output availability.
-- `Linux.Syslog.SSHLogin`, `Linux.ProcessList`, and `Linux.BashHistory` outputs produce evidence-referenced factual observations; ProcessList observations are limited to collection time, and BashHistory observations do not confirm execution.
-- The workflow writes only the dedicated, schema-valid result artifact.
-
-### Phase D — Case / external update proposal
-
-- Generate append-only, reviewable finding-based case-enrichment proposals.
-- Generate a dry-run external-case update proposal.
-- Do not auto-apply either proposal.
-
-### Phase E — Additional artifact parsers and comparison
-
-- Add file-metadata parsers only with explicit limitation handling.
-- Map actual Velociraptor output into the generic input boundary.
-- Define executor / DFIR result comparison after post-action semantics stabilize.
+Executor/result comparison remains a separate contract.
 
 ---
 

@@ -1,0 +1,61 @@
+{
+  "ai_assistance_only": true,
+  "assistant_info": {
+    "configuration_ref": "mock-v1",
+    "model": "deterministic-mock-ai-review-draft-v1",
+    "provider": "mock"
+  },
+  "candidate_generation_started": false,
+  "classification_decision_allowed": false,
+  "draft_id": "ri-ai-review-draft-mock-comparison-001",
+  "errors": [],
+  "human_review_required": true,
+  "promotion_allowed": false,
+  "source_review_input_id": "ri-review-comparison-001",
+  "source_review_input_ref": "data/runs/run-comparison/rule_improvement_review_input.json",
+  "source_stage": "post_action_dfir",
+  "suggestions": [
+    {
+      "confidence_rationale": "The normalized evidence is limited and requires human review.",
+      "evidence_caveats": [
+        "Evidence refs are references only and were not opened by the mock draft."
+      ],
+      "review_questions": [
+        "What independent evidence is required before classifying this signal?"
+      ],
+      "source_signal_ref": "/supporting_signals/0",
+      "suggested_label": "insufficient_evidence",
+      "suggested_next_step": "Have a human seek independent corroboration.",
+      "suggested_rationale": "The available normalized evidence is insufficient for a stronger review suggestion."
+    },
+    {
+      "confidence_rationale": "Parser extraction gaps are explicitly represented in the normalized context.",
+      "evidence_caveats": [
+        "Collected output exists, but normalized fields may be incomplete."
+      ],
+      "review_questions": [
+        "Does the current parser expose the fields needed for review?"
+      ],
+      "source_signal_ref": "/supporting_signals/1",
+      "suggested_label": "parser_gap",
+      "suggested_next_step": "Have a human review parser coverage and normalized field extraction.",
+      "suggested_rationale": "The normalized context explicitly identifies parser extraction as a review gap."
+    },
+    {
+      "confidence_rationale": "Telemetry availability must be reviewed before candidate work.",
+      "evidence_caveats": [
+        "Missing telemetry remains a review gap, not proof of benign activity."
+      ],
+      "review_questions": [
+        "What telemetry is needed to review the uncovered activity?"
+      ],
+      "source_signal_ref": "/supporting_signals/2",
+      "suggested_label": "telemetry_gap",
+      "suggested_next_step": "Have a human identify whether suitable telemetry can be collected or retained.",
+      "suggested_rationale": "The related context identifies unavailable telemetry needed for review."
+    }
+  ],
+  "warnings": [
+    "Deterministic mock suggestions require independent human review."
+  ]
+}

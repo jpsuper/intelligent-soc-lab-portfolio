@@ -1,6 +1,8 @@
 # Sysmon Event ID 1 Normalized Mapper Contract
 
-Status: Implemented / Fixture A/B/C Expected Normalized Parity Implemented
+Evidence scope: Fixture A/B/C exact expected-normalized parity. See the
+[Main Roadmap](../../roadmap/roadmap.md) for overall Windows and downstream
+pipeline status.
 
 ## Purpose And Boundary
 
@@ -23,6 +25,13 @@ field authority is
 [`endpoint_events.schema.json`](../../../schemas/endpoint_events.schema.json);
 the input authority is
 [`sysmon_event1_parsed_event.schema.json`](../../../schemas/sysmon_event1_parsed_event.schema.json).
+
+> Document responsibility:
+> This document owns the mapper API and version, canonical event identity,
+> timestamp and Windows path policy, field mapping, provenance, rejection
+> behavior, and expected-normalized parity. The
+> [Main Roadmap](../../roadmap/roadmap.md) owns implementation status,
+> priorities, downstream sequencing, validation depth, and Done Criteria.
 
 ## Public API And Versions
 
@@ -71,7 +80,7 @@ The object is serialized with `sort_keys=True`, separators `(",", ":")`, and
 Host case is folded only for identity. The original `computer` value and case
 are preserved as top-level `host`. `process_guid` remains provenance but is not
 an identity input while the preferred set is available. No fallback or
-fixture-only identity is implemented.
+fixture-only identity is defined by this contract.
 
 The canonical ID is a deterministic lab identifier. It is not the provider
 Event ID, EventRecordID, ProcessGuid, fixture ID, or a native Windows ID.
@@ -225,9 +234,10 @@ source -> parser -> mapper -> expected_normalized
 ```
 
 This parity is repository-fixture evidence only. It does not claim live
-normalized parity or add detection semantics to the mapper. The separately
-implemented deterministic detector consumes these normalized events and has
-its own Fixture A/B/C `expected_detection` parity.
+normalized parity or add detection semantics to the mapper. A separate
+deterministic detector consumes these normalized events; its Fixture A/B/C
+`expected_detection` evidence is documented in the
+[fixture contract](sysmon_event1_fixture_contract.md).
 
 ## Security And Trust Boundaries
 
@@ -237,16 +247,17 @@ maliciousness, attack success, a detection, an incident, or permission for any
 state-changing response. It does not alter pre-case investigation or
 post-action DFIR behavior.
 
-## Downstream Status And Non-Responsibilities
+## Non-Responsibilities And Status Reference
 
-- the mapper does not generate PowerShell observable features or detections
-- downstream deterministic PowerShell observation and Fixture A/B/C
-  `expected_detection` parity are implemented separately
-- Common Defender Pipeline v0 invocation/spine
-- incident bridging
-- Wazuh Windows integration or live collector changes
-- fallback event identity
-- CLI or artifact writing
+The mapper does not own:
 
-The next focused slice implements Common Pipeline v0 without changing this
-mapper boundary.
+- PowerShell observable features, detections, or expected-detection parity;
+- Common Defender Pipeline invocation or downstream composition;
+- Incident, Triage, or Investigation construction;
+- Wazuh Windows integration or live collector behavior;
+- fallback event identity; or
+- a CLI or artifact-writing workflow.
+
+Current downstream implementation status and sequencing belong in the
+[Main Roadmap](../../roadmap/roadmap.md). Downstream progress does not change
+or imply completion of the mapper boundary defined here.

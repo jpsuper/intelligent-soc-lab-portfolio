@@ -13,14 +13,14 @@ promotion workflow.
 
 Generator behavior is defined separately in
 `docs/design/rule-improvement/rule_improvement_candidate_proposal_generator_contract.md`.
-Future human review and conversion after proposal generation are defined in
+Human proposal review and conversion are defined in
 `docs/design/rule-improvement/rule_improvement_candidate_proposal_review_conversion_contract.md`.
-The future proposal human review decision artifact shape is defined by
+The proposal human-review decision shape is defined by
 `schemas/rule_improvement_proposal_review_decisions_v1.schema.json`.
-The future conversion boundary from canonical review decisions into concrete
-candidate artifacts is defined in
+Conversion from canonical review decisions into the concrete candidate bundle
+is defined in
 `docs/design/rule-improvement/rule_improvement_proposal_conversion_contract.md`.
-The preferred future concrete candidate artifact strategy is defined in
+The concrete candidate artifact strategy is defined in
 `docs/design/rule-improvement/rule_improvement_concrete_candidate_artifact_strategy.md`.
 
 The AI-assisted Rule Improvement flow may now produce proposal-only v2 output
@@ -32,28 +32,32 @@ rule_improvement_candidate_creation_input.json
 
 ## 2. Flow position
 
-The standalone generator position is:
+The implemented standalone artifact path is:
 
 ```text
 rule_improvement_candidate_creation_input.json
   ↓ scripts/generate_rule_improvement_candidate_proposals_v2.py
-rule_improvement_candidate_proposals_v2.json   (proposal-only)
-  ↓ future human proposal review decisions
-  ↓ future proposal converter
-  ↓ future concrete candidate artifacts
-  ↓ future apply / deployment / promotion workflows
+rule_improvement_candidate_proposals_v2.json
+  ↓ proposal review template export and human completion
+rule_improvement_proposal_review_decisions.json
+  ↓ standalone proposal converter
+rule_improvement_concrete_candidate_bundle_v1.json
+  ↓ schema-validated narrowing exporters
+candidate and recommendation artifacts
 ```
 
-The v2 artifact is a proposal artifact only. It is not candidate approval,
-deployment approval, promotion approval, or authority to mutate rule, prompt,
-parser, telemetry, correlation, baseline, active-agent, case, action, or
-investigation state.
+The v2 artifact is proposal-only. It is not candidate approval, deployment
+approval, promotion approval, or authority to mutate rule, prompt, parser,
+telemetry, correlation, baseline, active-agent, case, action, or investigation
+state.
 
-The follow-on proposal review decisions artifact has
-`artifact_semantics: conversion_review_only`. Its `accept_for_conversion`
-decision means only future conversion eligibility; it is not apply,
-deployment, baseline update, prompt update, parser update, telemetry update,
-correlation update, or promotion approval.
+The follow-on review-decision artifact has
+`artifact_semantics: conversion_review_only`. Its
+`accept_for_conversion` decision authorizes only conversion into a
+non-applying concrete bundle; it is not apply, deployment, baseline-update,
+runtime-mutation, or promotion approval.
+
+---
 
 ## 3. Schema identity
 
@@ -90,9 +94,9 @@ candidate-creation input:
 }
 ```
 
-The SHA-256 value must be lowercase hexadecimal. The schema does not define how
-the hash is calculated or checked at runtime; that remains future generator and
-reviewer validation work.
+The SHA-256 value must be lowercase hexadecimal. The standalone generator
+calculates it over the exact candidate-creation input bytes. Downstream review
+and conversion validate source identity before writing output.
 
 ## 5. Proposal item requirements
 
@@ -121,11 +125,11 @@ Each proposal preserves:
 "human_review_required"
 ```
 
-This status means the proposal still requires later review. It does not mean
+This status means the proposal still requires human review. It does not mean
 the candidate has been approved, deployed, applied, or promoted.
 
 The optional `payload` object carries schema-compatible, non-authorizing
-details that a later reviewed converter/exporter may need. For example,
+details that a reviewed converter or narrowing exporter may need. For example,
 `promotion_review` proposals that are intended for recommendation-only export
 may include `promotion_recommended`, `current_agent`, `challenger_agent`,
 `next_baseline_agent`, `score_delta`, `gates`, and `blocking_gaps` in
@@ -134,8 +138,7 @@ rejected. Payload fields do not authorize apply, deployment, baseline update,
 prompt update, parser update, telemetry update, correlation update, or
 promotion.
 
-When proposal payload is later preserved into concrete candidate bundle
-payload, it must not override converter-owned base metadata such as `target`,
+When proposal payload is preserved into concrete candidate bundle payload, it must not override converter-owned base metadata such as `target`,
 `source_signal_ref`, `source_label`, `source_fact_ids`,
 `required_evidence_refs`, `priority`, or `review_status`.
 
@@ -199,30 +202,29 @@ agents.
 
 ## 8. Relationship to legacy schemas
 
-The v2 proposal contract intentionally differs from the legacy
+The v2 proposal contract intentionally differs from the smaller
 comparison-harness schemas:
 
 - `schemas/rule_candidates_schema.json`
 - `schemas/prompt_candidates_schema.json`
+- `schemas/parser_candidates_schema.json`
 - `schemas/promotion_recommendation_schema.json`
 
-Those legacy schemas remain intact and continue to describe lightweight
-comparison-harness proposal/recommendation artifacts. They are too small to
-preserve the richer provenance needed by the AI-assisted candidate-creation
-flow, such as source candidate-creation input refs and hashes, source signal
-refs, source fact IDs, required evidence refs, limitations, and human
-candidate-review decision provenance.
+The v2 schema preserves source candidate-creation refs and hashes, source
+signals and facts, evidence refs, limitations, and human decision provenance.
+It therefore does not emit a legacy shape directly.
 
-Generator work targets the v2 proposal schema rather than directly emitting the
-legacy schema shape. Any future conversion from v2 proposals into
-concrete rule, prompt, parser, telemetry, correlation, or promotion-review
-artifacts must be a separate reviewed workflow. The future review and
-conversion boundary is documented in
-`docs/design/rule-improvement/rule_improvement_candidate_proposal_review_conversion_contract.md`.
-The concrete candidate artifact strategy recommends that a future converter
-first emit a provenance-preserving
-`rule_improvement_concrete_candidate_bundle_v1.json`, with any
-legacy-compatible export handled later as a separate schema-validated step.
+Reviewed proposals progress through the provenance-preserving
+`rule_improvement_concrete_candidate_bundle_v1.json`. Dedicated
+schema-validated exporters then narrow eligible bundle items into rule, prompt,
+parser, or recommendation artifacts while preserving backreferences wherever
+the target schema permits.
+
+Proposal review, conversion, and export are separate boundaries. None of their
+artifacts authorizes apply, deployment, baseline update, runtime mutation, or
+promotion.
+
+---
 
 ## 9. Prohibited semantics
 
@@ -251,34 +253,35 @@ It must not:
 - mutate case, action, pre-case investigation, post-action DFIR, containment,
   approval, verdict, severity, confidence, or Rule Improvement promotion state
 
-## 10. Implementation status
+## 10. Status And Evidence Ownership
 
-Implemented:
+This document owns proposal schema identity, source provenance, human decision
+provenance, candidate-type mapping, payload constraints, and prohibited
+semantics. The schema, generator, conversion contracts, and focused tests named
+here are evidence for those boundaries.
 
-- v2 proposal JSON Schema
-- standalone generator from `rule_improvement_candidate_creation_input.json`
-- v1 proposal human review decision schema
-- proposal review decisions template exporter
-- proposal review decisions importer / validator
-- concrete candidate artifact strategy document
-- focused schema tests for valid rule and prompt proposals
-- tests rejecting unknown, approval-like, malformed provenance, and unsafe
-  semantic fields
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Changes to downstream converter or exporter availability must not redefine the
+proposal-only semantics in this contract.
 
-Not implemented:
+---
 
-- process-pipeline integration
-- candidate YAML generation
-- proposal review worksheet
-- converter from v2 proposals to concrete candidate artifacts
-- concrete candidate bundle schema
-- legacy-compatible exporter
-- conversion into legacy artifacts
-- apply, deployment, baseline update, prompt update, parser update, telemetry
-  update, correlation update, or promotion behavior
+## 11. Boundary Acceptance Criteria
 
-## 11. One-line summary
+The v2 proposal boundary remains valid when:
+
+- source refs and exact source hashes remain required
+- human decision provenance cannot be fabricated or omitted
+- candidate type and allowed next-artifact type remain coupled
+- optional payload cannot override converter-owned metadata
+- approval, apply, deployment, mutation, and promotion fields remain prohibited
+- proposals remain review-required and non-applying
+
+---
+
+## 12. One-line summary
 
 ```text
-v2 candidate proposals preserve reviewed provenance for future work, but remain proposal-only and non-applying.
+v2 candidate proposals preserve reviewed provenance for conversion and export, but remain proposal-only and non-applying.
 ```

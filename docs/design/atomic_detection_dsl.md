@@ -1,49 +1,48 @@
 # Atomic Detection DSL
 
-## 1. 目的
+## 1. Purpose
 
-この文書は、AI SOC Lab における **atomic detection DSL の canonical design** を定義する。
+This document defines the canonical design for the AI SOC Lab atomic detection
+DSL.
 
-本 DSL の目的は以下である。
+The DSL has five goals:
 
-1. detection 出力の共通契約を backend 非依存で固定する
-2. scenario ごとのハードコードを減らす
-3. downstream の triage / investigation / case / action が依存できる
-   `artifact / behavior_features / evidence` 契約を明文化する
-4. Python detection / Wazuh deploy target / 将来の export target に対する
-   source of truth を持つ
-5. Phase6 以降の correlation-first incident entry を支える
+1. define a backend-independent canonical detection-output contract;
+2. reduce scenario-specific hard-coding;
+3. define stable `artifact`, `behavior_features`, and `evidence` contracts
+   for downstream triage, investigation, case, and action stages;
+4. provide one source of truth for Python detection, Wazuh deployment, and
+   future export targets; and
+5. support correlation-first Incident entry from Phase 6 onward.
 
 ---
 
-## 2. なぜ atomic detection DSL を先にやるのか
+## 2. Why The Atomic Detection DSL Comes First
 
-最初にやるべきことは、`investigation-agent` の pack 化ではなく、
-**atomic detection DSL の導入**である。
+The stable input contract must exist before investigation is generalized into
+packs. Investigation packs depend on predictable `artifact`,
+`behavior_features`, and `evidence` fields.
 
-理由は、pack ベースの investigation は入力として
-`artifact` / `behavior_features` / `evidence` の安定した契約を必要とするためである。
-
-順番としては以下が自然である。
+The dependency order is:
 
 ```text
 atomic detection DSL
   ↓
 artifact / behavior_features / evidence contract
   ↓
-investigation pack 化
+investigation packs
   ↓
-workflow / policy 化
+workflow / policy
 ```
 
-もし DSL より先に pack 化すると、pack の入力仕様が後から変わりやすく、
-結果として pack 自体が再びシナリオ依存になりやすい。
+Introducing packs first would make their inputs more likely to change and would
+reintroduce scenario-specific assumptions.
 
 ---
 
-## 3. Source of Truth と全体像
+## 3. Source Of Truth And System View
 
-本 lab における基本方針は以下。
+The lab uses this relationship:
 
 ```text
 atomic detection DSL
@@ -51,49 +50,48 @@ atomic detection DSL
 canonical detection output
   ↓
 target adapter / compiler
-  ├─ python detection target
-  ├─ wazuh deploy target
+  ├─ Python detection target
+  ├─ Wazuh deployment target
   └─ future export target
 ```
 
-### 3.1 Source of truth
+### 3.1 Source Of Truth
 
-- DSL = source of truth
-- canonical detection output = lab 内の共通契約
-- Wazuh = deploy / search target
+- The DSL is the detection-rule source of truth.
+- Canonical detection output is the shared internal contract.
+- Wazuh is a deployment, alert, and search target.
 
-つまり、downstream の agent は backend 固有の field ではなく、
-**canonical detection output** に依存する。
+Downstream agents therefore depend on canonical detection output rather than
+backend-specific fields.
 
-### 3.2 DSL の役割
+### 3.2 DSL Responsibilities
 
-atomic detection DSL は以下を表現する。
+The atomic detection DSL expresses:
 
-- どの入力に対する rule か
-- どういう条件に一致したら hit か
-- 何という `artifact` を出力するか
-- どの `behavior_features` を付与するか
-- どの target にコンパイル可能か
+- the expected input source;
+- the conditions that produce a hit;
+- the emitted `artifact`;
+- the attached `behavior_features`; and
+- the targets for which the rule may be compiled or adapted.
 
 ---
 
-## 4. Feature Lifecycle における責務
+## 4. Responsibilities In The Feature Lifecycle
 
-本 lab における feature の層は以下。
+The lab separates features into these layers:
 
-- `behavior_features` = detection が付与する観測事実
-- `derived_features` = triage が意味付けする
-- `enriched_features` = investigation が文脈補強する
-- `assessment` = 最終判断
+- `behavior_features`: observed facts attached by detection;
+- `derived_features`: meaning derived during triage;
+- `enriched_features`: context added during investigation; and
+- `assessment`: the final judgment.
 
-### 4.1 重要なルール
+### 4.1 Key Rule
 
-detection で付与する feature は、原則として **`behavior_features` のみ** とする。
+Detection and the DSL should attach only observation-based
+`behavior_features`. Interpretive or conclusion-oriented meaning belongs to
+triage or investigation.
 
-- detection では **観測事実ベースの feature のみ付与**する
-- 結論寄りの意味付けは triage / investigation に回す
-
-### 4.2 detection / DSL で扱うものの例
+### 4.2 Detection And DSL Examples
 
 - `remote_download`
 - `temporary_path_execution`
@@ -101,21 +99,21 @@ detection で付与する feature は、原則として **`behavior_features` �
 - `direct_ip_download`
 - `permission_change_before_execution`
 
-### 4.3 triage / investigation で扱うものの例
+### 4.3 Triage And Investigation Examples
 
 - `download_and_execute_chain`
 - `high_risk_execution_flow`
 - `same_parent_process_chain`
 - `payload_path_confirmed`
 
-つまり、DSL の `behavior_features` は一般 feature 全体の定義場所ではなく、
-**観測事実としての behavior_features を定義する場所**である。
+The DSL therefore defines observation-based `behavior_features`; it is not the
+definition point for every feature used by the pipeline.
 
 ---
 
-## 5. 最初の対象範囲
+## 5. Initial Scope
 
-最初から多く作らず、以下の 5 つ程度に限定する。
+Keep the initial artifact vocabulary intentionally small:
 
 - `ssh_failed_login`
 - `ssh_success_login`
@@ -123,19 +121,20 @@ detection で付与する feature は、原則として **`behavior_features` �
 - `authorized_keys_modification`
 - `process_exec`
 
-必要なら次点:
+Possible later additions include:
 
 - `sudo_command`
 - `user_creation`
 
-目的は、scenario_003 / 004 / 005 / 006 を支える最低限の artifact 群を
-DSL ベースで表現可能にすることである。
+This initial vocabulary is sufficient to represent the artifacts required by
+`scenario_003`, `scenario_004`, `scenario_005`, and `scenario_006`
+without embedding scenario-specific output contracts.
 
 ---
 
-## 6. 最小 schema 案
+## 6. Minimal Schema Shape
 
-最初の schema は以下の程度でよい。
+The minimal rule shape is:
 
 ```yaml
 id: auth.ssh_success_password
@@ -168,7 +167,7 @@ targets:
   - wazuh
 ```
 
-### 6.1 必須にしたいフィールド
+### 6.1 Required Fields
 
 - `id`
 - `title`
@@ -179,7 +178,7 @@ targets:
 - `behavior_features`
 - `targets`
 
-### 6.2 任意でよいフィールド
+### 6.2 Optional Fields
 
 - `status`
 - `metadata`
@@ -191,8 +190,8 @@ targets:
 
 ## 7. Canonical Detection Output
 
-DSL から downstream に渡す canonical detection output は、
-最低限以下を持つ。
+Canonical detection output passed downstream from the DSL contains at least
+the following fields:
 
 ```yaml
 id: det-000001
@@ -229,7 +228,7 @@ time_window_start: 2026-04-11T04:06:55Z
 time_window_end: 2026-04-11T04:06:55Z
 ```
 
-### 7.1 最低限持ちたい共通フィールド
+### 7.1 Required Common Fields
 
 - `id`
 - `rule_id`
@@ -246,19 +245,20 @@ time_window_end: 2026-04-11T04:06:55Z
 - `behavior_features`
 - `evidence_refs`
 - `raw_event_refs`
-- 時系列情報
+- time-window fields
   - `time_window_start`
   - `time_window_end`
 
-### 7.2 補足
+### 7.2 Notes
 
-- `auth_method` や `result` は全 artifact に必須ではないため optional 扱いでよい
-- `path` や `command_line` も artifact によって null でよい
-- canonical output は backend 非依存の契約として扱う
+- `auth_method` and `result` are optional because they do not apply to every
+  artifact.
+- `path` and `command_line` may be null when they do not apply.
+- Canonical output remains backend-independent.
 
 ---
 
-## 8. 最初の 5 ルールひな形
+## 8. Initial Rule Templates
 
 ### 8.1 ssh_failed_login
 
@@ -442,60 +442,39 @@ targets:
 
 ---
 
-## 9. 実装方針
+## 9. Implementation Boundaries
 
-### 9.1 最初にやること
+The implementation should preserve these responsibilities:
 
-#### Step 1
-DSL loader を作る
+- the loader reads YAML and validates required fields;
+- the evaluator applies `match` conditions to normalized input;
+- the evaluator emits canonical `artifact` and `behavior_features` fields;
+- target adapters translate the canonical rule without becoming a second source
+  of truth; and
+- scenario runners and orchestration code do not embed replacement copies of
+  DSL match logic.
 
-対象:
-- YAML を読む
-- 必須フィールドを検証する
-- Python で扱いやすい dict / model にする
-
-#### Step 2
-Python evaluator を作る
-
-対象:
-- 既存の normalized event / Wazuh alert に対して `match` を評価する
-- `artifact` と `behavior_features` を canonical detection output に落とす
-
-#### Step 3
-最初の 5 ルールを `detection/dsl/` に置く
-
-#### Step 4
-scenario_003 / 004 / 005 / 006 に必要な artifact が DSL ベースで出せることを確認する
-
-#### Step 5
-その後に investigation-agent の pack 化へ進む
-
-### 9.2 evaluator / compiler の最小実装
-
-最初は 2 つで十分。
-
-- DSL → 現在の Python detection/evaluation で使える形式
-- DSL → 将来の Wazuh 用 target に落とすための中間表現
-
-この段階では、いきなり完全な Wazuh XML 生成器を作らなくてよい。  
-まずは lab 内で DSL が source of truth として機能することを優先する。
+A complete Wazuh XML generator is not required for the DSL to serve as the
+lab-local source of truth. Target expansion must preserve canonical output and
+be validated independently.
 
 ---
 
-## 10. Wazuh との関係
+## 10. Relationship To Wazuh
 
-将来的に Wazuh を導入する場合でも、**Wazuh は source of truth ではなく deploy / search target** として扱う。
+Wazuh is a deployment, alert, and search target rather than the rule source of
+truth:
 
-- DSL = source of truth
-- canonical detection output = lab 内の共通契約
-- Wazuh = baseline collection / decoding / basic detection / search backend
+- DSL: source of truth;
+- canonical detection output: shared lab contract; and
+- Wazuh: baseline collection, decoding, basic detection, and search backend.
 
-つまり、Wazuh 固有の field を downstream の agent が直接前提にするのではなく、
-必要なら adapter / normalizer を介して canonical model に変換して使う。
+Downstream agents must not depend directly on Wazuh-specific fields. An adapter
+or normalizer should map required source fields into the canonical model.
 
 ---
 
-## 11. 推奨ディレクトリ案
+## 11. Reference Directory Layout
 
 ```text
 detection/
@@ -515,105 +494,87 @@ detection/
 
 ---
 
-## 12. 今はまだやらなくてよいこと
+## 12. Non-Goals
 
-- 全ルールの Sigma 化
-- 完全な Sigma → Wazuh 自動変換
-- investigation-agent の全面 rewrite
-- queue / Redis Stream などの event-driven 化
-- workflow engine の本格導入
-- multi-host / external intel 対応
+This contract does not require:
 
----
-
-## 13. Done
-
-この着手フェーズの Done は以下。
-
-1. atomic detection DSL の最初の schema が決まっている
-2. 最初の 5 ルールが DSL で記述されている
-3. DSL を読み込む loader / evaluator の最小実装がある
-4. scenario_003 / 004 / 005 / 006 に必要な artifact 群が DSL ベースで表現できる
-5. downstream が backend 非依存で使える canonical detection output が明文化されている
-6. その後に investigation pack 化へ進めるための
-   `artifact / behavior_features / evidence` 契約が明文化されている
+- converting every rule to Sigma;
+- complete Sigma-to-Wazuh generation;
+- rewriting the investigation agent;
+- introducing queue or Redis Stream event delivery;
+- introducing a workflow engine;
+- implementing multi-host or external-intelligence support; or
+- decoding or executing untrusted command content.
 
 ---
 
-## 14. 一言まとめ
+## 13. Contract Acceptance Criteria
 
-最初にやるべきことは、
+The contract is usable when:
 
-**「investigation を汎用化すること」ではなく、  
-「investigation が依存する artifact / behavior_features / evidence の共通契約を atomic detection DSL で先に固めること」** である。
+1. the rule schema and required fields are explicit;
+2. the initial artifact vocabulary can be represented in DSL rules;
+3. a loader and evaluator can validate and apply those rules;
+4. scenarios can emit canonical artifacts without scenario-only downstream
+   assumptions;
+5. canonical detection output is backend-independent; and
+6. `artifact`, `behavior_features`, and `evidence` remain stable inputs for
+   downstream stages.
 
-その後に pack / policy / workflow へ進むのが最も安全で拡張しやすい。
+These are contract criteria, not a live implementation checklist. Current
+completion and validation evidence belong in the
+[Main Roadmap](../roadmap/roadmap.md) and
+[Phase 6](../roadmap/phase6.md).
+
 ---
 
-## 15. Current Implementation Status
+## 14. Summary
 
-The atomic detection DSL is no longer only a design proposal. In Phase6, the DSL foundation has been implemented as the canonical detection contract for the current SSH / persistence / process execution scenarios.
+The atomic detection DSL stabilizes the observation contract before
+investigation packs, policies, or workflows are generalized. This ordering
+keeps downstream stages backend-independent and reduces scenario-specific
+coupling.
 
-Implemented status:
+---
 
-- `detection/dsl/` contains the initial atomic detection rules
-- DSL loader / evaluator / dedupe / correlation components exist under `detection/compiler/`
-- the initial artifact vocabulary is active:
-  - `ssh_failed_login`
-  - `ssh_success_login`
-  - `ssh_key_login`
-  - `authorized_keys_modification`
-  - `process_exec`
-- scenario_004 / 005 / 006 can be evaluated through the DSL-backed artifact model
-- correlation-first incident entry is used for the persistence and key-reuse scenarios
-- downstream triage / investigation / case / action stages consume canonical artifacts rather than scenario-only assumptions
-- the Windows/Sysmon-specific rules
-  `execution.windows_powershell_process_observed` and
-  `execution.windows_powershell_encoded_command_observed` reuse the same DSL
-  loader, evaluator, and canonical detection output
-- Fixture A/B/C `expected_detection` parity is implemented as a separate
-  schema-validated test oracle, not as runtime evidence
+## 15. Status And Evidence Ownership
 
-Current role:
+This document owns the DSL rule shape, feature lifecycle boundary, canonical
+detection-output semantics, and target-adapter responsibilities. The
+[Main Roadmap](../roadmap/roadmap.md) and
+[Phase 6](../roadmap/phase6.md) own current implementation status, validation
+depth, priorities, and sequencing.
 
-```text
-atomic detection DSL
-  ↓
-canonical detection output
-  ↓
-incident / triage / investigation / case / action
-```
+The following descriptions are contract semantics and must not be interpreted
+as a claim that every source, target, scenario, or deployment path is complete.
 
-Near-term direction:
+### 15.1 Windows Match Operator Semantics
 
-- keep the DSL as the source of truth for lab-local detection contracts
-- avoid moving DSL internals back into `run_process_pipeline.py`
-- use this document as the detailed DSL contract, while `docs/roadmap/phase6.md` remains the high-level index
-- treat Wazuh as a deploy / alert / search target, not as the source of truth
-- keep Windows rule content and match conditions source/domain-specific while
-  the future Common Pipeline v0 owns common invocation and handoff
+Windows rule content and match conditions remain source- and domain-specific
+while using the shared DSL loader, evaluator, and canonical output.
 
-The implemented Windows operators are:
+The defined Windows operators are:
 
-- `process_name_casefold`: case-insensitive exact process-name comparison
-- `command_token_casefold_any`: case-insensitive exact-token comparison against
-  an explicit non-empty token list
+- `process_name_casefold`: case-insensitive exact process-name comparison;
+- `command_token_casefold_any`: case-insensitive exact-token comparison
+  against an explicit non-empty token list.
 
-The Windows rules also require exact `source: sysmon`, `platform: windows`, and
+Windows rules require exact `source: sysmon`, `platform: windows`, and
 `event_type: process_exec` routing. Substrings such as
-`-EncodedCommandSuffix` and `prefix-enc` do not match. Unknown match operators
-fail closed. Command text is preserved as untrusted data and is never decoded
+`-EncodedCommandSuffix` and `prefix-enc` do not match. Unknown match
+operators fail closed. Command text remains untrusted data and is never decoded
 or executed.
 
-The two rules use `severity: low` because `severity` remains a required global
+### 15.2 Severity Boundary
+
+The Windows rules use `severity: low` because `severity` is a required global
 DSL field and `low` is the lowest existing value. This is rule metadata, not a
 malicious verdict, Incident severity, confidence, assessment, or response
-approval. Common Pipeline v0 invocation and Windows detection-to-Incident
-execution remain the next separate PR.
+approval.
 
-Future work:
+### 15.3 Extension Conditions
 
-- add more atomic rules only when needed by new scenarios
-- formalize export targets if Wazuh / Sigma deployment becomes necessary
-- keep canonical detection output stable before introducing investigation packs or workflow policies
-
+Add rules, operators, or export targets only when required by an evidence-backed
+scenario or backend integration. Each extension must preserve canonical output,
+fail closed for unknown operators, keep untrusted source content inert, and add
+focused validation. Project priority and delivery order remain Roadmap-owned.

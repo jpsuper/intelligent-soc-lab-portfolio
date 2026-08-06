@@ -262,8 +262,8 @@ The canonical decision-record contract is `docs/design/rule-improvement/rule_imp
 A human reviewer classifies each review signal before any candidate-generation
 step. The classifications are:
 
-An optional future `rule_improvement_ai_review_draft.json` may provide
-suggestions before this human step. Per
+An optional `rule_improvement_ai_review_draft.json` may provide suggestions
+before this human step. Per
 `docs/design/rule-improvement/ai_assisted_review_draft_contract.md`, it cannot
 make a classification decision, derive eligibility, invoke candidate
 generation, or bypass the human-operated helper.
@@ -368,26 +368,20 @@ signal.
 
 ---
 
-## 13. Implementation status and remaining work
+## 13. Status And Evidence Ownership
 
-Implemented:
+This document owns the one-way DFIR-to-review projection, evidence semantics,
+data minimization, provenance, candidate-hint boundaries, and fail-closed
+export behavior. The schema, exporter, human classification helper, fixtures,
+and focused tests named in this contract are evidence for those boundaries.
 
-1. Draft 2020-12 schema for `rule_improvement_review_input.json`.
-2. Deterministic exporter from a schema-valid post-action result.
-3. Source and output validation with fail-closed behavior.
-4. Sanitized fact projection that preserves BashHistory weak-evidence and ProcessList point-in-time semantics.
-5. Synthetic schema and exporter tests, including promotion and mutation boundary checks.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Downstream proposal, conversion, export, validation-summary, apply, deployment,
+and promotion state must not be inferred from this review-input contract.
 
-6. Human signal-classification contract and Draft 2020-12 schema for the human-created `rule_improvement_signal_classification.json` decision record, with synthetic fixtures and boundary tests.
-7. Human-operated deterministic helper that validates the review input, resolves source signals, copies provenance, derives eligibility, and validates the classification before writing.
-
-Current downstream implementation status:
-
-1. Generated rule/prompt/parser/telemetry/correlation candidate artifacts and promotion remain disabled.
-2. Minimized prompt input, versioned prompt, deterministic prompt bundle export, mock/OpenAI/LM Studio draft paths, importer acceptance, descriptive comparison, worksheet export, decisions template export, and human signal classification are implemented.
-3. Reviewed eligible signals can be exported to `rule_improvement_candidate_generation_input.json`, rendered into `rule_improvement_candidate_draft.json`, reviewed through worksheet/template handoff, validated as `rule_improvement_candidate_review_decisions.json`, and projected into `rule_improvement_candidate_creation_input.json`.
-4. `rule_improvement_candidate_creation_input.json` is still input for a later candidate-creation workflow only. It does not create `rule_candidates.yaml`, `prompt_candidates.yaml`, or `promotion_recommendation.yaml`.
-5. Revision and supersession handling remain follow-on work.
+Revision or supersession support must preserve an auditable decision history
+and cannot silently replace a human-reviewed record.
 
 ---
 

@@ -1,5 +1,10 @@
 # Phase7: Deception Layer
 
+> [!NOTE]
+> This document preserves Phase7-specific implementation history and validation
+> context. The [main Roadmap](roadmap.md) is authoritative for current status,
+> active priority, incomplete work, and Done Criteria.
+
 ## 1. Purpose
 
 Phase7 adds a deception layer for high-confidence defender-side SOC signals.
@@ -24,11 +29,10 @@ deception_inventory.yaml
   -> incident.json
 ```
 
-The next step is the scenario contract at
-`docs/design/deception/deception_scenario_contract.md`, followed later by a
-separate scenario YAML / runner implementation PR. 
-The scenario-contract step is docs-only and does not add schemas, scripts,
-tests, fixtures, scenarios, runners, or generated run artifacts.
+The scenario contract now exists at
+`docs/design/deception/deception_scenario_contract.md`. It is docs-only and
+does not add a scenario YAML or runner. A future scenario YAML / runner
+implementation remains intentionally deferred.
 
 Rule Improvement export MVP is complete for the current candidate-generation
 boundary. Apply, deploy, update, promotion workflow, and automatic promotion
@@ -36,9 +40,8 @@ remain future work.
 
 ## 3. MVP scope
 
-The first MVP is defender-side agentic deception for high-confidence signals.
-
-Initial implementation should be:
+The Phase7 MVP is defender-side agentic deception for high-confidence signals.
+Its durable boundaries are:
 
 - local-lab only
 - deterministic
@@ -46,10 +49,13 @@ Initial implementation should be:
 - defensive simulation only
 - bounded to reviewed artifacts and approval gates
 
-The MVP should start with a small deception path such as a honey credential,
-decoy file, local canary endpoint, or decoy service contact.
+The implemented artifact foundation uses a small deception path based on
+local-lab lures and deterministic defender-side trap observations. A scenario
+YAML / runner is not part of the current MVP implementation.
 
-## 4. Proposed pipeline
+## 4. Historical implementation plan
+
+The initial docs-only Phase7 plan proposed the following pipeline:
 
 ```text
 deception_inventory.yaml
@@ -60,28 +66,30 @@ deception_inventory.yaml
   -> triage / investigation / case
 ```
 
-The incident bridge is future work. `deception_hits.json` should be a dedicated
-artifact first, before canonical detection output integration.
+At that stage, the incident bridge was future work and
+`deception_hits.json` was intentionally designed as a dedicated artifact
+before canonical detection output integration. The deterministic artifact
+foundation and deception-hit-to-Incident bridge are now implemented, while
+canonical detection output integration remains future work.
 
-## 5. Proposed artifacts
+## 5. Historical artifact proposal
 
-Future artifacts:
+The initial docs-only plan listed the following as future artifacts:
 
 - `deception_inventory.yaml`
 - `deception_hits.json`
 
-Future schemas:
+It also listed these schemas and scripts as future work:
 
 - `schemas/deception_inventory.schema.json`
 - `schemas/deception_hits.schema.json`
-
-Future scripts:
-
 - `scripts/generate_deception_assets.py`
 - `scripts/generate_deception_hits.py`
 - `scripts/build_incident_from_deception_hits.py`
 
-None of these schemas or scripts are implemented in this docs-only PR.
+None of them were implemented in the initial docs-only PR. They now form the
+implemented artifact foundation described in
+[Current status](#2-current-status).
 
 ## 6. Agent responsibilities
 
@@ -97,7 +105,7 @@ None of these schemas or scripts are implemented in this docs-only PR.
 - observe defender-side trap interactions
 - produce deterministic `deception_hits.json`
 - keep trap observations separate from attacker-side runner claims
-- hand off to a future incident bridge
+- hand off to the existing deception-hit-to-Incident bridge
 
 AI may later summarize, triage, investigate, or suggest improvements. AI must
 not be the source of truth for whether a deception hit occurred.
@@ -129,9 +137,9 @@ Attacker-side structured runner events such as `decoy_env_read_attempted`,
 as defender-side detection unless defender telemetry or `deception_hits.json`
 confirms the interaction.
 
-## 8. Implementation order
+## 8. Historical implementation order
 
-Recommended implementation order:
+The original recommended implementation order was:
 
 1. Define Phase7 agentic deception MVP scope.
 2. Add deception inventory and deception hits schemas.
@@ -146,20 +154,24 @@ Recommended implementation order:
 10. Separately define attacker-agent untrusted artifact safety.
 11. Later consider DB extortion simulation with simulation-only flags.
 
-## 9. Acceptance criteria
+Steps 1 through 8 are complete. Step 9 is intentionally deferred. Steps 10 and
+11 remain separate future research tracks and are not part of the current
+Phase7 implementation priority.
 
-The next scenario implementation should not be considered ready until a future
-PR provides:
+## 9. Acceptance criteria for a future scenario implementation
 
-- deterministic local decoy asset generation
-- deterministic trap hit generation
-- local-lab-only canary endpoints
-- tests or smoke coverage that prove attacker-side events are not counted as
-  defender-side hits
-- no automatic containment, apply, deploy, update, Rule Improvement generation,
-  Rule Improvement promotion, or automatic promotion behavior
-- one scenario YAML and one safe runner that do not reuse `scenario_007` or
-  `scenario_008`
+A future scenario YAML / runner implementation must reuse the existing
+artifact foundation without weakening its evidence or approval boundaries. It
+should not be considered ready until it:
+
+- reuses deterministic local decoy asset and trap hit generation
+- keeps canary endpoints local-lab only
+- includes tests or smoke coverage proving that attacker-side events are not
+  counted as defender-side hits
+- adds one scenario YAML and one safe runner without reusing
+  `scenario_007` or `scenario_008`
+- does not add automatic containment, apply, deploy, update, Rule Improvement
+  generation, Rule Improvement promotion, or automatic promotion behavior
 
 ## 10. Future work
 
@@ -168,7 +180,7 @@ Future work includes:
 - canonical detection output integration
 - triage and investigation support for deception incidents
 - Rule Improvement review signals through the existing reviewed-candidate path
-- one local-lab scenario YAML and one safe runner after
+- one local-lab scenario YAML and one safe runner governed by
   `docs/design/deception/deception_scenario_contract.md`
 - attacker-agent untrusted artifact safety as a separate track
 - DB extortion simulation as later simulation-only work
@@ -179,12 +191,14 @@ Scenario-family names for planning:
 - `attacker_agent_untrusted_artifact_safety`
 - `agentic_db_extortion_simulation`
 
-No scenario number is assigned in this docs-only PR. Future scenario numbers
-must be selected only after existing scenario IDs are checked.
+The initial docs-only Phase7 scope assigned no scenario number. No deception
+scenario number is currently assigned. A future implementation must select one
+only after checking the existing scenario IDs.
 
 ## Current decision: park scenario runner implementation
 
-The Phase7 deception artifact foundation is complete through the local deterministic chain:
+The Phase7 deception artifact foundation is complete through the local
+deterministic chain:
 
 ```text
 deception_inventory.yaml
@@ -201,15 +215,16 @@ The next scenario YAML / runner implementation is intentionally deferred.
 
 Reason:
 
-- A scripted runner that touches a known decoy path would add limited research value at this stage.
-- Deception becomes more useful after attacker-agent behavior is more exploratory and decision-oriented.
-- Deception also becomes more useful after response/action automation, SIEM/EDR-style evidence sources, and approval-gated containment workflows are more mature.
-- The current artifact foundation is enough to resume Phase7 later without losing the contract.
+- A scripted runner that touches a known decoy path would add limited research
+  value at this stage.
+- Deception becomes more useful after attacker-agent behavior is more
+  exploratory and decision-oriented.
+- Deception also becomes more useful after response/action automation,
+  SIEM/EDR-style evidence sources, and approval-gated containment workflows are
+  more mature.
+- The current artifact foundation is enough to resume Phase7 later without
+  losing the contract.
 
-Next focus:
-
-- scenario family expansion policy
-- broader Linux scenario families
-- Windows telemetry MVP
-- Wazuh / SIEM optional integration
-- later return to deception scenario runner when attacker-agent and response automation are more mature
+Current follow-on priorities are maintained in the
+[main Roadmap](roadmap.md). This phase document does not define active
+sequencing.
