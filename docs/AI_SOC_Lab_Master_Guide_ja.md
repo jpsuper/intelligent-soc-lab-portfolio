@@ -733,7 +733,7 @@ repository-structure review processと、必要に応じてADRが必要です。
   "timestamp": "2026-03-16T10:00:00Z",
   "host": "ubuntu-victim01",
   "event_type": "ssh_failed_login",
-  "src_ip": "10.0.1.10",
+  "src_ip": "192.0.2.40",
   "user": "root",
   "raw_log": "...",
   "rule": null,
@@ -779,7 +779,7 @@ primary artifactの例:
   "scenario_name": "ssh_bruteforce_priv_esc",
   "severity": "high",
   "host": "ubuntu-victim01",
-  "src_ip": "10.0.1.10",
+  "src_ip": "192.0.2.40",
   "timeline": [],
   "matched_rules": [
     "ssh_failed_login",
