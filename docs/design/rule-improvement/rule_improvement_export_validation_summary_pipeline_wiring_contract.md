@@ -148,36 +148,34 @@ This contract does not implement:
 - promotion workflow
 - automatic promotion
 
-## 9. Implementation Status
+## 9. Status And Evidence Ownership
 
-Implemented:
+This document owns the explicit opt-in trigger, disabled default behavior,
+ordering after export steps, reporter invocation, fail-closed propagation, and
+the pipeline's non-mutating boundary. The pipeline flag, reporter contract,
+schema, and focused tests named here are evidence for those boundaries.
 
-- explicit opt-in `--enable-ri-export-validation-summary`
-- disabled-by-default process-pipeline behavior
-- summary reporter call after existing RI export steps
-- canonical `rule_improvement_export_artifact_validation_summary.json` output
-- reporter-managed summary schema validation before write
-- fail-closed propagation of reporter failures and `overall_status: fail`
-- focused tests for disabled default behavior, enabled generation, and surfaced
-  reporter failure
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Additional exporters or E2E validation must not be inferred from this wiring
+contract.
 
-Still not implemented:
+---
 
-- attack-to-detection-to-RI E2E smoke
-- parser process-pipeline wiring
-- telemetry legacy export
-- correlation legacy export
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
-- automatic promotion
+## 10. Boundary Acceptance Criteria
 
-## 10. One-Line Summary
+The pipeline-wiring boundary remains valid when:
+
+- the summary step remains disabled by default
+- only the explicit opt-in flag enables it
+- inspected artifacts already exist before the reporter runs
+- the reporter never invokes exporters or creates candidate artifacts
+- schema and validation failures propagate without rewriting inspected outputs
+- summary results cannot authorize apply, deployment, mutation, or promotion
+
+---
+
+## 11. One-Line Summary
 
 RI export validation summary pipeline wiring is explicit, disabled by default,
 ordered after export artifacts already exist, and limited to non-mutating

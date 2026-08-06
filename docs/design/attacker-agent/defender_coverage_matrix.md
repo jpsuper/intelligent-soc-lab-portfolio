@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This matrix connects current attacker-side scenario artifacts to expected defender-side telemetry, detections, investigation pivots, and coverage gaps. It covers `scenario_004` through `scenario_008` and the current canonical attacker artifacts:
+This matrix connects attacker-side scenario artifacts to expected defender-side
+telemetry, detections, investigation pivots, and evidence gaps. It covers the
+documented scenario family and canonical attacker-artifact vocabulary:
 
 - `ssh_failed_login`
 - `ssh_success_login`
@@ -25,9 +27,20 @@ Key boundaries:
 - Endpoint telemetry collection design for post-login artifacts is tracked in [Endpoint Telemetry Coverage Design](../defender/endpoint_telemetry_coverage.md).
 - Minimal auditd coverage for current post-login artifacts is scoped in [Auditd Minimal Coverage Design](../defender/auditd_minimal_coverage.md).
 
+## Status And Evidence Ownership
+
+This matrix owns the technical mapping between attacker artifacts, expected
+defender evidence, investigation pivots, and documented gaps. It does not own
+project priority, implementation completion, or delivery order; those belong in
+the [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents.
+
+Coverage language is evidence-scoped. `Strong`, `weak`, fixture-backed, or
+live-derived descriptions apply only to the evidence stated in the row and do
+not prove full cross-platform or production validation.
+
 ## Coverage Matrix
 
-| Scenario | Artifact | Attacker-side event | Expected defender telemetry | Current likely coverage | Investigation pivots | Gap / follow-up |
+| Scenario | Artifact | Attacker-side event | Expected defender telemetry | Documented evidence posture | Investigation pivots | Evidence gap |
 |---|---|---|---|---|---|---|
 | `scenario_004` | `ssh_failed_login` | `ssh_bruteforce_attempted` | `/var/log/auth.log`, sshd failed password messages, Wazuh auth rules | Strong | Source IP, target user, failure count, time window | Confirm Wazuh/auth parser coverage and threshold behavior. |
 | `scenario_004` | `ssh_success_login` | `ssh_login_succeeded` | `/var/log/auth.log`, sshd `Accepted password` messages | Strong | Source IP, target user, session open time | Confirm correlation between brute force window and successful login. |
@@ -40,20 +53,31 @@ Key boundaries:
 
 ## Summary
 
-Auth-related artifacts currently have the strongest likely defender coverage because SSH authentication events are usually available in auth logs and Wazuh auth rules. Post-login process, file, and discovery artifacts require stronger endpoint telemetry to move from attacker-side evidence to defender-side observability.
+Authentication artifacts can rely on auth-log or Wazuh evidence when the
+documented source is present. Post-login process, file, discovery, and staging
+artifacts require endpoint or collection evidence before attacker-side claims
+can be treated as defender-side observability.
 
-Current gaps point toward Wazuh FIM, auditd, osquery, EDR, or Velociraptor integration. Scenario additions should wait until defender coverage for the current artifact set is understood well enough to say what telemetry and pivots each artifact requires.
+Wazuh FIM, auditd, osquery, EDR, and Velociraptor are candidate sources, not
+implicit implementation claims. A scenario extension should identify the
+required defender evidence and pivots before adding a new attacker artifact.
 
-## Recommended Next Steps
+## Gap Review Conditions
 
-1. Confirm `/var/log/auth.log` and Wazuh coverage for SSH authentication artifacts.
-2. Decide whether auditd, osquery, EDR, or Velociraptor should provide process and file telemetry.
-3. Define expected defender evidence for `process_exec`, `suspicious_file_write`, and `system_discovery`.
-4. Investigate the Scenario 009 Wazuh collection boundary after Outcome C:
-   manager receipt and five operations are confirmed, but complete serial-linked
-   grouping is not preserved. Do not create a parity fixture or adapter until a
-   canonical source is established. Keep Velociraptor, direct production-log
-   ingestion, and containment execution separate.
+A coverage gap may enter planned work only after review identifies:
+
+1. the defender-observable fact that is missing;
+2. the candidate telemetry source and its collection limitations;
+3. the normalization, detection, correlation, or investigation boundary
+   responsible for the gap;
+4. bounded fixture or live-validation evidence;
+5. the required provenance and pivot fields; and
+6. whether the result is a telemetry, parser, correlation, or rule-review
+   concern.
+
+Scenario 009 remains subject to its documented source-selection and grouping
+boundary. Manager receipt does not establish complete event grouping, canonical
+source selection, normalized parity, detection, or Incident consumption.
 
 ## Review Boundaries
 

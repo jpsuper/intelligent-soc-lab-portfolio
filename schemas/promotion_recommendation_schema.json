@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/promotion_recommendation_schema.json",
+  "title": "Promotion Recommendation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["promotion_recommendation"],
+  "properties": {
+    "promotion_recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "promote",
+        "from_agent",
+        "to_agent",
+        "current_agent",
+        "challenger_agent",
+        "next_baseline_agent",
+        "score_delta",
+        "reason",
+        "blocking_gaps",
+        "gates"
+      ],
+      "properties": {
+        "promote": {"type": "boolean"},
+        "from_agent": {"type": ["string", "null"]},
+        "to_agent": {"type": ["string", "null"]},
+        "current_agent": {"type": "string"},
+        "challenger_agent": {"type": "string"},
+        "next_baseline_agent": {"type": "string"},
+        "score_delta": {"type": "number"},
+        "reason": {"type": "string"},
+        "blocking_gaps": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "gates": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "score_improvement",
+            "primary_artifact_coverage",
+            "overclaim_control"
+          ],
+          "properties": {
+            "score_improvement": {"type": "string", "enum": ["pass", "fail"]},
+            "primary_artifact_coverage": {"type": "string", "enum": ["pass", "fail"]},
+            "overclaim_control": {"type": "string", "enum": ["pass", "fail"]}
+          }
+        }
+      }
+    }
+  }
+}

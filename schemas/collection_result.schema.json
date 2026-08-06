@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "collection_result_schema_v1",
+  "title": "Collection Result Schema",
+  "type": "object",
+  "required": [
+    "collection_result_id",
+    "collection_request_ref",
+    "case_id",
+    "attack_id",
+    "scenario_id",
+    "status",
+    "collector",
+    "target",
+    "requested_artifacts",
+    "collected_artifacts",
+    "failed_artifacts",
+    "skipped_artifacts",
+    "context"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "collection_result_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "collection_request_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attack_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scenario_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "requested",
+        "completed",
+        "partial",
+        "failed",
+        "skipped",
+        "cancelled"
+      ]
+    },
+    "collector": {
+      "type": "object",
+      "required": [
+        "type",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "mock",
+            "manual",
+            "velociraptor",
+            "future",
+            "unknown"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "run_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "host"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "host": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "requested_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "collected_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact_result"
+      }
+    },
+    "failed_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact_result"
+      }
+    },
+    "skipped_artifacts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/artifact_result"
+      }
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "detection_type",
+        "verdict",
+        "priority",
+        "action_types"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "detection_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "verdict": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "priority": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "action_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "output_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "timing": {
+      "type": "object",
+      "required": [
+        "started_at",
+        "completed_at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "started_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "completed_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "artifact_result": {
+      "type": "object",
+      "required": [
+        "artifact",
+        "status",
+        "target",
+        "output_refs",
+        "evidence_refs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "collected",
+            "failed",
+            "skipped"
+          ]
+        },
+        "target": {
+          "type": "object",
+          "required": [
+            "host"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "host": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "output_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,180 @@
+{
+  "schema_version": "endpoint_events.v1",
+  "generated_at": "2026-07-07T00:00:00Z",
+  "source_artifact": "synthetic_endpoint_events.json",
+  "source_run_id": "scenario-009-defender-fixture",
+  "metadata": {
+    "fixture": "scenario_009_suspicious_archive_staging",
+    "scenario_id": "scenario_009",
+    "artifact": "suspicious_archive_staging",
+    "synthetic": true,
+    "defender_side": true,
+    "notes": [
+      "Synthetic defender-side fixture only.",
+      "Does not use attacker-side structured runner events as telemetry.",
+      "Does not claim exfiltration, ransomware, real data collection, credential access, or compromise."
+    ]
+  },
+  "events": [
+    {
+      "event_id": "scenario-009-endpoint-mkdir-001",
+      "source": "auditd",
+      "platform": "linux",
+      "host": "local-linux-lab",
+      "timestamp": "2026-07-07T00:00:01Z",
+      "event_type": "process_exec",
+      "user": "lab-user",
+      "uid": "1000",
+      "pid": 41001,
+      "ppid": 40900,
+      "process_name": "mkdir",
+      "exe": "/usr/bin/mkdir",
+      "argv": [
+        "mkdir",
+        "-p",
+        "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staging"
+      ],
+      "command_line": "mkdir -p /tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staging",
+      "cwd": "/tmp",
+      "parent_process_name": "bash",
+      "parent_exe": "/usr/bin/bash",
+      "parent_command_line": "bash attacks/runners/scenario_009_suspicious_archive_staging.sh",
+      "raw_ref": {
+        "source_file": "synthetic_endpoint_events.json",
+        "record": "mkdir"
+      },
+      "source_fields": {
+        "audit_key": "isl_execve",
+        "scenario_id": "scenario_009"
+      }
+    },
+    {
+      "event_id": "scenario-009-endpoint-note-write-001",
+      "source": "auditd",
+      "platform": "linux",
+      "host": "local-linux-lab",
+      "timestamp": "2026-07-07T00:00:02Z",
+      "event_type": "file_write",
+      "user": "lab-user",
+      "uid": "1000",
+      "pid": 41002,
+      "ppid": 40900,
+      "process_name": "bash",
+      "exe": "/usr/bin/bash",
+      "command_line": "printf synthetic lab staging note",
+      "cwd": "/tmp",
+      "file_path": "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staging/note.txt",
+      "file_action": "create",
+      "parent_process_name": "bash",
+      "parent_exe": "/usr/bin/bash",
+      "parent_command_line": "bash attacks/runners/scenario_009_suspicious_archive_staging.sh",
+      "raw_ref": {
+        "source_file": "synthetic_endpoint_events.json",
+        "record": "note-write"
+      },
+      "source_fields": {
+        "audit_key": "isl_file_write",
+        "scenario_id": "scenario_009"
+      }
+    },
+    {
+      "event_id": "scenario-009-endpoint-metadata-write-001",
+      "source": "auditd",
+      "platform": "linux",
+      "host": "local-linux-lab",
+      "timestamp": "2026-07-07T00:00:03Z",
+      "event_type": "file_write",
+      "user": "lab-user",
+      "uid": "1000",
+      "pid": 41003,
+      "ppid": 40900,
+      "process_name": "bash",
+      "exe": "/usr/bin/bash",
+      "command_line": "printf synthetic metadata json",
+      "cwd": "/tmp",
+      "file_path": "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staging/metadata.json",
+      "file_action": "create",
+      "parent_process_name": "bash",
+      "parent_exe": "/usr/bin/bash",
+      "parent_command_line": "bash attacks/runners/scenario_009_suspicious_archive_staging.sh",
+      "raw_ref": {
+        "source_file": "synthetic_endpoint_events.json",
+        "record": "metadata-write"
+      },
+      "source_fields": {
+        "audit_key": "isl_file_write",
+        "scenario_id": "scenario_009"
+      }
+    },
+    {
+      "event_id": "scenario-009-endpoint-tar-001",
+      "source": "auditd",
+      "platform": "linux",
+      "host": "local-linux-lab",
+      "timestamp": "2026-07-07T00:00:04Z",
+      "event_type": "process_exec",
+      "user": "lab-user",
+      "uid": "1000",
+      "pid": 41004,
+      "ppid": 40900,
+      "process_name": "tar",
+      "exe": "/usr/bin/tar",
+      "argv": [
+        "tar",
+        "-czf",
+        "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staged_synthetic_files.tar.gz",
+        "-C",
+        "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staging",
+        "note.txt",
+        "metadata.json"
+      ],
+      "command_line": "tar -czf /tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staged_synthetic_files.tar.gz -C /tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staging note.txt metadata.json",
+      "cwd": "/tmp",
+      "file_path": "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staged_synthetic_files.tar.gz",
+      "parent_process_name": "bash",
+      "parent_exe": "/usr/bin/bash",
+      "parent_command_line": "bash attacks/runners/scenario_009_suspicious_archive_staging.sh",
+      "raw_ref": {
+        "source_file": "synthetic_endpoint_events.json",
+        "record": "tar"
+      },
+      "source_fields": {
+        "audit_key": "isl_execve",
+        "scenario_id": "scenario_009"
+      }
+    },
+    {
+      "event_id": "scenario-009-endpoint-chmod-001",
+      "source": "auditd",
+      "platform": "linux",
+      "host": "local-linux-lab",
+      "timestamp": "2026-07-07T00:00:05Z",
+      "event_type": "process_exec",
+      "user": "lab-user",
+      "uid": "1000",
+      "pid": 41005,
+      "ppid": 40900,
+      "process_name": "chmod",
+      "exe": "/usr/bin/chmod",
+      "argv": [
+        "chmod",
+        "0640",
+        "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staged_synthetic_files.tar.gz"
+      ],
+      "command_line": "chmod 0640 /tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staged_synthetic_files.tar.gz",
+      "cwd": "/tmp",
+      "file_path": "/tmp/ai_soc_lab_scenario_009_suspicious_archive_staging/staged_synthetic_files.tar.gz",
+      "parent_process_name": "bash",
+      "parent_exe": "/usr/bin/bash",
+      "parent_command_line": "bash attacks/runners/scenario_009_suspicious_archive_staging.sh",
+      "raw_ref": {
+        "source_file": "synthetic_endpoint_events.json",
+        "record": "chmod"
+      },
+      "source_fields": {
+        "audit_key": "isl_execve",
+        "scenario_id": "scenario_009"
+      }
+    }
+  ]
+}

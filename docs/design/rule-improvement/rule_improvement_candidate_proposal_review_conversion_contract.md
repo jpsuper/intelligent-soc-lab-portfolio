@@ -2,65 +2,57 @@
 
 ## 1. Purpose
 
-This document defines the future human review and conversion boundary after
-`rule_improvement_candidate_proposals_v2.json`.
+This document defines the human proposal-review boundary after
+`rule_improvement_candidate_proposals_v2.json` and its handoff to the
+standalone concrete-bundle converter.
 
-`rule_improvement_candidate_proposals_v2.json` is proposal-only. It requires a
-future human review step before any conversion into concrete candidate
-artifacts. Human review and conversion are separate from standalone generator
-behavior.
+The proposal artifact is proposal-only. A human reviewer records explicit
+conversion-review decisions before any proposal can enter the converter.
+Review and conversion remain separate from proposal generation.
 
-This contract is supported by the v1 proposal review decisions schema at
-`schemas/rule_improvement_proposal_review_decisions_v1.schema.json`. The
-schema defines a conversion-review-only human decision artifact. The local
-template exporter is implemented at
-`scripts/export_rule_improvement_proposal_review_decisions_template.py`; it
-creates an incomplete human-review template and defaults every decision to
-`defer`. The local importer is implemented at
-`scripts/import_rule_improvement_proposal_review_decisions.py`; it validates
-human-completed decisions and writes canonical
-`rule_improvement_proposal_review_decisions.json`. These scripts do not add a
-review worksheet, converter, pipeline step, apply workflow, deployment
-workflow, baseline update workflow, prompt update workflow, parser update
-workflow, telemetry update workflow, correlation update workflow, or promotion
-workflow.
+The review-decision shape is defined by
+`schemas/rule_improvement_proposal_review_decisions_v1.schema.json`.
+`scripts/export_rule_improvement_proposal_review_decisions_template.py`
+creates an incomplete template with safe `defer` defaults, and
+`scripts/import_rule_improvement_proposal_review_decisions.py` validates
+human-completed decisions before writing canonical
+`rule_improvement_proposal_review_decisions.json`.
 
-The future converter boundary from canonical proposal review decisions to
-concrete candidate artifacts is defined separately in
+These review tools do not convert proposals or authorize state changes. The
+standalone conversion boundary is defined separately in
 `docs/design/rule-improvement/rule_improvement_proposal_conversion_contract.md`.
+
+---
 
 ## 2. Flow Position
 
-The intended review and conversion position is:
+The implemented standalone review and conversion path is:
 
 ```text
 rule_improvement_candidate_creation_input.json
   -> rule_improvement_candidate_proposals_v2.json
-  -> future human proposal review decisions
-  -> future proposal converter
-  -> future concrete candidate artifacts
-  -> future apply / deployment / promotion workflows
+  -> rule_improvement_proposal_review_decisions_template.json
+  -> human-completed proposal review decisions
+  -> rule_improvement_proposal_review_decisions.json
+  -> rule_improvement_concrete_candidate_bundle_v1.json
+  -> optional schema-validated narrowing exporters
 ```
 
-The first two artifacts in this flow are currently implemented, and the future
-human proposal review decision artifact shape is defined by schema. The
-standalone generator can create proposal-only v2 artifacts from reviewed
-candidate-creation input, and the template exporter can create an incomplete
-human-review template from those proposals. The importer can validate a
-human-completed version of that template and write canonical decisions. No
-review worksheet, conversion artifact, concrete candidate artifact, apply
-workflow, deployment workflow, baseline update workflow, or promotion workflow
-is implemented by this contract.
+Proposal review records conversion eligibility only. Conversion creates a
+non-applying concrete bundle only. Apply, deployment, baseline update, runtime
+mutation, and promotion require separate workflows.
+
+---
 
 ## 3. Review Decision Schema
 
-The future human proposal review decision artifact validates against:
+Canonical human proposal-review decisions validate against:
 
 ```text
 schemas/rule_improvement_proposal_review_decisions_v1.schema.json
 ```
 
-Its root invariants are:
+Root invariants are:
 
 ```json
 {
@@ -70,109 +62,84 @@ Its root invariants are:
 }
 ```
 
-The artifact records human review decisions over
-`rule_improvement_candidate_proposals_v2.json` items. It authorizes only future
-conversion eligibility. It is not apply approval, deployment approval,
-baseline update approval, prompt update approval, parser update approval,
-telemetry update approval, correlation update approval, or promotion approval.
+The artifact records human decisions over v2 proposals. It authorizes only
+conversion eligibility and cannot authorize apply, deployment, baseline
+update, prompt update, parser update, telemetry update, correlation update, or
+promotion.
 
-`scripts/export_rule_improvement_proposal_review_decisions_template.py`
-exports a schema-valid starting template for this artifact. The template is
-incomplete human-review input: each decision defaults to `defer`, uses a
-placeholder rationale, omits reviewer identity, and is not imported
-automatically.
+The template exporter writes incomplete human-review input: each decision
+defaults to `defer`, uses a placeholder rationale, and omits reviewer
+identity. The importer rejects placeholder rationale and writes canonical JSON
+only after schema and invariant validation. Neither tool performs conversion.
 
-`scripts/import_rule_improvement_proposal_review_decisions.py` validates a
-human-completed review decisions artifact, rejects the TODO rationale
-placeholder, and writes canonical JSON only after schema validation and
-invariant checks pass. The importer canonicalizes decisions only; it does not
-convert proposals into concrete candidate artifacts.
+---
 
 ## 4. Human Review Decision Semantics
 
-A future proposal review decision artifact should use explicit decision values
-with narrow meanings. Expected decision values are:
+The decision values have narrow meanings:
 
 | Decision | Meaning |
 |---|---|
-| `accept_for_conversion` | The reviewer allows the proposal to proceed to a later converter for a concrete candidate artifact. |
-| `reject` | The reviewer rejects the proposal for conversion. |
-| `defer` | The reviewer postpones the decision without authorizing conversion. |
-| `split_required` | The reviewer requires the proposal to be split before conversion. |
-| `needs_more_evidence` | The reviewer requires additional evidence or context before conversion. |
+| `accept_for_conversion` | The proposal may enter the standalone converter for a concrete candidate bundle item. |
+| `reject` | The proposal is rejected for conversion. |
+| `defer` | The decision is postponed without authorizing conversion. |
+| `split_required` | The proposal must be split before conversion. |
+| `needs_more_evidence` | More evidence or context is required before conversion. |
 
-`accept_for_conversion` is not apply approval. It is not deployment approval.
-It is not baseline update approval. It is not prompt update approval, parser
-update approval, telemetry update approval, correlation update approval, or
-promotion approval.
+`accept_for_conversion` is not apply, deployment, baseline-update,
+runtime-mutation, or promotion approval. The converter treats every other
+decision as ineligible and records it as a skipped decision rather than a
+converted candidate.
 
-A future converter must treat any decision other than `accept_for_conversion`
-as not eligible for conversion unless a later reviewed contract explicitly
-defines a narrower flow.
+---
 
 ## 5. Required Review Decision Provenance
 
-Future human proposal review decisions should preserve enough provenance to
-trace the decision back to both the proposal and the accepted
-candidate-creation input.
+Each human proposal-review decision preserves enough provenance to trace the
+decision to both the proposal and the accepted candidate-creation input:
 
-At minimum, each decision should preserve:
-
-- `candidate_id`, or a future `proposal_id` if a later schema introduces one
-- `proposal_ref`, such as `/proposals/0`
+- `candidate_id`
+- `proposal_ref`
 - `source_candidate_creation_input_ref`
 - `source_candidate_creation_input_sha256`
 - the proposal's `human_decision_provenance`
-- reviewer identity or reviewer ref, if the future review artifact supports it
+- reviewer identity or reviewer ref
 - reviewer rationale
-- limitations, unresolved evidence gaps, or required follow-up evidence when
-  applicable
+- limitations, unresolved evidence gaps, or required follow-up evidence
 
-The review artifact must not fabricate human candidate-review decision
-identity. It should carry forward the proposal's
+The review artifact must not fabricate human candidate-review identity. It
+carries forward
 `human_decision_provenance.decision_ref`,
 `human_decision_provenance.decision_id`, and
-`human_decision_provenance.decision_status` exactly unless a later reviewed
-schema defines an explicit transformation.
+`human_decision_provenance.decision_status` exactly.
+
+---
 
 ## 6. Conversion Boundary
 
-Future conversion may create concrete candidate artifacts only after a
-schema-valid proposal artifact and explicit human proposal review decision
-authorize conversion.
+Conversion requires both a schema-valid proposal artifact and canonical human
+review decisions. The standalone converter consumes only
+`accept_for_conversion` decisions and writes
+`rule_improvement_concrete_candidate_bundle_v1.json`.
 
-The detailed future conversion contract is
-`docs/design/rule-improvement/rule_improvement_proposal_conversion_contract.md`.
-That contract consumes canonical
-`rule_improvement_proposal_review_decisions.json` and may consider only
-`accept_for_conversion` decisions.
-
-Expected future conversion directions are:
-
-| v2 proposal area | Future concrete artifact area |
+| v2 proposal area | Concrete bundle candidate area |
 |---|---|
-| `rule` proposal | rule candidate artifact |
-| `prompt` proposal | prompt candidate artifact |
-| `parser` proposal | parser candidate artifact |
-| `telemetry` proposal | telemetry candidate artifact |
-| `correlation` proposal | correlation candidate artifact |
-| `promotion_review` proposal | promotion review recommendation artifact |
+| `rule` | rule candidate |
+| `prompt` | prompt candidate |
+| `parser` | parser candidate |
+| `telemetry` | telemetry candidate |
+| `correlation` | correlation candidate |
+| `promotion_review` | promotion-review recommendation candidate |
 
-Legacy comparison-harness artifacts remain separate:
+Legacy-compatible rule, prompt, parser, and recommendation artifacts are
+separate narrowed exports from the concrete bundle. Their smaller schemas do
+not replace the v2 proposal or bundle as the provenance-preserving source.
 
-- `rule_candidates.yaml`
-- `prompt_candidates.yaml`
-- `promotion_recommendation.yaml`
-
-Current v2 proposals are not directly equivalent to those legacy artifacts.
-The legacy schemas are smaller and do not preserve the full v2 provenance
-shape. Any future converter that emits legacy artifact names must be a
-separate reviewed implementation with explicit schema validation, provenance
-preservation rules, tests, and safety boundaries.
+---
 
 ## 7. Safety Boundaries
 
-Future proposal review and conversion must not:
+Proposal review and conversion must not:
 
 - automatically apply changes
 - automatically deploy changes
@@ -200,60 +167,52 @@ approve, convert, apply, deploy, update, or promote anything.
 
 ## 8. Failure and Unresolved Cases
 
-Future proposal review and conversion tooling must fail closed on:
+Review import and conversion fail closed on:
 
-- invalid `rule_improvement_candidate_proposals_v2.json` schema
-- missing proposal provenance
-- missing `source_candidate_creation_input_sha256`
-- malformed or missing `human_decision_provenance`
-- unsupported `candidate_type`
-- mismatched `candidate_type` / `allowed_next_artifact_type`
-- missing human proposal review decision
-- proposal review decision that is not `accept_for_conversion`
+- invalid proposal or review-decision schemas
+- missing source refs, hashes, or human decision provenance
+- unsupported candidate types or mismatched next-artifact types
+- missing decisions or placeholder rationale
 - unsafe conversion semantics
-- attempts to treat diagnostics as proposal items
-- attempts to treat conversion as apply, deployment, baseline update, or
-  promotion
+- attempts to treat diagnostics as proposals
+- attempts to treat conversion review as state-change approval
 
-Unsupported, ambiguous, split-required, deferred, or evidence-insufficient
-items must remain unconverted unless a later reviewed contract defines a safe
-next step.
+Only `accept_for_conversion` decisions may become converted candidates.
+Rejected, deferred, split-required, evidence-insufficient, unsupported, or
+ambiguous items remain explicit skipped decisions.
 
-## 9. Implementation Status
+---
 
-Implemented:
+## 9. Status And Evidence Ownership
 
-- v2 proposal JSON Schema
-- standalone deterministic v2 proposal generator
-- generator diagnostics for skipped unsupported future schema-valid candidate
-  types
-- runbook usage documentation for v2 proposal generation and diagnostics
-- v1 proposal human review decisions JSON Schema
-- deterministic proposal review decisions template exporter
-- deterministic proposal review decisions importer / validator
-- focused schema tests for conversion-review-only semantics, provenance,
-  unsafe-field rejection, and candidate type mapping
-- focused exporter tests for exact source hashing, safe default decisions,
-  provenance preservation, and fail-closed behavior
-- focused importer tests for completed rationale validation, canonical output,
-  provenance preservation, and fail-closed behavior
+This document owns human proposal-review semantics, decision provenance,
+conversion eligibility, the review-to-converter handoff, and fail-closed
+handling of unresolved items. The schemas, template exporter, importer,
+converter contract, and focused tests named here are evidence for those
+boundaries.
 
-Not implemented:
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Converter and exporter availability must not broaden
+`accept_for_conversion` beyond conversion-review-only semantics.
 
-- proposal review worksheet
-- converter from v2 proposals to concrete candidate artifacts
-- pipeline wiring
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
+---
 
-## 10. One-Line Summary
+## 10. Boundary Acceptance Criteria
+
+The review and conversion boundary remains valid when:
+
+- templates default safely and require explicit human completion
+- canonical decisions preserve source and human-review provenance
+- only `accept_for_conversion` enters the converter
+- every other decision remains explicit and unconverted
+- review decisions cannot authorize apply, deployment, mutation, or promotion
+- invalid or unsafe input fails closed before output is written
+
+---
+
+## 11. One-Line Summary
 
 ```text
-Proposal v2 artifacts may later be reviewed for conversion, but review and conversion are separate future boundaries and still do not authorize apply, deployment, baseline update, or promotion.
+Human proposal review may authorize conversion into a non-applying concrete bundle; it never authorizes apply, deployment, mutation, or promotion.
 ```

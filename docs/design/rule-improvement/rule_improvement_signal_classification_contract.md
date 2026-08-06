@@ -49,7 +49,7 @@ rule_improvement_review_input.json
   ↓ human signal classification
 rule_improvement_signal_classification.json    (schema-defined review decision record)
   ↓ only eligible, completed classifications
-separate future candidate-generation input
+separate candidate-generation intake (when authorized)
   ↓ candidate review + regression gates
 human-approved rule or prompt update
 ```
@@ -74,13 +74,14 @@ pretty JSON. It does not copy suggested labels or rationales into human fields,
 derive eligibility, populate reviewer metadata, invoke the helper, read evidence
 refs, generate candidates or promotion, or mutate state.
 
-An optional future AI suggestion stage is defined in
-`docs/design/rule-improvement/ai_assisted_review_draft_contract.md`. Its
-`rule_improvement_ai_review_draft.json` schema is implemented, but no prompt or
-runtime generator exists. Its prompt/input boundary is documented in
-`docs/design/rule-improvement/ai_review_draft_prompt_input_contract.md`, and the
-minimized prompt-input schema is implemented. The artifact is not a decision
-record and cannot replace or invoke the human-operated classification helper.
+The optional AI suggestion boundary is defined in
+[`ai_assisted_review_draft_contract.md`](ai_assisted_review_draft_contract.md),
+with minimized prompt context defined in
+[`ai_review_draft_prompt_input_contract.md`](ai_review_draft_prompt_input_contract.md).
+Its deterministic exporters, explicit manual model runners, and fail-closed
+importer can produce a schema-valid suggestions-only draft. That artifact is
+not a decision record and cannot replace or invoke the human-operated
+classification helper.
 
 ---
 
@@ -512,35 +513,28 @@ auto-applied or auto-promoted.
 
 ---
 
-## 14. Implementation status and next steps
+## 14. Status And Evidence Ownership
 
-Implemented:
+This document owns human classification semantics, provenance, the fixed
+label-to-eligibility mapping, and the locked candidate and promotion
+invariants. The schema, fixtures, deterministic helper, authoring aids, and
+focused tests named in this contract are evidence references for those
+boundaries.
 
-1. Draft 2020-12 schema for `rule_improvement_signal_classification.json`.
-2. Required source, signal, fact, evidence, reviewer, timestamp, and rationale
-   provenance fields.
-3. Fixed label-to-eligibility mapping.
-4. Schema-locked `candidate_generation_started: false` and
-   `promotion_allowed: false` invariants.
-5. Valid and invalid synthetic fixtures and focused schema tests, including
-   candidate, promotion, mutation, and provenance boundary checks.
-6. Human-operated deterministic CLI that validates source and output schemas,
-   resolves source signal references, copies provenance, and derives label
-   eligibility without creating candidate or promotion artifacts.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+A completed classification may become reviewed intake for a separately
+authorized candidate-generation adapter, but this schema neither implements nor
+authorizes candidate creation, apply, deployment, or promotion.
 
-Next:
-
-1. Add revision and supersession handling.
-2. Expand prompt-input/evaluation fixtures and add a versioned prompt before
-   any runtime model integration.
-3. Consider a separate candidate-generation adapter only as later work; it is
-   not implemented or authorized by this schema.
+Revision and supersession support must preserve an auditable decision history
+and cannot silently replace a human-reviewed record.
 
 ---
 
-## 15. Done criteria
+## 15. Boundary Acceptance Criteria
 
-The classification boundary is ready for runtime implementation when:
+The classification boundary remains valid when:
 
 - all labels and meanings are fixed
 - provenance requirements are schema-testable

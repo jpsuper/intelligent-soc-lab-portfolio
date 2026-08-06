@@ -1,0 +1,15 @@
+{
+  "source_context": {
+    "source_review_input_id": "ri-review-prompt-bundle-invalid"
+  },
+  "signals": [],
+  "observed_fact_summaries": [],
+  "output_contract": {
+    "schema": "schemas/rule_improvement_ai_review_draft.schema.json",
+    "ai_assistance_only": true,
+    "human_review_required": true,
+    "classification_decision_allowed": true,
+    "candidate_generation_started": false,
+    "promotion_allowed": false
+  }
+}

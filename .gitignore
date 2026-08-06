@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs / datasets
+*.log
+lab/datasets/logs/
+lab/datasets/incidents/
+
+# Notebook
+.ipynb_checkpoints/
+
+# Secrets
+.env
+*.env
+secrets/
+
+# Generated artifacts
+data/
+configs/
+
+diff.txt

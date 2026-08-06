@@ -25,42 +25,18 @@ attack_observed_effects.json = attacker-side observed effects, not defender-side
 
 ---
 
-## 2. Current Status
+## 2. Contract And Status Ownership
 
-Current Phase C observed-effects artifact work is implemented for the
-scenario_004 / 005 / 006 / 007 shell-runner path.
+This document owns the attacker-side observed-effect artifact, its provenance,
+effect and evidence semantics, and its separation from defender telemetry,
+detection, evaluation verdicts, and Rule Improvement decisions. The artifact
+catalog, structured runner output contract, and evaluation contract own their
+respective mappings and consumer boundaries.
 
-Implemented:
-
-- `attack_result.schema.json`
-- `attack_execution_log.schema.json`
-- `attack_observed_effects.schema.json`
-- attacker-agent output validation
-- process pipeline `attack_result.json` schema alignment
-- attack artifact contract
-- attacker artifact catalog for scenario family / event / artifact mappings
-- shell backend contract
-- attacker-agent runtime generation of `attack_observed_effects.json`
-- shell backend stdout / stderr preservation in `attack_execution_log.json`
-- additive `structured_events` in `attack_execution_log.json` when valid
-  `ATTACK_EVENT_JSON:` lines are present
-- scenario_004 / 005 / 006 / 007 structured runner events for current observed-effect
-  mappings
-- observed-effects generation that prefers valid `execution_log.structured_events`
-  before stdout structured-event parsing, legacy stdout marker fallback, and
-  exit-code fallback
-- additive `observed_effects_alignment` in `evaluation_result.json`
-- Rule Improvement review signals from observed-effects alignment gaps
-
-Still future / follow-on:
-
-- richer observed-effect sources beyond the current shell-runner evidence path
-- reviewer-approved conversion from observed-effects signals into concrete rule
-  or prompt candidates
-
-The runtime behavior remains bounded by this contract: attacker-side observed
-effects are useful context, but they are not defender-side telemetry or
-detections.
+The [Main Roadmap](../../roadmap/roadmap.md) and
+[Phase 6](../../roadmap/phase6.md) own current scenario coverage, validation
+depth, priorities, and sequencing. A listed scenario or evidence source does
+not imply defender observation or authorize candidate conversion.
 
 ---
 
@@ -297,7 +273,7 @@ Current effect shape:
 
 ## 9. Suggested Top-Level Fields
 
-Current required fields:
+Required fields:
 
 - `attack_id`
 - `scenario_id`
@@ -305,7 +281,7 @@ Current required fields:
 - `generated_at`
 - `effects`
 
-Current optional fields:
+Optional fields:
 
 - `schema_version`
 - `run_id`
@@ -373,7 +349,7 @@ Examples:
 
 ### 10.2 `status`
 
-Current enum:
+Defined enum:
 
 - `observed`
 - `not_observed`
@@ -382,7 +358,7 @@ Current enum:
 
 ### 10.3 `confidence`
 
-Current enum:
+Defined enum:
 
 - `low`
 - `medium`
@@ -638,45 +614,33 @@ The following remain out of scope for the observed-effects contract:
 
 ---
 
-## 18. Implementation Status and Follow-Ons
+## 18. Extension Conditions
 
-Completed:
+Add a new effect source or mapping only when it:
 
-1. Add this contract document
-2. Add `schemas/attack_observed_effects.schema.json`
-3. Add unit tests with synthetic scenario_005 / 006 examples
-4. Add observed-effects generation for attacker-agent shell execution evidence
-5. Keep process pipeline verdict behavior unchanged
-6. Add additive `observed_effects_alignment` to `evaluation_result.json`
-7. Add Rule Improvement review signals without auto-populating
-   `rule_candidates.yaml`
-
-Follow-ons:
-
-1. Add richer observed-effect sources only when new scenario families need them
-2. Convert observed-effects signals to rule or prompt candidates only through a
-   reviewer-approved workflow
+1. is grounded in traceable attacker-side execution evidence;
+2. preserves effect status, confidence, limitations, and provenance;
+3. remains separate from defender telemetry and evaluation verdicts;
+4. keeps legacy evidence fallbacks only when their weaker semantics are clear;
+5. has focused schema, mapping, and fallback validation; and
+6. enters candidate work only through a reviewer-approved workflow.
 
 ---
 
-## 19. Current Done Criteria
+## 19. Contract Acceptance Criteria
 
-Current implementation is done for the scenario_004 / 005 / 006 / 007 shell-runner
-path when:
+The contract remains valid when:
 
-- `attack_observed_effects.schema.json` exists
-- synthetic examples validate
-- attacker-agent can generate `attack_observed_effects.json`
-- scenario_004 / 005 / 006 / 007 shell execution can produce or derive observed
-  effects
-- structured runner events are supported while legacy stdout marker / exit-code
-  fallback remains compatible
-- observed effects remain separate from defender-side artifacts
-- evaluation alignment remains additive and does not change `overall_result` or
-  `detected`
-- Rule Improvement signals remain review-only and do not auto-populate
-  `rule_candidates.yaml`
-- docs clarify the attacker-side / defender-side boundary
+- the artifact validates against
+  [`attack_observed_effects.schema.json`](../../../schemas/attack_observed_effects.schema.json);
+- attacker-side observations remain distinct from defender-side artifacts;
+- structured runner evidence and weaker fallbacks retain identifiable
+  provenance;
+- evaluation alignment remains additive and cannot change `overall_result` or
+  `detected`;
+- Rule Improvement signals remain review-only; and
+- no effect directly mutates Case, Action, approval, containment, or promotion
+  state.
 
 ---
 

@@ -1,0 +1,17 @@
+{
+  "draft_id": "ri-ai-review-draft-invalid-schema",
+  "source_stage": "post_action_dfir",
+  "source_review_input_ref": "data/runs/run-import/rule_improvement_review_input.json",
+  "source_review_input_id": "ri-review-model-output-import-001",
+  "ai_assistance_only": true,
+  "human_review_required": true,
+  "classification_decision_allowed": false,
+  "candidate_generation_started": false,
+  "promotion_allowed": false,
+  "suggestions": [
+    {
+      "source_signal_ref": "/supporting_signals/0",
+      "suggested_label": "timing_or_scope_limit"
+    }
+  ]
+}

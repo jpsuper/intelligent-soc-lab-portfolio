@@ -1,5 +1,10 @@
 # Phase 3: Attacker Agent & Scenario Execution
 
+> [!NOTE]
+> This document preserves Phase3-specific implementation history and
+> validation context. The [main Roadmap](roadmap.md) is authoritative for current
+> status, active priority, incomplete work, and Done Criteria.
+
 ## Overview
 Phase 3 introduces an attacker simulation layer to the SOC automation lab.
 This phase enables controlled execution of attack scenarios and produces structured, traceable attack results.
@@ -18,6 +23,7 @@ This phase enables controlled execution of attack scenarios and produces structu
 
 ## Architecture
 
+```text
 scenario.yaml
    ↓
 attacker-agent
@@ -27,6 +33,7 @@ kali-attacker
 target (victim)
    ↓
 SOC pipeline (parser → detection → correlation → incident → triage → action)
+```
 
 ---
 
@@ -74,6 +81,7 @@ data/attacks/attack_result.json
 
 Example:
 
+```json
 {
   "attack_id": "attack-000001",
   "scenario_id": "scenario-001",
@@ -87,6 +95,7 @@ Example:
   ],
   "steps": [...]
 }
+```
 
 ---
 
@@ -128,7 +137,7 @@ data/
   ├── incidents/
   ├── triage/
   ├── actions/
-  └── evaluation/   ← 追加
+  └── evaluation/   ← added
 
 ---
 
@@ -175,6 +184,7 @@ Phase 3 introduces a minimal evaluation layer to validate detection outcomes.
 
 ### Example
 
+```json
 {
   "attack_id": "attack-000001",
   "scenario_id": "scenario-001",
@@ -198,6 +208,7 @@ Phase 3 introduces a minimal evaluation layer to validate detection outcomes.
     "false_positive": false
   }
 }
+```
 
 ### Capabilities
 
@@ -220,9 +231,9 @@ Phase 3 introduces a minimal evaluation layer to validate detection outcomes.
 
 ---
 
-## Next Steps
+## Historical Next Steps
 
-### Phase3 Scope (Completed / In Progress)
+### Historical Phase3 Scope (Completed / In Progress)
 
 - Evaluation enhancement (analysis layer)
 - Detection coverage validation
@@ -236,4 +247,4 @@ Phase 3 introduces a minimal evaluation layer to validate detection outcomes.
 
 ## Summary
 
-Phase 3 establishes a fully executable and traceable SOC pipeline from attack to response.
+Phase 3 established the original run-scoped scenario path and traceable artifacts from attack execution through response planning. This historical milestone does not by itself establish live defender-side observation, complete cross-platform execution, or current runtime coverage.

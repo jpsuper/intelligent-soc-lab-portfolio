@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/sysmon_event1_expected_detection.schema.json",
+  "title": "sysmon_event1_expected_detection",
+  "description": "Reviewed deterministic PowerShell observation outcome for one Sysmon Event ID 1 parity fixture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "fixture_id",
+    "normalized_event_id",
+    "matched_rule_ids",
+    "behavior_features"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "sysmon_event1_expected_detection.v1"
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^sysmon-event1-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "normalized_event_id": {
+      "type": "string",
+      "pattern": "^sysmon-event1:v1:[0-9a-f]{64}$"
+    },
+    "matched_rule_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "behavior_features": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "powershell_process_observed": {
+          "const": true
+        },
+        "encoded_command_observed": {
+          "const": true
+        }
+      }
+    }
+  }
+}

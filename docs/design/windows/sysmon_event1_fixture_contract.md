@@ -1,7 +1,8 @@
 # Sysmon Event ID 1 Fixture Contract
 
-Status: Fixture A/B/C Source, Parsed, Normalized, Detection, Common Pipeline,
-And Bounded Observation-Level Incident Parity Implemented
+Evidence scope: Fixture A/B/C source-to-detection parity and bounded native
+source/parser parity. See the [Main Roadmap](../../roadmap/roadmap.md) for
+overall Windows and common-pipeline status.
 
 ## 1. Purpose
 
@@ -10,17 +11,14 @@ This document defines the first sanitized fixture boundary for Sysmon Event ID
 [`Windows Telemetry MVP Contract`](windows_telemetry_contract.md) into three
 deterministic fixture cases and their separately reviewed expectations.
 
-The source fixture schema, sanitized Fixture A/B/C source JSON, source parser,
-expected parsed contract, bounded native parity tooling, normalized mapper, and
-Fixture A/B/C expected normalized parity are implemented.
-Bounded native collection, source-shape validation, source parser live parity,
-and parsed-event schema live parity have been observed. The deterministic
-PowerShell observation rules, Fixture A/B/C expected detection parity, Common
-Pipeline detector spine, bounded observation-level Incident boundary, and
-bounded deterministic Rule Triage and evidence-aware pre-case Investigation
-boundaries are implemented separately from the mapper. Wazuh configuration,
-continuous collection, live normalized parity, and live
-detection-to-Investigation validation are not implemented.
+> Document responsibility:
+> This document owns the sanitized Fixture A/B/C source, parsed, normalized, and
+> detection expectations; their separation, identity, safety, and parity
+> evidence; and the bounded native source/parser observation. The
+> [Main Roadmap](../../roadmap/roadmap.md) owns overall Windows and common-pipeline
+> implementation status, priorities, sequencing, validation depth, and Done
+> Criteria. Downstream Incident, Triage, and Investigation composition does not
+> determine whether this fixture contract is satisfied.
 
 The intended validation path is:
 
@@ -35,9 +33,9 @@ raw/live Sysmon event (runtime evidence; not a repository fixture)
 
 Each arrow is a contract boundary. A downstream expectation must not be copied
 into an upstream source fixture, and successful manual runtime observation does
-not mean that any repository stage is implemented.
+not by itself establish repository implementation status.
 
-## 2. Scope And Completion Claims
+## 2. Scope And Evidence Claims
 
 This contract covers only Sysmon Event ID 1 and these fixture cases:
 
@@ -47,9 +45,9 @@ This contract covers only Sysmon Event ID 1 and these fixture cases:
 | `encoded_flag` | `sysmon-event1-encoded-flag-001` | `powershell.exe` process creation with an encoded-command-like flag and inert placeholder | Exercise flag observation without an operational payload |
 | `ordinary_notepad` | `sysmon-event1-ordinary-notepad-001` | Ordinary `notepad.exe` process creation | Negative control for PowerShell-specific observation |
 
-### Current Implementation Status
+### Fixture And Boundary Evidence
 
-Implemented:
+Repository evidence:
 
 - source fixture JSON Schema:
   [`sysmon_event1_source_fixture.schema.json`](../../../schemas/sysmon_event1_source_fixture.schema.json);
@@ -92,19 +90,13 @@ Implemented:
 - Fixture A/B/C static `expected_detection` artifacts; and
 - focused schema, rule-loader, exact positive/negative parity, safety-boundary,
   and no-overwrite tests:
-  [`test_sysmon_event1_expected_detection.py`](../../../tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py);
-- platform-neutral Common Pipeline detector invocation; and
-- bounded Fixture A/B/C canonical detection-to-Incident validation:
-  [`test_sysmon_event1_incident_boundary.py`](../../../tests/windows/sysmon_event1/test_sysmon_event1_incident_boundary.py),
-  including shared top-level and timeline string-array `evidence_refs`; and
-- bounded Fixture A/B/C canonical Incident-to-deterministic-Rule-Triage
-  validation:
-  [`test_sysmon_event1_triage_boundary.py`](../../../tests/windows/sysmon_event1/test_sysmon_event1_triage_boundary.py),
-  producing 1 / 2 / 0 schema-valid, identity-preserving Triage results; and
-- bounded Fixture A/B/C identity-linked Incident/Triage-to-evidence-aware
-  pre-case-Investigation validation:
-  [`test_sysmon_event1_investigation_boundary.py`](../../../tests/windows/sysmon_event1/test_sysmon_event1_investigation_boundary.py),
-  producing 1 / 2 / 0 schema-valid, identity-preserving Investigation results.
+  [`test_sysmon_event1_expected_detection.py`](../../../tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py).
+
+Downstream use of these fixtures by the common pipeline is tracked in the
+[Main Roadmap](../../roadmap/roadmap.md) and the
+[Defender Event Processing Flow](../../architecture/defender-event-processing-flow.md).
+This contract does not own completion claims for Incident, Triage,
+Investigation, live integration, or cross-platform execution.
 
 Observed manually on 2026-07-26:
 
@@ -115,26 +107,10 @@ Observed manually on 2026-07-26:
 - no unknown EventData warnings observed; and
 - no live artifacts committed.
 
-Not implemented:
-
-- live Windows detection-to-Investigation validation;
-- Windows Slice 2 multi-event correlation;
-- Windows Triage/Investigation quality and AI Triage/Investigation
-  batch/live-model validation;
-- continuous live collection automation; and
-- Wazuh Windows integration.
-
-The mapper reaches one normalized endpoint event from one parsed event.
+The mapper produces one normalized endpoint event from one parsed event.
 Fixture A/B/C expected normalized and detection parity is fixed by separate
-static artifacts. The bounded Incident boundary produces one observation-level
-Incident per canonical detection without adding expected-Incident artifacts.
-The bounded Rule Triage boundary produces one result per Incident without
-adding an aggregate persistent artifact. It validates deterministic execution
-and identity linkage, not Windows verdict quality. The bounded pre-case
-Investigation boundary reuses the existing evidence-aware builder once per
-identity-linked pair without adding an aggregate artifact. It validates
-boundary mechanics, not Windows Investigation quality. All later downstream
-pipeline stages remain separate.
+static artifacts. This contract defines no expected Incident, Triage, or
+Investigation artifact and makes no claim about downstream analytical quality.
 
 ## 3. Required Boundary Model
 
@@ -149,7 +125,7 @@ A sanitized fixture is a deliberately curated, deterministic representation.
 It uses synthetic identities and safe command text, removes environment-private
 values, and retains only fields required to exercise Event ID 1 semantics. It
 must not claim to be the byte-for-byte raw event. Raw XML, EVTX, provider JSON,
-and live exports remain outside this docs-only slice.
+and live exports remain outside this fixture contract and committed fixture set.
 
 Sanitization must preserve the semantic relationships needed by the case:
 
@@ -195,7 +171,7 @@ worthy of containment.
 
 An `expected_detection` definition may describe deterministic observable
 features expected from a normalized event. It is a reviewed test oracle for
-the implemented detector, not source evidence, a runtime canonical detection
+the detector under test, not source evidence, a runtime canonical detection
 result, or a fixture label. Detection
 expectations must therefore be stored separately and must not be copied into
 the source fixture, parsed event, or normalized event.
@@ -220,7 +196,7 @@ another:
 
 Source `system.provider_event_id` maps to parsed `provider_event_id`, which
 remains integer `1` and represents the provider event type. The parsed event
-does not contain canonical `event_id`; the implemented mapper generates it
+does not contain canonical `event_id`; the mapper generates it
 with identity version `sysmon-event1-event-id.v1` from:
 
 ```text
@@ -233,7 +209,7 @@ event_record_id
 The sorted compact canonical JSON is SHA-256 hashed, and the full digest is
 prefixed with `sysmon-event1:v1:`. `process_guid` remains provenance and
 `fixture_id` remains only in `raw_ref`; neither is an identity input in this
-slice. No fallback or fixture-only identity is implemented.
+slice. Fallback and fixture-only identity are outside this contract.
 
 ## 4. Provider-Like Source Fixture Contract
 
@@ -252,7 +228,7 @@ Every provider-like source fixture must use this top-level envelope:
 ```
 
 The top-level names, nesting, `fixture_contract_version`, and `source_format`
-value are fixed by this contract. The implemented source fixture schema,
+value are fixed by this contract. The source fixture schema,
 [`sysmon_event1_source_fixture.schema.json`](../../../schemas/sysmon_event1_source_fixture.schema.json),
 enforces this envelope and its machine-readable constraints. A breaking change
 requires a separately reviewed contract version. Parser expectations,
@@ -451,13 +427,12 @@ sentinels. A type conversion failure is an explicit parser outcome, not a
 silently coerced value.
 
 `system_time` and `utc_time` remain independently traceable through parsing.
-The parser does not decide which value becomes canonical. The implemented
-mapper applies the explicit `utc_time` precedence and accepts unequal
-schema-valid timestamps.
+The parser does not decide which value becomes canonical. The mapper applies
+the explicit `utc_time` precedence and accepts unequal schema-valid timestamps.
 
 ## 6. Normalized Mapping Expectations
 
-For each valid `expected_parsed` event, the implemented mapper returns one
+For each valid `expected_parsed` event, the mapper returns one
 event conforming to the tracked
 [`endpoint_events.schema.json`](../../../schemas/endpoint_events.schema.json).
 Its exact policy is defined in the
@@ -665,7 +640,7 @@ event_data.Hashes: SHA256=CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 ## 8. Separation Of Artifacts
 
-The following implemented concerns remain logically separate even if a test
+The following concerns remain logically separate even if a test
 loader later packages references in one manifest:
 
 ```text
@@ -696,9 +671,7 @@ oracle and is not the runtime canonical detection output itself.
 
 ### 8.1 Grouped File Layout
 
-The implementation uses this grouped layout. Fixture A/B/C source,
-`expected_parsed`, `expected_normalized`, and `expected_detection` files are
-implemented:
+This contract uses the following grouped layout:
 
 ```text
 tests/fixtures/windows/sysmon_event1/
@@ -721,27 +694,23 @@ tests/fixtures/windows/sysmon_event1/
 ```
 
 This layout makes the source/parsed/normalized/detection boundaries visible and
-lets each expectation refer to the same stable `fixture_id`. Source,
-`expected_parsed`, `expected_normalized`, and `expected_detection` A/B/C files
-are implemented. Tests compare the detector summary with the static golden
-artifacts and do not generate or overwrite them.
+lets each expectation refer to the same stable `fixture_id`. Tests compare the
+detector summary with the static golden artifacts and do not generate or
+overwrite them.
 
-## 9. Runtime Validation And Repository Status
+## 9. Runtime Evidence Boundary
 
-The current Windows victim is a manually provisioned runtime VM. Sysmon Event
-ID 1 has been observed manually on that VM. This confirms only that the runtime
-product can produce the source event needed by this design.
+The bounded native observation recorded in the
+[native parity runbook](../../runbooks/windows/sysmon_event1_native_parity.md)
+confirms that Sysmon Event ID 1 source records can cross the documented source
+shape, parser, and parsed-schema boundaries under the recorded lab conditions.
+It is runtime evidence, not a committed fixture or a claim of continuous
+collection, live normalized parity, downstream analytical quality, or
+end-to-end Windows telemetry ingestion.
 
-Manual validation does not establish any of the following repository
-capabilities:
-
-- automated VM provisioning;
-- committed sanitized fixture coverage;
-- source schema validation;
-- parser or mapper implementation;
-- deterministic detection;
-- Wazuh Agent installation or retrieval; or
-- end-to-end Windows telemetry ingestion.
+Native observation and repository fixture evidence remain separate. A manual
+run must not be used by itself to claim automated VM provisioning, deterministic
+detection coverage, Wazuh retrieval, or any later pipeline stage.
 
 Runtime inventory details belong in architecture documentation. They must not
 be copied into sanitized fixture values or expected outputs.
@@ -767,7 +736,8 @@ the underlying provider fields are unavailable.
 The normalized `source` remains `sysmon` when the normalized semantics come
 from recoverable Sysmon provider data. Wazuh query scope, retrieval provenance,
 and backend identity remain separate metadata governed by the provider-neutral
-SIEM query contract. Wazuh Windows integration is not started by this design.
+SIEM query contract. Wazuh Windows integration is outside this fixture
+contract. Its status belongs in the Main Roadmap.
 
 ## 11. Sanitization And Safety Requirements
 
@@ -786,7 +756,7 @@ SIEM query contract. Wazuh Windows integration is not started by this design.
 - Do not commit raw XML, EVTX, provider JSON, live Wazuh output, or generated
   runtime artifacts as part of this design slice.
 
-## 12. Acceptance Criteria And Current Status
+## 12. Fixture-Parity Acceptance Evidence
 
 The focused source, parser, mapper, and detector fixture-parity slices
 collectively provide:
@@ -820,49 +790,19 @@ collectively provide:
     executed or decoded.
 
 Bounded native live source-shape and parser parity was observed as the
-pre-mapper validation step. Its collector, local validator, focused tests, and
-runbook are implemented. Wazuh retrieval remains a later optional integration
-slice. Raw or live runtime evidence is not committed.
+pre-mapper validation step and is recorded in the dedicated runbook. Raw or
+live runtime evidence is not committed.
 
-## 13. Follow-Up Sequence
+## 13. Status And Planning References
 
-Completed:
+The [Main Roadmap](../../roadmap/roadmap.md) is the source of truth for
+downstream Windows work, Common Defender Pipeline completion, live integration,
+and Wazuh sequencing. This contract intentionally carries no independent
+Completed, Next, or Later implementation list.
 
-1. Add the source fixture schema for the fixed provider-like envelope and its
-   focused schema validation tests.
-2. Add Fixture A (`sysmon-event1-ordinary-powershell-001`) and Fixture C
-   (`sysmon-event1-ordinary-notepad-001`).
-3. Implement the Sysmon source parser and focused parser tests.
-4. Add `expected_parsed` artifacts, a parsed-event schema, and parity tests.
-5. Add and manually validate bounded native Sysmon Event ID 1
-   collection/source-shape/parser parity tooling.
-6. Implement the `normalized_endpoint_event` mapper.
-7. Add Fixture A/C `expected_normalized` artifacts and exact parity tests.
-8. Add Fixture B (`sysmon-event1-encoded-flag-001`) source, parsed, and
-   normalized coverage.
-9. Add the deterministic PowerShell observation rule, Fixture A/B/C
-   `expected_detection` artifacts, and exact positive/negative parity.
-10. Implement the Common Defender Pipeline v0 detector spine.
-11. Connect bounded Windows Slice 1 to the existing observation-level Incident
-    boundary.
-12. Connect the canonical Incident list to bounded deterministic Rule Triage.
-13. Connect identity-linked Incident/Triage pairs to bounded evidence-aware
-    pre-case Investigation.
-
-Next:
-
-14. Complete shared dedupe/correlation and full cross-platform validation for
-    Common Pipeline v0.
-15. Add Windows Slice 2 multi-event correlation validation.
-
-Later:
-
-16. Optionally add Wazuh retrieval parity.
-
-Each implementation step requires focused review and must preserve the artifact,
-identity, safety, runtime, and retrieval boundaries in this contract. Each step
-may and should proceed in a separate focused PR; no single PR is expected to
-implement the complete sequence or all acceptance criteria.
+Changes to the fixture set or its schemas still require focused review and must
+preserve artifact separation, identity, safety, runtime-evidence, and retrieval
+boundaries.
 
 ## 14. Non-Goals
 

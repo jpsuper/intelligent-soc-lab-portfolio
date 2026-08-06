@@ -1,8 +1,12 @@
-# Phase1 — Correlation & Incident Builder
+# Phase1 — Detection, Correlation, and Incident Builder
+
+> [!NOTE]
+> This document preserves Phase1-specific implementation history and
+> validation context. The [main Roadmap](roadmap.md) is authoritative for current
+> status, active priority, incomplete work, and Done Criteria.
 
 ## 🎯 Goal
-単発の検知（detection）を相関（correlation）し、  
-調査・分析に使える **incident.json を生成する**。
+Correlate individual detections and **generate incident.json for investigation and analysis**.
 
 ---
 
@@ -37,8 +41,8 @@ incident.json
 ## ⚙️ Implemented Agents
 
 ### 1. parser-agent
-- ログを正規化
-- event_type を付与
+- Normalize logs
+- Assign event_type
   - ssh_failed_login
   - ssh_success_login
   - sudo_command
@@ -46,8 +50,8 @@ incident.json
 ---
 
 ### 2. detection-agent
-- 正規化イベントから検知を生成
-- MITRE ATT&CK マッピング
+- Generate detections from normalized events
+- Map detections to MITRE ATT&CK
   - ssh_failed_login → T1110
   - ssh_success_login → T1078
   - sudo_command → T1548
@@ -55,8 +59,8 @@ incident.json
 ---
 
 ### 3. correlation-agent
-- シナリオベース相関
-- 検知をつなげてインシデント化
+- Perform scenario-based correlation
+- Connect detections into an incident
 
 #### Implemented Scenario
 ```
@@ -67,21 +71,21 @@ ssh_success_login
 sudo_command
 ```
 
-#### 条件
-- success の前に failed（15分以内）
-- success の後に sudo（10分以内）
-- host / username 一致
+#### Conditions
+- failed occurs before success (within 15 minutes)
+- sudo occurs after success (within 10 minutes)
+- host and username match
 
-#### 改善
-- sudo起点に変更（重複排除）
-- 最も近い success のみ使用
+#### Improvements
+- Use sudo as the correlation starting point (to eliminate duplicates)
+- Use only the closest success event
 
 ---
 
 ### 4. incident-builder-agent
-- 相関結果を人間・AIが読める形式に整形
+- Format correlation results for human and AI consumption
 
-#### 追加情報
+#### Additional Information
 - timeline
 - source_ips
 - mitre_attack
@@ -93,27 +97,27 @@ sudo_command
 ## 📦 Output Files
 
 ### normalized_events.json
-- 正規化済みイベント
+- Normalized events
 
 ### detection_hits.json
-- 検知結果
+- Detection results
 
 ### correlated_incidents.json
-- 相関結果
+- Correlation results
 
 ### incident.json
-- 最終インシデント（分析用）
+- Final incident for analysis
 
 ---
 
 ## 🔍 Example Incident
 
-- 攻撃元IP: 192.0.2.40
-- ユーザー: victim01
-- 流れ:
-  - SSH brute force（複数failed）
-  - 認証成功（success）
-  - 権限昇格（sudo）
+- Source IP: 192.0.2.40
+- User: victim01
+- Sequence:
+  - SSH brute force (multiple failed events)
+  - Successful authentication (success)
+  - Privilege escalation (sudo)
 
 ### MITRE ATT&CK
 - T1110: Brute Force
@@ -124,45 +128,45 @@ sudo_command
 
 ## 🧠 Key Design Principles
 
-### 1. 責務分離
+### 1. Separation of Responsibilities
 ```
-parser → ログ解釈
-detection → 意味付け
-correlation → ストーリー化
-incident builder → 表現
+parser → log interpretation
+detection → semantic classification
+correlation → attack-story construction
+incident builder → presentation
 ```
 
 ---
 
-### 2. ログ非依存設計
-- detection は event_type のみを見る
-- ログフォーマットに依存しない
+### 2. Log-Format-Independent Design
+- detection uses only event_type
+- Does not depend on log format
 
 ---
 
-### 3. シナリオベース相関
-- 単発検知ではなく「攻撃の流れ」を捉える
+### 3. Scenario-Based Correlation
+- Capture the attack sequence instead of isolated detections
 
 ---
 
 ## 🚧 Known Limitations
 
-- failed が多すぎる（ノイズ）
-- confidence が固定
-- 単一ホスト前提
-- lateral movement 未対応
+- Too many failed events create noise
+- confidence is fixed
+- Assumes a single host
+- Does not support lateral movement
 
 ---
 
-## 🚀 Next Phase
+## 🚀 Historical Next Phase
 
 ### Phase2 — AI Triage Agent
 
-incident.json を入力として：
+Using incident.json as input:
 
-- 攻撃内容の説明
-- 影響範囲の推定
-- 初動対応の提案
-- 調査手順の提示
+- Explain the attack
+- Estimate the scope of impact
+- Recommend initial response actions
+- Present investigation steps
 
-👉 SOCアナリストの判断を支援するAIを実装する
+👉 Implement AI that supports SOC analyst decision-making

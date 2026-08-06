@@ -1,0 +1,45 @@
+id: collection.suspicious_archive_staging
+title: Suspicious archive staging behavior
+status: experimental
+
+log_source:
+  product: linux
+  service: auditd
+
+match:
+  event_type:
+    - process_exec
+    - file_write
+  command_contains:
+    - tar
+    - -czf
+    - .tar.gz
+
+artifact: suspicious_archive_staging
+severity: medium
+
+behavior_features:
+  local_staging_path: true
+  synthetic_file_staging: true
+  archive_creation: true
+  # The synthetic fixture represents archive creation as process_exec, while
+  # normalized live-derived auditd telemetry represents it as file_write.
+  # chmod is present in both flows but is not correlated by this rule yet.
+  archive_permission_change_observed: false
+  exfiltration_observed: false
+  credential_access_observed: false
+  ransomware_behavior_observed: false
+
+metadata:
+  mitre:
+    - T1074.001
+    - T1560.001
+  references: []
+  tags:
+    - collection
+    - archive
+    - staging
+    - auditd
+
+targets:
+  - python

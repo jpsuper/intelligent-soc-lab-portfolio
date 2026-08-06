@@ -1,5 +1,10 @@
 # Phase6: Behavior Feature + Automated Improvement Loop
 
+> [!NOTE]
+> This document preserves Phase6-specific implementation history and
+> validation context. The [main Roadmap](roadmap.md) is authoritative for current
+> status, active priority, incomplete work, and Done Criteria.
+
 ## 1. Purpose
 
 Phase6 establishes a behavior-feature-centered, compare-ready SOC improvement loop.
@@ -495,10 +500,19 @@ Implemented:
 - `candidate_review.md` surfaces observed-effects alignment signals for human review
 - observed-effects alignment signals remain separate from automatic rule candidate generation
 
-Details:
+Current attacker-agent design contracts:
 
-- `docs/roadmap/attacker-agent-roadmap.md`
 - `docs/design/attacker-agent/scenario_schema.md`
+- `docs/design/attacker-agent/attack_artifact_contract.md`
+- `docs/design/attacker-agent/attack_observed_effects_contract.md`
+- `docs/design/attacker-agent/observed_effects_evaluation_contract.md`
+- `docs/design/attacker-agent/shell_backend_contract.md`
+- `docs/design/attacker-agent/structured_runner_output_contract.md`
+
+Historical context:
+
+- Archived historical plan (non-canonical):
+  `docs/design/archive/attacker-agent-roadmap.md`
 
 ---
 
@@ -576,7 +590,26 @@ candidate_review.md
 
 ## 6. Scenario Coverage
 
-### scenario_004
+The initial Phase B schema-unification and compare-ready validation scope
+covered `scenario_004` through `scenario_006`. Current
+`attack_scenario_v1` YAML and shell runner contract coverage extends through
+`scenario_009`:
+
+- `scenario_004`
+- `scenario_005`
+- `scenario_006`
+- `scenario_007`
+- `scenario_008`
+- `scenario_009`
+
+This coverage does not imply that every scenario has the same live defender
+telemetry or end-to-end validation. Current scenario families, structured
+runner events, and expected defender-side artifacts are maintained in the
+[Attacker Artifact Catalog](../design/attacker-agent/artifact_catalog.md).
+
+### Historical Phase B focus
+
+#### scenario_004
 
 SSH brute force followed by authorized_keys persistence installation.
 
@@ -588,7 +621,7 @@ ssh_success_login
 authorized_keys_modification
 ```
 
-### scenario_005
+#### scenario_005
 
 SSH public-key persistence reuse.
 
@@ -598,7 +631,7 @@ Primary artifact:
 ssh_key_login
 ```
 
-### scenario_006
+#### scenario_006
 
 SSH public-key login followed by post-login command execution.
 
@@ -609,7 +642,10 @@ ssh_key_login
 process_exec
 ```
 
-Scenario details are intentionally not expanded in this roadmap document. The scenario contracts are now maintained through `attack_scenario_v1` YAML files and the attacker-agent roadmap.
+Scenario details are intentionally not expanded in this roadmap document.
+Current scenario contracts are maintained through `attack_scenario_v1` YAML
+files and the design documents under `docs/design/attacker-agent/`. The
+archived attacker-agent roadmap is historical and non-canonical.
 
 ---
 
@@ -620,13 +656,14 @@ Use this document as the Phase6 index. Detailed contracts live in dedicated desi
 | Topic | Document |
 |---|---|
 | Atomic Detection DSL | `docs/design/atomic_detection_dsl.md` |
-| Rule Improvement / Orchestrator / Harness contracts | `docs/design/rule-improvement/rule_improvement_orchestrator_contract.md` |
+| Rule Improvement orchestrator contract | `docs/design/rule-improvement/rule_improvement_orchestrator_contract.md` |
+| Triage / Investigation / Action comparison harness contract | `docs/design/rule-improvement/comparison_harness_contract.md` |
 | Observed effects Rule Improvement signal | `docs/design/rule-improvement/observed_effects_alignment_signal_contract.md` |
 | Post-action DFIR Rule Improvement review input | `docs/design/rule-improvement/post_action_dfir_review_input_contract.md` |
 | Rule Improvement human signal classification | `docs/design/rule-improvement/rule_improvement_signal_classification_contract.md` |
 | AI-assisted Rule Improvement review draft | `docs/design/rule-improvement/ai_assisted_review_draft_contract.md` |
 | AI review draft prompt/input | `docs/design/rule-improvement/ai_review_draft_prompt_input_contract.md` |
-| Wazuh integration direction | `docs/design/wazuh_integration_design.md` |
+| Wazuh integration contract | `docs/design/wazuh_integration_design.md` |
 | DFIR collection result contract | `docs/design/dfir/collection_result_contract.md` |
 | DFIR collection result ingestion | `docs/design/dfir/collection_result_ingestion.md` |
 | Post-action DFIR investigation | `docs/design/dfir/post_action_dfir_investigation.md` |
@@ -634,12 +671,15 @@ Use this document as the Phase6 index. Detailed contracts live in dedicated desi
 | Endpoint telemetry coverage | `docs/design/defender/endpoint_telemetry_coverage.md` |
 | Auditd investigation signal enrichment | `docs/design/investigation/auditd_signal_enrichment.md` |
 | Attacker scenario schema | `docs/design/attacker-agent/scenario_schema.md` |
+| Attacker artifact catalog | `docs/design/attacker-agent/artifact_catalog.md` |
+| Defender coverage matrix | `docs/design/attacker-agent/defender_coverage_matrix.md` |
 | Attack artifact contract | `docs/design/attacker-agent/attack_artifact_contract.md` |
 | Attack observed effects contract | `docs/design/attacker-agent/attack_observed_effects_contract.md` |
 | Observed effects evaluation contract | `docs/design/attacker-agent/observed_effects_evaluation_contract.md` |
 | Shell backend contract | `docs/design/attacker-agent/shell_backend_contract.md` |
 | Structured runner output contract | `docs/design/attacker-agent/structured_runner_output_contract.md` |
-| Attacker-agent roadmap | `docs/roadmap/attacker-agent-roadmap.md` |
+| Archived attacker-agent historical plan (non-canonical) | `docs/design/archive/attacker-agent-roadmap.md` |
+| Archived Rule Improvement orchestrator and harness plan (non-canonical) | `docs/design/archive/rule-improvement-orchestrator-and-harness-plan.md` |
 | Rule Improvement candidate creation workflow | `docs/design/rule-improvement/rule_improvement_candidate_creation_workflow.md` |
 
 ---
@@ -669,8 +709,13 @@ Completed:
 - post-action DFIR result schema, run workflow, and `Linux.Syslog.SSHLogin` parser are implemented
 - mock collection writes the controlled `Linux.Syslog.SSHLogin` output and links it through `output_refs`
 - attacker-agent Phase A dispatcher is implemented
-- attacker-agent Phase B scenario schema unification is implemented for scenario_004 / 005 / 006
-- schema-v1 scenarios are runtime-validated
+- the initial attacker-agent Phase B scenario schema unification is implemented
+  for scenario_004 / 005 / 006
+- current `attack_scenario_v1` YAML and shell runner contract coverage extends
+  through scenario_009
+- schema loading and runner contract validation exist for the current
+  schema-v1 scenarios; live defender and end-to-end validation varies by
+  scenario
 - attack_result includes schema-derived metadata
 - attack artifact schemas exist for result, execution log, and observed effects
 - attacker-agent generates schema-compatible `attack_observed_effects.json`
@@ -693,7 +738,8 @@ Completed:
   - `missing_pivot_detection = 1.0`
 - structured runner output contract exists
 - structured runner event parser and tests exist
-- scenario_004 / 005 / 006 / 007 / 008 emit structured runner events for their current observed-effect mappings
+- scenario_004 / 005 / 006 / 007 / 008 / 009 emit structured runner events for
+  their current observed-effect mappings
 - attacker-agent observed-effects generation prefers structured runner events when present
 - legacy stdout marker / exit-code fallback remains compatible
 - shell backend static contract tests enforce runner path, executable bit,
@@ -730,9 +776,11 @@ Remaining work should be treated as follow-on work, not Phase6 blocker work.
 ### Offense-side follow-ons
 
 - reviewer-approved conversion from observed-effects signals to concrete rule or prompt candidates
-- richer attack artifacts beyond the current scenario_004 / 005 / 006 / 007 / 008 coverage
+- richer attack artifacts beyond the current scenario_004 / 005 / 006 / 007 /
+  008 / 009 coverage
 - extend observed-effects alignment smoke checks only when new scenario families introduce new artifact mappings
-- maintain structured runner event coverage for scenario_004 / 005 / 006 / 007 / 008 and extend it only when new scenario families require new mappings
+- maintain structured runner event coverage for scenario_004 / 005 / 006 / 007 /
+  008 / 009 and extend it only when new scenario families require new mappings
 - shell backend formalization follow-ons
 - TTP catalog
 - TTP composition mode
@@ -741,9 +789,15 @@ Remaining work should be treated as follow-on work, not Phase6 blocker work.
 
 ---
 
-## 10. Next Priorities
+## 10. Historical Next Priorities after Phase6 Completion — Superseded
 
-Recommended next implementation order after Phase6 / Rule Improvement export MVP completion:
+The following list preserves the implementation order proposed after the Phase6
+and Rule Improvement export MVP. It is historical and does not define current
+priority. Phase7 artifact work and later scenario-family expansion changed this
+state; current active sequencing is maintained in the
+[main Roadmap](roadmap.md).
+
+Historical recommended order:
 
 1. Define Phase7 Deception MVP scope before implementation
    - deception inventory

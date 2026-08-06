@@ -1,0 +1,7 @@
+{
+  "schema_version": "sysmon_event1_expected_detection.v1",
+  "fixture_id": "sysmon-event1-ordinary-notepad-001",
+  "normalized_event_id": "sysmon-event1:v1:0d71d2939ce94b4a27040fa570be53d1bf1913aa695d9545b92fd27143ab332f",
+  "matched_rule_ids": [],
+  "behavior_features": {}
+}

@@ -1,0 +1,32 @@
+id: execution.windows_powershell_process_observed
+title: Windows PowerShell process observed
+status: experimental
+
+log_source:
+  product: windows
+  service: sysmon
+
+match:
+  source: sysmon
+  platform: windows
+  event_type: process_exec
+  process_name_casefold: powershell.exe
+
+artifact: powershell_process_observed
+severity: low
+
+behavior_features:
+  powershell_process_observed: true
+
+metadata:
+  mitre:
+    - T1059.001
+  references: []
+  tags:
+    - execution
+    - powershell
+    - sysmon
+    - observation
+
+targets:
+  - python

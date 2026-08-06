@@ -1,0 +1,13 @@
+{
+  "schema_version": "sysmon_event1_expected_detection.v1",
+  "fixture_id": "sysmon-event1-encoded-flag-001",
+  "normalized_event_id": "sysmon-event1:v1:4fc28bf961113fe8702ef58882f449a3928772fa5eec9fa0d34e2e033c134643",
+  "matched_rule_ids": [
+    "execution.windows_powershell_encoded_command_observed",
+    "execution.windows_powershell_process_observed"
+  ],
+  "behavior_features": {
+    "encoded_command_observed": true,
+    "powershell_process_observed": true
+  }
+}

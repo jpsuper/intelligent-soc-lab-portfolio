@@ -1,0 +1,11 @@
+{
+  "schema_version": "sysmon_event1_expected_detection.v1",
+  "fixture_id": "sysmon-event1-ordinary-powershell-001",
+  "normalized_event_id": "sysmon-event1:v1:54aa19e2ce68d8cf8f27f519992024f5338d6d9e65c6916912919465c538bcef",
+  "matched_rule_ids": [
+    "execution.windows_powershell_process_observed"
+  ],
+  "behavior_features": {
+    "powershell_process_observed": true
+  }
+}

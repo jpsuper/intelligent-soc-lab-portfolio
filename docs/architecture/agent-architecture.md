@@ -1,24 +1,32 @@
 # Agent Architecture
 
-AI SOC Labで段階的に実装するAgent一覧と依存関係を定義する。  
-このドキュメントは **最終アーキテクチャ** を定義しつつ、あわせて **現在の実装範囲** も明記する。
+This document defines the AI SOC Lab's stable target architecture, agent
+responsibilities, dependencies, artifact boundaries, and trust boundaries.
+
+It does not own volatile implementation status, active priorities, unfinished
+work, or Done Criteria. The
+[Main Roadmap](../roadmap/roadmap.md) is the authoritative source for current
+status.
 
 ---
 
 ## 1. Design Principle
 
-このドキュメントでは、次の2つを分けて扱う。
+This document separates the following two concerns.
 
-1. **Full Architecture**
-   - ラボ全体の完成形
-   - 将来導入予定のAgentも含む
+1. **Target Architecture**
+   - the intended end-state architecture of the lab
+   - responsibilities for implemented and future agents
+   - stable artifact and trust boundaries between stages
 
-2. **Current Implementation**
-   - 現時点で実装済み・動作確認済みの範囲
-   - Phase進行に応じて更新する
+2. **Current Implementation Status**
+   - maintained in the Main Roadmap
+   - updated from code, tests, schemas, fixtures, and validation evidence
+   - never inferred from this document's component list or dependency diagrams
 
-つまり、**未実装Agentは削除しない**。  
-未実装でも、将来の責務として明示的に残す。
+Unimplemented agents remain in the target architecture as explicit future
+responsibilities. Their presence in this document does not mean that they are
+Implemented, Validated, live, or runtime-validated.
 
 ---
 
@@ -55,25 +63,25 @@ Detection Agent
 
 | Agent | Purpose | Input | Output | Main Phase |
 |---|---|---|---|---|
-| Telemetry Agent | ログ収集 | raw logs | collected raw logs / forwarded logs | Phase0 |
-| Log Parser Agent | 正規化 | raw log | normalized events | Phase0 |
-| Detection Agent | 単発検知 / 初期 feature 付与 | normalized events | detection hits | Phase1 |
-| Correlation Agent | 相関検知 | detection hits | correlated incident candidates | Phase1 |
-| Incident Builder Agent | incident生成 | correlated incidents + refs + features | incident.json | Phase1 |
-| Triage Agent | SOC分析 / 初期判断 / リスク評価 | incident + optional context | triage_result.json | Phase2 |
-| Action Agent | 対応方針 / playbook 生成 | triage / investigation / case | action_result.json | Phase2拡張 |
-| Executor Agent | playbook 実行 / approval 制御 | action_result / playbook | execution result / external execution | Phase2拡張 |
-| Scenario Agent | 攻撃シナリオ定義 | scenario YAML / templates | runnable scenario definitions | Phase3 |
-| Attacker Agent | 攻撃実行 | scenario | attack_result.json / attack execution | Phase3 |
-| Attack Planner Agent | objective を subtask に分解し tool / specialist / executor を選択（将来拡張） | objective / constraints / memory | attack plan | Phase3拡張 / 将来 |
-| Case Agent | run結果を case.json に正規化し source of truth を作る | incident / triage / investigation / evaluation | case.json | Phase4 |
-| Investigation Agent | 前後文脈取得 / attack story / DFIR連携 | incident / triage / case / host context | investigation_result.json / evidence refs | Phase4 |
-| Endpoint Telemetry Agent | process telemetry 強化 | endpoint telemetry | enriched endpoint events | Phase5 |
-| Rule Improvement Agent | 検知・相関・workflow改善提案 | attack results + incidents + triage + actions + gaps | rule suggestions / improvement notes | Phase6 |
-| Scenario Orchestrator | attack→detect→triage→investigate→improve ループ制御 | scenario + config | loop run / orchestration result | Phase6 |
-| Deception Agent | decoy / honeytoken生成 | attacker intent / config | deception assets | Phase7 |
-| Trap Detection Agent | deception hit検知 | auth / access / endpoint logs | trap alert | Phase7 |
-| Background Activity Agent | 正常系ノイズ生成 | schedule / templates | normal activity logs | Phase8 |
+| Telemetry Agent | Log collection | raw logs | collected raw logs / forwarded logs | Phase0 |
+| Log Parser Agent | Normalization | raw log | normalized events | Phase0 |
+| Detection Agent | Atomic detection / initial feature assignment | normalized events | detection hits | Phase1 |
+| Correlation Agent | Correlation | detection hits | correlated incident candidates | Phase1 |
+| Incident Builder Agent | Incident construction | correlated incidents + refs + features | incident.json | Phase1 |
+| Triage Agent | SOC analysis / initial judgment / risk assessment | incident + optional context | triage_result.json | Phase2 |
+| Action Agent | Response planning / playbook generation | triage / investigation / case | action_result.json | Phase2 extension |
+| Executor Agent | Playbook execution / approval control | action_result / playbook | execution result / external execution | Phase2 extension |
+| Scenario Agent | Attack scenario definition | scenario YAML / templates | runnable scenario definitions | Phase3 |
+| Attacker Agent | Attack execution | scenario | attack_result.json / attack execution | Phase3 |
+| Attack Planner Agent | Decompose objectives into subtasks and select tools, specialists, and executors (future extension) | objective / constraints / memory | attack plan | Phase3 extension / future |
+| Case Agent | Normalize run results into case.json as the source of truth | incident / triage / investigation / evaluation | case.json | Phase4 |
+| Investigation Agent | Pre-case context acquisition / attack story / evidence-gap analysis | incident / triage / defender-side context | `investigation_result.json` / evidence refs | Phase4 |
+| Endpoint Telemetry Agent | Process telemetry enhancement | endpoint telemetry | enriched endpoint events | Phase5 |
+| Rule Improvement Agent | Detection, correlation, and workflow improvement proposals | attack results + incidents + triage + actions + gaps | rule suggestions / improvement notes | Phase6 |
+| Scenario Orchestrator | Control of the attack→detect→triage→investigate→improve loop | scenario + config | loop run / orchestration result | Phase6 |
+| Deception Agent | Decoy / honeytoken generation | attacker intent / config | deception assets | Phase7 |
+| Trap Detection Agent | Deception-hit detection | auth / access / endpoint logs | trap alert | Phase7 |
+| Background Activity Agent | Benign-noise generation | schedule / templates | normal activity logs | Phase8 |
 
 ---
 
@@ -95,13 +103,25 @@ Triage Agent
 Investigation Agent
   ↓
 Case Agent
+  ├─ TheHive / case integration
   ↓
 Action Agent
   ↓
-Executor Agent
-  ├─ TheHive / case integrations
-  ├─ Velociraptor / DFIR integrations
-  └─ Rule Improvement Agent
+Executor Agent / approval gate
+  ↓
+collection request / execution
+  ↓
+collection_result.json
+  ↓
+post-action DFIR investigation / external integration
+  ↓
+human-reviewed handoff
+
+reviewed run artifacts
+  ↓
+Rule Improvement Agent
+  ↓
+review / apply / deploy / promotion gates
 
 Scenario Agent
   ↓
@@ -122,6 +142,10 @@ Background Activity Agent
 Telemetry realism / false positive evaluation
 ```
 
+The pre-case Investigation Agent produces `investigation_result.json` before
+Case and Action. It does not consume `collection_result.json`. Collected output
+is handled by the separate post-action DFIR workflow.
+
 ---
 
 ## 5. Core Data Flow
@@ -135,12 +159,20 @@ Raw Log
 → Correlated Incident
 → Incident
 → Triage
-→ Investigation
-→ Case
+→ pre-case Investigation
+→ Initial Case
 → Action
-→ Execution / Approval
-→ DFIR / External Integrations
+→ Approval / Execution
+→ Collection Request
+→ Collection Result
+→ post-action DFIR / External Integration
+→ Human-reviewed Handoff
 ```
+
+Pre-case Investigation and post-action DFIR are separate stages with separate
+inputs, outputs, and authority. Neither collection outcome metadata nor
+post-action findings automatically overwrite the earlier assessment or action
+state.
 
 ### 5.2 Offensive / Validation Workflow
 
@@ -174,16 +206,21 @@ attack_result.json
 + investigation_result.json
 + case.json
 + action_result.json
-+ execution / integration results
++ reviewed execution / integration evidence
         ↓
 Rule Improvement Agent
         ↓
-suggestions / gap analysis
+proposal / candidate / recommendation artifacts
+        ↓
+human review and explicit apply / deploy / promotion gates
         ↓
 Scenario Orchestrator
         ↓
 attack again
 ```
+
+A recommendation artifact is not approval or execution. Rule Improvement must
+not auto-apply, auto-deploy, or auto-promote a candidate.
 
 ### 5.4 Feature Lifecycle
 
@@ -205,243 +242,248 @@ Case
 
 ---
 
-## 6. Current Implementation Status
+## 6. Stable Responsibility and Trust Boundaries
 
-### 6.1 Implemented / Working
+Current implementation status, priorities, incomplete work, sequencing, and
+Done Criteria are maintained in the
+[Main Roadmap](../roadmap/roadmap.md). The boundaries below remain valid
+regardless of which optional backend, model, or integration is selected.
 
-| Agent | Status | Notes |
-|---|---|---|
-| Log Parser Agent | Implemented | Parses and normalizes run-scoped logs |
-| Detection Agent | Implemented | Generates detection hits |
-| Correlation Agent | Implemented | Correlates related activity |
-| Incident Builder Agent | Implemented | Builds structured incident.json |
-| Triage Agent | Implemented | LLM-based triage with structured output |
-| Action Agent | Implemented | Rule-based / AI planning support |
-| Executor Agent | Implemented | Executes playbook with approval boundary |
-| Scenario Agent | Minimal / implicit | Scenario YAML in use |
-| Attacker Agent | Implemented | Local scenario YAML + shell runner model; writes `attack_result.json`, `attack_execution_log.json`, and `attack_observed_effects.json` |
-| Case Agent | Implemented | Generates case.json with schema validation |
-| Investigation Agent | Partial / integration-oriented | Velociraptor request generation / follow-on workflow |
-| Scenario Orchestrator | Minimal / lightweight | Makefile / run-based orchestration |
+### 6.1 Pre-case Investigation
 
-### 6.2 Implemented Cross-Cutting Capabilities
+The Investigation Agent operates before the initial Case and Action stages.
 
-- run isolation / run-based outputs
-- `run_id` traceability
-- `attack_id` propagation
-- supported pipeline execution across existing implemented stages:
-  - attack
-  - parse
-  - detect
-  - correlate
-  - incident
-  - triage
-  - case
-  - action
-  - execution
-- decision logging:
-  - detection
-  - triage
-  - action
-  - execution
-- TheHive integration
-- Velociraptor request generation
-- `behavior_features` in case / triage / action planning
-- scenario family expansion policy
-- Linux scenario family candidates
-- Phase7 deception artifact foundation through schemas, local asset generator,
-  hit generator, incident bridge, and chain smoke
-- `scenario_009_suspicious_archive_staging` local scenario YAML + shell runner
-- `scenario_009` attacker-side structured events / observed effects
-- initial `scenario_009` synthetic defender-side endpoint fixture
-- initial `scenario_009` DSL detection expectation for
-  `suspicious_archive_staging`
-- initial `scenario_009` helper-level observation incident bridge for
-  `suspicious_archive_staging` detection hits
+Primary inputs:
 
-### 6.3 Not Yet Fully Implemented
+- `incident.json`
+- `triage_result.json`
+- defender-side telemetry and optional defender enrichment
 
-| Agent / Capability | Planned Phase |
-|---|---|
-| Telemetry Agent | Phase0 refinement |
-| Investigation Agent (full context expansion) | Phase4 refinement / Phase6 workflowization |
-| Endpoint Telemetry Agent (broader beyond process telemetry) | Phase5 expansion |
-| Rule Improvement apply / deploy / promotion workflows | Phase6 follow-on / review-gated |
-| Scenario Orchestrator (full agent form) | Phase6 |
-| Phase7 deception scenario runner | Phase7 follow-on / intentionally deferred |
-| Live auditd / Wazuh / SIEM telemetry collection for `scenario_009` | Follow-on |
-| `scenario_009` triage / investigation / action coverage | Follow-on |
-| Atomic Red Team adapter | Later optional / reference mapping only for now |
-| CALDERA integration | Later optional |
-| Background Activity Agent | Phase8 |
-| Attack Planner Agent | Future extension |
+Primary output:
+
+- `investigation_result.json`
+
+Responsibilities:
+
+- build an evidence-referenced attack story
+- add surrounding context and `enriched_features`
+- identify evidence gaps and recommended pivots
+- preserve fixture, controlled, live, and runtime evidence labels
+
+It does not execute a DFIR collection request and must not consume
+`collection_result.json`.
+
+### 6.2 Post-action DFIR
+
+Post-action DFIR is a separate workflow after Action, approval, and collection.
+
+Primary inputs:
+
+- `case.json`
+- `action_result.json`
+- `collection_request.json`
+- `collection_result.json`
+- collected outputs referenced by the collection result
+
+Primary output:
+
+- `post_action_dfir_investigation_result.json`
+
+The workflow records evidence availability, factual parsed observations,
+limitations, and review proposals. It must not overwrite
+`investigation_result.json` or automatically change Case assessment, Action
+state, containment, external Case state, or Rule Improvement promotion state.
+
+See
+[Post-action DFIR Investigation Design](../design/dfir/post_action_dfir_investigation.md)
+for the canonical post-action contract.
+
+### 6.3 Triage Processing Contract
+
+Triage is a processing contract, not a required model choice. Deterministic and
+AI-assisted implementations may consume the same bounded inputs and produce the
+same structured artifact contract. Model use does not relax evidence,
+validation, or comparison boundaries.
+
+### 6.4 Action, Execution, and Integration
+
+Action planning, approval, execution, collection, and external integration are
+separate responsibilities.
+
+- `action_result.json` records the proposed response plan and policy context.
+- approval artifacts record reviewer intent where required.
+- the Executor Agent records execution state; it does not interpret collected evidence.
+- `collection_request.json` describes requested evidence.
+- `collection_result.json` records collection outcome and output references; completion is not a security conclusion.
+- TheHive updates, Velociraptor API execution, and other external integrations
+  remain explicit integration boundaries.
+- post-action findings require human review before Case reassessment, external
+  update, or follow-up Action.
+
+### 6.5 Scenario and Evidence Boundaries
+
+Attacker-side results and observed effects never prove defender-side telemetry,
+detection, or Incident coverage.
+
+A bounded fixture path may validate artifact composition without establishing
+live or continuous integration. For example, Scenario 009 fixture-backed
+Incident-to-Action coverage does not establish canonical live Wazuh source
+integration. Consult the Main Roadmap for the current Scenario 009 status.
 
 ---
 
-## 7. Current Practical Pipeline
+## 7. Reference Pipeline
 
-現時点で実際に動作している run ベースの最小パイプラインは以下。
+The following flow shows the intended artifact order. It is a responsibility
+map, not a claim that every stage is live-integrated or runtime-validated.
 
 ```text
 scenario
-→ attacker-agent
-→ shell runner
-→ attack_result.json
-→ attack_execution_log.json
-→ attack_observed_effects.json
-→ parser-agent
-→ detection-agent
-→ correlation-agent
-→ incident-builder-agent
-→ ai-triage-agent
-→ case-agent
-→ action-agent
-→ executor-agent
-→ TheHive / Velociraptor request
+→ attacker execution
+→ attacker-side result / execution log / observed effects
+→ defender-side logs, telemetry, or bounded fixtures
+→ source parsing and normalization
+→ deterministic detection
+→ correlation
+→ incident.json
+→ triage_result.json
+→ investigation_result.json
+→ case.json
+→ action_result.json
+→ approval / execution
+→ collection_request.json
+→ collection_result.json
+→ post_action_dfir_investigation_result.json
+→ human-reviewed Case / external integration handoff
+→ evaluation / Rule Improvement review artifacts
 ```
 
-実行は現在、Makefile / run-based orchestration をベースに行う。
+Each implementation claim must retain its evidence qualifier, such as fixture,
+controlled, manual, live, or runtime-validated.
 
 ---
 
-## 8. Current Output Set
+## 8. Artifact Ownership
 
-現実装で主に出力される成果物:
+| Artifact / boundary | Primary owner | Boundary |
+|---|---|---|
+| normalized events | source parser / normalized mapper | Telemetry shaping only; not detection or assessment. |
+| detection hits | Detection | Defender-side detection output; attacker claims are not substitutes. |
+| `incident.json` | Incident Builder | Structured Incident entry for downstream processing. |
+| `triage_result.json` | Triage | Initial bounded analysis; deterministic or AI-assisted implementation may be used. |
+| `investigation_result.json` | pre-case Investigation | Context, evidence gaps, pivots, and enriched features before Case/Action. |
+| `case.json` | Case | Internal source of truth for the reviewed workflow state. |
+| `action_result.json` | Action | Proposed response plan; not proof of approval or execution. |
+| `collection_request.json` | Action / Executor boundary | Evidence request; not collection success. |
+| `collection_result.json` | collection backend | Outcome and output-reference metadata; not evidence interpretation. |
+| `post_action_dfir_investigation_result.json` | post-action DFIR workflow | Factual follow-on analysis and review proposal; no automatic reassessment. |
+| candidate / recommendation artifacts | Rule Improvement | Review inputs only until explicit apply, deploy, or promotion approval. |
 
-```text
-data/runs/<run_id>/
-  attack_result.json
-  normalized_events.json
-  detection_hits.json
-  correlated_incidents.json
-  incident.json
-  triage_result.json
-  case.json
-  action_result.json
-  decision_log.json
-  collection_request.json
-```
-
-process telemetry を使う run では、以下も含まれる。
-
-```text
-process_events.json
-interesting_process_events.json
-process_chain_hits.json
-```
-
-For `scenario_009`, the current defender-side slice is fixture based:
-
-```text
-tests/fixtures/scenario_009_suspicious_archive_staging/endpoint_events.json
-  → detection/dsl/suspicious_archive_staging.yaml
-  → suspicious_archive_staging detection expectation
-```
-
-This is an initial synthetic defender-side fixture / DSL detection expectation.
-It is not live auditd / Wazuh / SIEM coverage, and it does not imply
-incident / triage / investigation coverage.
+`decision_log.json` may record decisions across stages, but it does not transfer
+authority between the owners above.
 
 ---
 
-## 9. Current Cross-Cutting Design
+## 9. Cross-Cutting Design
 
 ### 9.1 Run Isolation
 
-- `run_id` ごとに成果物を分離する
-- run単位で再現・比較可能にする
-- 1 run = 1 experiment unit を維持する
+- separate artifacts by `run_id`
+- preserve run-level reproducibility and comparison
+- maintain one run as one experimental unit
 
-### 9.2 attack_id Traceability
+### 9.2 Traceability
 
-全パイプラインに以下を伝播させる:
+Use `run_id`, `attack_id`, event references, Incident references, Case
+references, and artifact paths according to each contract. Do not fabricate
+cross-stage linkage when the source artifact does not provide it.
 
-```json
-"attack_id": "attack-000001"
-```
+Traceability supports:
 
-対象:
-- normalized events
-- detection hits
-- correlated incidents
-- incidents
-- triage results
-- case records
-- action results
-
-目的:
-- run単位評価
-- missed detection 分析
-- rule improvement の前提データ化
+- run-level evaluation
+- missed-detection analysis
+- evidence review
+- Rule Improvement input construction
 
 ### 9.3 Case as Source of Truth
 
-- case は事実と判断を保持する内部記録
-- 後続の TheHive / DFIR / external integrations は case を基準に接続する
-- case enrichment は append-only を原則とする
+- use the Case as the internal record of facts and judgments
+- connect external integrations to the reviewed Case state
+- distinguish outcome-only collection metadata from reviewed post-action findings
+- do not let post-action evidence overwrite the Case assessment without review
 
-### 9.4 Feature-Based Design Direction
+### 9.4 Feature-Based Design
 
-- detection_type / scenario 名依存を減らす
-- observed behavior を behavior_features として保持する
-- triage で derived_features を生成する
-- investigation で enriched_features を追加する
-- action は feature + policy を主根拠にする
+- Detection records observed behavior as `behavior_features`
+- Triage produces `derived_features` from bounded inputs
+- pre-case Investigation adds `enriched_features` from defender-side evidence
+- Action uses features and policy as its primary basis
+- post-action DFIR findings do not flow backward into the pre-case feature lifecycle
+
+### 9.5 Approval and Promotion Gates
+
+- state-changing Actions such as containment, isolation, blocking, and
+  credential revocation retain their approval boundaries
+- collection success does not imply evidence interpretation or Case reassessment
+- a Rule Improvement recommendation does not imply apply, deploy, runtime
+  update, or promotion execution
 
 ---
 
-## 10. Future Agent Responsibilities
+## 10. Agent Responsibility Details
 
 ### 10.1 Case Agent
-- incident / triage / investigation を case.json に統合する
-- case lifecycle を保持する
-- external integrations の source of truth を提供する
+- integrate Incident, Triage, and Investigation into `case.json`
+- maintain the Case lifecycle
+- provide the source of truth for external integrations
 
 ### 10.2 Investigation Agent
-- surrounding context / timeline / attack story を拡張する
-- DFIR / evidence collection を起動する
-- evidence と incident / case を関連付ける
+- expand the surrounding context, timeline, and attack story for Incident and Triage
+- relate defender-side evidence, evidence gaps, and recommended pivots
+- produce `investigation_result.json` before Case and Action
+- do not own collection execution or post-action DFIR interpretation
 
 ### 10.3 Endpoint Telemetry Agent
-- process / file / network telemetry を統合する
-- Linux auth系以外のシグナルを defensive workflow に供給する
-- richer correlation を可能にする
+- integrate process, file, and network telemetry
+- provide the defensive workflow with signals beyond Linux authentication events
+- enable richer correlation
 
 ### 10.4 Rule Improvement Agent
-- attack run ごとに結果を比較する
-- detected / missed / noisy を判断する
-- rule improvement suggestions を生成する
-- correlation / workflow improvement suggestions も扱う
+- compare results across attack runs
+- classify outcomes as detected, missed, or noisy
+- generate rule-improvement suggestions
+- also handle correlation and workflow improvement suggestions
 
 ### 10.5 Scenario Orchestrator
-- 複数 scenario の実行制御
-- defensive workflow との再実行ループ
-- improvement loop のハブ
-- 将来的に workflow definitions を実行可能にする
+- control the execution of multiple scenarios
+- coordinate rerun loops with the defensive workflow
+- act as the hub of the improvement loop
+- provide a future execution point for workflow definitions
 
 ### 10.6 Deception / Trap Detection
-- Phase7 foundation currently provides schemas, deterministic local asset
-  generation, trap hit generation, an incident bridge, and chain smoke coverage
-- honeytoken / decoy deployment through a scenario runner is intentionally
-  deferred
-- future deception hits should become a high-confidence signal layer without
-  bypassing approval gates
+- the Deception Agent generates bounded local-lab assets
+- the Trap Detection Agent produces hits from defender-side trap observations
+- do not derive deception hits from attacker-side claims
+- even when a confirmed deception hit is treated as a high-confidence signal,
+  preserve evidence, approval, containment, and Rule Improvement review boundaries
+- maintain the current status of the scenario runner, deployment, and live
+  validation in the Main Roadmap
 
 ### 10.7 Background Activity Agent
-- 正常系ノイズを生成する
-- false positive 測定を可能にする
-- 本番 SOC に近い観測条件を再現する
+- generate benign background noise
+- support false-positive measurement
+- reproduce observation conditions closer to a production SOC
 
 ### 10.8 Attack Planner Agent
-- objective を subtask に分解する
-- tool / executor / specialist を選択する
-- offensive planner / memory / graph への拡張点となる
+- decompose objectives into subtasks
+- select tools, executors, and specialists
+- provide an extension point for an offensive planner, memory, and graph
 
 ---
 
 ## 11. MVP Order (Recommended)
 
-最終形は大きいが、MVP順は次の通り。
+Although the target architecture is broad, the recommended MVP order is:
 
 1. Telemetry / Parser
 2. Detection
@@ -460,23 +502,30 @@ incident / triage / investigation coverage.
 
 ## 12. Key Design Principles
 
-- **Modular**: Agentごとに責務を分ける
-- **Traceable**: attack_id / event_ref / incident_id / run_id で追跡する
-- **Reproducible**: scenario と run を再現可能にする
-- **Phase-based**: 段階実装を前提にする
-- **Future-compatible**: 未実装Agentも最終構想として保持する
-- **Feature-oriented**: behavior feature を中心に汎用化する
-- **Evidence-first**: AI判断より evidence / decision boundary を可視化する
+- **Modular**: separate responsibilities by agent
+- **Traceable**: trace activity through `attack_id`, `event_ref`, `incident_id`, and `run_id`
+- **Reproducible**: make scenarios and runs reproducible
+- **Phase-based**: support incremental implementation by phase
+- **Future-compatible**: retain unimplemented agents in the target architecture
+- **Feature-oriented**: generalize processing around behavior features
+- **Evidence-first**: make evidence and decision boundaries more visible than AI judgments
 
 ---
 
 ## 13. Summary
 
-このアーキテクチャでは、**現在の実装状況** と **将来の完成形** を分けて扱う。
+This architecture defines target agent responsibilities and artifact and trust
+boundaries. It does not duplicate current implementation status; the Main
+Roadmap remains authoritative.
 
-- 現在:
-  - attack → detect → triage → case → action → execution の最小SOCループが実行可能
-- 将来:
-  - investigation / richer telemetry / improvement loop / deception / planner まで拡張
+In particular, preserve the boundaries between:
 
-したがって、未実装Agentは削除せず、**最終アーキテクチャの一部として保持する**。
+- attacker-side evidence and defender-side evidence
+- the Triage processing contract and model choice
+- pre-case `investigation_result.json` and post-action
+  `post_action_dfir_investigation_result.json`
+- Action planning, approval, execution, collection outcome, and evidence interpretation
+- Rule Improvement recommendations and apply, deploy, or promotion operations
+
+Retain unimplemented agents in the target architecture, but do not treat their
+presence in this document as evidence that they are Implemented or Validated.

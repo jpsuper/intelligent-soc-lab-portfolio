@@ -1,0 +1,153 @@
+version: 1
+
+rules:
+  - id: triage.df.001
+    name: download_and_execute_chain
+    domain: process_execution
+    category: derived_feature
+    tags: [process_execution, chain, core]
+    enabled: true
+    description: Detects a download followed by execution behavior chain.
+    stage: triage
+    when:
+      all:
+        - feature: remote_download
+          equals: true
+        - feature: execution_after_download
+          equals: true
+    produce:
+      derived_features:
+        download_and_execute_chain: true
+
+  - id: triage.df.002
+    name: high_risk_execution_flow
+    domain: process_execution
+    category: derived_feature
+    tags: [process_execution, execution, core]
+    enabled: true
+    description: Flags execution from a temporary path as high risk.
+    stage: triage
+    when:
+      all:
+        - feature: temporary_path_execution
+          equals: true
+    produce:
+      derived_features:
+        high_risk_execution_flow: true
+
+  - id: triage.df.003
+    name: external_payload_source
+    domain: process_execution
+    category: derived_feature
+    tags: [process_execution, network, core]
+    enabled: true
+    description: Flags direct IP download as an external payload source.
+    stage: triage
+    when:
+      all:
+        - feature: direct_ip_download
+          equals: true
+    produce:
+      derived_features:
+        external_payload_source: true
+
+  - id: triage.extra.001
+    name: rapid_execution_after_download
+    domain: process_execution
+    category: derived_feature_extra
+    tags: [process_execution, timing, extra]
+    enabled: true
+    description: Adds an extra pattern for rapid download then execution.
+    stage: triage
+    when:
+      all:
+        - feature: remote_download
+          equals: true
+        - feature: execution_after_download
+          equals: true
+    produce:
+      derived_features_extra:
+        - rapid_execution_after_download
+
+  - id: triage.extra.002
+    name: temporary_directory_staging
+    domain: process_execution
+    category: derived_feature_extra
+    tags: [process_execution, staging, extra]
+    enabled: true
+    description: Adds an extra pattern for staging in a temporary directory.
+    stage: triage
+    when:
+      all:
+        - feature: temporary_path_execution
+          equals: true
+    produce:
+      derived_features_extra:
+        - temporary_directory_staging
+
+  - id: triage.extra.003
+    name: direct_ip_payload_delivery
+    domain: process_execution
+    category: derived_feature_extra
+    tags: [process_execution, network, extra]
+    enabled: true
+    description: Adds an extra pattern for direct IP payload delivery.
+    stage: triage
+    when:
+      all:
+        - feature: direct_ip_download
+          equals: true
+    produce:
+      derived_features_extra:
+        - direct_ip_payload_delivery
+
+  - id: triage.extra.004
+    name: script_execution_from_tmp
+    domain: process_execution
+    category: derived_feature_extra
+    tags: [process_execution, execution, extra]
+    enabled: true
+    description: Adds an extra pattern for execution from a temporary path after download.
+    stage: triage
+    when:
+      all:
+        - feature: temporary_path_execution
+          equals: true
+        - feature: execution_after_download
+          equals: true
+    produce:
+      derived_features_extra:
+        - script_execution_from_tmp
+  - id: triage.extra.005
+    name: chmod_then_execute
+    domain: process_execution
+    category: derived_feature_extra
+    tags: [process_execution, execution, extra]
+    enabled: true
+    description: Adds an extra pattern when a permission change is followed by execution.
+    stage: triage
+    when:
+      all:
+        - feature: permission_change_before_execution
+          equals: true
+    produce:
+      derived_features_extra:
+        - chmod_then_execute
+
+  - id: triage.extra.006
+    name: download_retry_with_port_change
+    domain: process_execution
+    category: derived_feature_extra
+    tags: [process_execution, network, extra]
+    enabled: true
+    description: Adds an extra pattern when repeated download attempts include a port change.
+    stage: triage
+    when:
+      all:
+        - feature: repeated_download_attempt
+          equals: true
+        - feature: download_port_change
+          equals: true
+    produce:
+      derived_features_extra:
+        - download_retry_with_port_change

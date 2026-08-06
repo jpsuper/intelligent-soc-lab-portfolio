@@ -19,7 +19,7 @@ It must not replace human review. It must not apply rules, deploy changes,
 update baselines, update prompts, update parsers, update telemetry, update
 correlation logic, update active agents, or promote anything.
 
-## 2. Possible CLI Shape
+## 2. CLI Shape
 
 Command shape:
 
@@ -54,9 +54,9 @@ The summary command may inspect these artifacts when present:
 - other Rule Improvement export diagnostics JSON files, if present
 
 Artifacts may be present or absent depending on which export steps were run.
-`parser_candidates.yaml` is optional and is not required today. The command
-distinguishes absent optional artifacts from missing required artifacts in
-whichever mode it supports.
+`parser_candidates.yaml` is optional in the base reporting mode. The command
+distinguishes absent optional artifacts from artifacts required by the selected
+mode.
 
 ## 4. Checks
 
@@ -65,7 +65,7 @@ The summary should report artifact presence:
 - present
 - absent
 - optional
-- required, if a future mode defines required artifacts
+- required, when the selected mode marks an artifact as required
 
 It should report schema validation status for:
 
@@ -191,7 +191,7 @@ Existing export-chain smoke tests prove focused artifact paths:
   covers the concrete bundle to recommendation-only promotion recommendation
   export chain.
 - `tests/test_rule_improvement_export_validation_summary_chain_smoke.py` covers
-  the implemented export chain through validation summary reporting with
+  the supported export chain through validation summary reporting with
   synthetic schema-valid `tmp_path` fixtures:
   `rule_improvement_candidate_proposals_v2.json` plus
   `rule_improvement_proposal_review_decisions.json` to
@@ -205,14 +205,10 @@ those flows. It must not invoke exporters as an apply workflow and must not
 create candidate or recommendation semantics beyond reporting what is already
 present.
 
-With this reporting layer, the Rule Improvement export MVP is complete for the
-current candidate-generation boundary: reviewed proposal decisions can be
-converted into a concrete candidate bundle, narrowed into rule, prompt,
-promotion-review, and parser export artifacts, and checked by the export
-artifact validation summary. This MVP remains non-applying, non-deploying,
-non-mutating, review-oriented, and does not implement baseline updates, prompt
-updates, parser updates, telemetry updates, correlation updates, a promotion
-workflow, or automatic promotion.
+The reporting boundary covers reviewed proposal decisions converted into a
+concrete candidate bundle and narrowed into rule, prompt, promotion-review, and
+parser artifacts. Reporting remains non-applying, non-deploying, non-mutating,
+and non-promoting; state-changing behavior requires separate workflows.
 
 The chain smoke verifies that proposal v2 artifacts plus proposal review
 decisions can flow through concrete bundle conversion; the rule/prompt exporter
@@ -233,44 +229,35 @@ attack/victim-log end-to-end smoke and does not require victim logs, Wazuh,
 rsyslog, Hydra output, Proxmox, Kali, Ubuntu victim, or existing
 `data/runs/**` artifacts.
 
-## 8. Implementation Status
+## 8. Status And Evidence Ownership
 
-Implemented:
+This document owns artifact presence, schema validation, cross-artifact
+consistency, diagnostics, safety, provenance checks, and the machine-readable
+summary shape. The reporter, schema, pipeline-wiring contract, and focused
+tests named here are evidence for those boundaries.
 
-- proposal v2 artifacts
-- proposal review decisions
-- concrete candidate bundle
-- Phase 1 rule/prompt legacy export
-- promotion recommendation export
-- parser legacy export
-- rule/prompt export chain smoke
-- promotion recommendation export chain smoke
-- parser export chain smoke
-- validation summary schema
-- validation summary script
-- focused validation summary tests
-- focused validation summary schema tests
-- export validation summary chain smoke
-- disabled-by-default export validation summary pipeline wiring via
-  `scripts/run_process_pipeline.py --enable-ri-export-validation-summary`
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Changes to supported exporters must not turn validation results into approval
+or state-change authority.
 
-Not implemented:
+---
 
-- attack-to-detection-to-Rule-Improvement E2E smoke
-- parser process-pipeline wiring
-- telemetry legacy export
-- correlation legacy export
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
-- automatic promotion
+## 9. Boundary Acceptance Criteria
 
-## 9. One-Line Summary
+The validation-summary boundary remains valid when:
+
+- the reporter only inspects already-generated artifacts
+- optional and required presence are distinguished explicitly
+- source and output schemas are checked before success is reported
+- skipped items and diagnostics cannot become candidates or recommendations
+- provenance and cross-artifact consistency remain reviewable
+- the reporter cannot invoke exporters, rewrite artifacts, or authorize state
+  changes
+
+---
+
+## 10. One-Line Summary
 
 ```text
 The RI export artifact validation summary is a non-mutating reporter over already-generated export artifacts; it is not approval to apply, deploy, update baselines, or promote.

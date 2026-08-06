@@ -1,0 +1,189 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rule_improvement_ai_review_draft_schema_v1",
+  "title": "Rule Improvement AI Review Draft Schema",
+  "description": "A suggestions-only AI-assisted review sidecar. It cannot classify signals, derive candidate eligibility, generate candidates, allow promotion, or mutate operational state.",
+  "type": "object",
+  "required": [
+    "draft_id",
+    "source_stage",
+    "source_review_input_ref",
+    "source_review_input_id",
+    "ai_assistance_only",
+    "human_review_required",
+    "classification_decision_allowed",
+    "candidate_generation_started",
+    "promotion_allowed",
+    "suggestions"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "draft_id": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "source_stage": {
+      "const": "post_action_dfir"
+    },
+    "source_review_input_ref": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "source_review_input_id": {
+      "$ref": "#/$defs/non_empty_string"
+    },
+    "ai_assistance_only": {
+      "const": true
+    },
+    "human_review_required": {
+      "const": true
+    },
+    "classification_decision_allowed": {
+      "const": false
+    },
+    "candidate_generation_started": {
+      "const": false
+    },
+    "promotion_allowed": {
+      "const": false
+    },
+    "suggestions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/suggestion"
+      }
+    },
+    "assistant_info": {
+      "$ref": "#/$defs/assistant_info"
+    },
+    "model_info": {
+      "$ref": "#/$defs/assistant_info"
+    },
+    "warnings": {
+      "$ref": "#/$defs/strings"
+    },
+    "errors": {
+      "$ref": "#/$defs/strings"
+    }
+  },
+  "$defs": {
+    "non_empty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "strings": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/non_empty_string"
+      }
+    },
+    "non_empty_strings": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/strings"
+        },
+        {
+          "minItems": 1
+        }
+      ]
+    },
+    "assistant_info": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "model": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "configuration_ref": {
+          "$ref": "#/$defs/non_empty_string"
+        }
+      }
+    },
+    "suggestion": {
+      "type": "object",
+      "required": [
+        "source_signal_ref",
+        "suggested_label",
+        "suggested_rationale",
+        "suggested_next_step",
+        "evidence_caveats",
+        "review_questions",
+        "confidence_rationale"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "source_signal_ref": {
+          "type": "string",
+          "pattern": "^(?:/(?:[^~/]|~[01])*)+$"
+        },
+        "suggested_label": {
+          "type": "string",
+          "enum": [
+            "detection_gap",
+            "telemetry_gap",
+            "parser_gap",
+            "correlation_gap",
+            "timing_or_scope_limit",
+            "insufficient_evidence",
+            "expected_or_authorized_behavior",
+            "no_rule_change"
+          ]
+        },
+        "suggested_rationale": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "suggested_missing_requirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/suggested_missing_requirement"
+          }
+        },
+        "suggested_next_step": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "evidence_caveats": {
+          "$ref": "#/$defs/non_empty_strings"
+        },
+        "review_questions": {
+          "$ref": "#/$defs/non_empty_strings"
+        },
+        "confidence_rationale": {
+          "$ref": "#/$defs/non_empty_string"
+        }
+      }
+    },
+    "suggested_missing_requirement": {
+      "type": "object",
+      "required": [
+        "requirement_type",
+        "summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "requirement_type": {
+          "type": "string",
+          "enum": [
+            "telemetry",
+            "parser",
+            "correlation",
+            "collection_scope",
+            "collection_timing",
+            "evidence",
+            "review"
+          ]
+        },
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "recommended_sources": {
+          "$ref": "#/$defs/non_empty_strings"
+        }
+      }
+    }
+  }
+}

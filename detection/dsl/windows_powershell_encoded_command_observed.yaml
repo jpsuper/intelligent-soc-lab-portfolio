@@ -1,0 +1,35 @@
+id: execution.windows_powershell_encoded_command_observed
+title: Windows PowerShell encoded-command flag observed
+status: experimental
+
+log_source:
+  product: windows
+  service: sysmon
+
+match:
+  source: sysmon
+  platform: windows
+  event_type: process_exec
+  process_name_casefold: powershell.exe
+  command_token_casefold_any:
+    - -encodedcommand
+    - -enc
+
+artifact: encoded_command_observed
+severity: low
+
+behavior_features:
+  encoded_command_observed: true
+
+metadata:
+  mitre:
+    - T1059.001
+  references: []
+  tags:
+    - execution
+    - powershell
+    - sysmon
+    - observation
+
+targets:
+  - python

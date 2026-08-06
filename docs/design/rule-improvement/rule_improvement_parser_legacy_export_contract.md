@@ -160,58 +160,62 @@ checks, payload checks, safety checks, and output validation succeed.
 
 ## 7. Relationship to Validation Summary
 
-The implemented validation summary reporter currently inspects already
-generated concrete bundle, rule, prompt, promotion recommendation, parser, and
-diagnostics artifacts. It does not require `parser_candidates.yaml` today, but
-when `parser_candidates.yaml` is present it validates the artifact and checks
-that visible IDs come only from converted `candidate_type: parser` candidates.
+The validation summary reporter inspects already-generated concrete bundle,
+rule, prompt, promotion recommendation, parser, and diagnostics artifacts.
+`parser_candidates.yaml` is optional in the base reporting mode. When present,
+the reporter validates it and checks that visible IDs come only from converted
+`candidate_type: parser` candidates.
 
 Parser diagnostics remain diagnostics only. The validation summary must not
-create parser candidates and must not invoke parser exporters.
+create parser candidates or invoke parser exporters.
+
+---
 
 ## 8. Non-Goals
 
-Implemented:
-
-- parser legacy export future contract
-- parser candidate schema at `schemas/parser_candidates_schema.json`
-- focused parser candidate schema tests at
-  `tests/test_parser_candidates_schema.py`
-- parser legacy exporter at
-  `scripts/export_rule_improvement_parser_candidates.py`
-- focused parser legacy exporter tests at
-  `tests/test_export_rule_improvement_parser_candidates.py`
-- parser export chain smoke at
-  `tests/test_rule_improvement_parser_export_chain_smoke.py`
-
-Not implemented:
+This contract does not define or authorize:
 
 - parser process-pipeline wiring
-- parser apply workflow
-- parser deployment workflow
-- automatic parser update
-- telemetry legacy export
-- correlation legacy export
-- attack-to-detection-to-Rule-Improvement E2E smoke
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
-- automatic promotion
+- parser apply or deployment workflows
+- automatic parser updates
+- telemetry or correlation legacy export
+- attack-to-detection-to-Rule-Improvement E2E validation
+- baseline, prompt, parser, telemetry, or correlation mutation
+- promotion workflow or automatic promotion
 
-## 9. Future Implementation Checklist
+---
 
-Future parser export follow-up work should:
+## 9. Status And Evidence Ownership
 
-- update docs/status after implementation
-- keep process-pipeline wiring disabled by default if added later
+This document owns parser-export eligibility, candidate-only output semantics,
+diagnostics, safe output paths, schema validation, and fail-closed behavior.
+The parser candidate schema, exporter, focused tests, and export-chain smoke
+named here are evidence for those boundaries.
 
-## 10. One-Line Summary
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, pipeline integration, validation depth,
+priorities, and sequencing. Telemetry or correlation export must arrive
+through dedicated contracts rather than being inferred from this parser
+exporter.
+
+---
+
+## 10. Boundary Acceptance Criteria
+
+The parser export boundary remains valid when:
+
+- only eligible converted parser candidates are considered
+- skipped decisions, diagnostics, and other candidate types are excluded
+- source bundle and review provenance remain traceable
+- unsafe paths, payload overrides, or schema violations fail closed
+- output is validated before it is written
+- `parser_candidates.yaml` remains candidate-only and cannot update parser
+  code, configuration, active agents, or production state
+
+---
+
+## 11. One-Line Summary
 
 ```text
-Parser legacy export may produce parser_candidates.yaml from accepted parser concrete candidates, but it remains candidate-only and must not update parser code, parser configuration, active agents, or production state.
+Parser legacy export produces parser_candidates.yaml from eligible converted parser candidates, but remains candidate-only and cannot update parser code, configuration, active agents, or production state.
 ```

@@ -1,0 +1,59 @@
+{
+  "ai_assistance_only": true,
+  "assistant_info": {
+    "configuration_ref": "manual-lmstudio-run",
+    "model": "qwen3.6-35b-a3b",
+    "provider": "lmstudio"
+  },
+  "candidate_generation_started": false,
+  "classification_decision_allowed": false,
+  "draft_id": "ri-ai-review-draft-lmstudio-comparison-001",
+  "errors": [],
+  "human_review_required": true,
+  "promotion_allowed": false,
+  "source_review_input_id": "ri-review-comparison-001",
+  "source_review_input_ref": "data/runs/run-comparison/rule_improvement_review_input.json",
+  "source_stage": "post_action_dfir",
+  "suggestions": [
+    {
+      "confidence_rationale": "Detection coverage should be reviewed against supported telemetry.",
+      "evidence_caveats": [
+        "A suggested detection gap is not a promotion decision."
+      ],
+      "review_questions": [
+        "Does current detection logic represent the supported observed behavior?"
+      ],
+      "source_signal_ref": "/supporting_signals/0",
+      "suggested_label": "detection_gap",
+      "suggested_next_step": "Have a human compare supported behavior with current detection coverage.",
+      "suggested_rationale": "The signal states that detection coverage may not represent observed behavior."
+    },
+    {
+      "confidence_rationale": "Parser extraction remains a reviewable gap only.",
+      "evidence_caveats": [
+        "Collected artifact support does not authorize candidate generation."
+      ],
+      "review_questions": [
+        "Does parser output expose the needed fields consistently?"
+      ],
+      "source_signal_ref": "/supporting_signals/1",
+      "suggested_label": "parser_gap",
+      "suggested_next_step": "Have a human review parser coverage.",
+      "suggested_rationale": "The signal points to normalized field extraction limits."
+    },
+    {
+      "confidence_rationale": "Telemetry availability is unresolved.",
+      "evidence_caveats": [
+        "Missing telemetry is not proof of host-clean or benign activity."
+      ],
+      "review_questions": [
+        "Which telemetry source would make this reviewable?"
+      ],
+      "source_signal_ref": "/supporting_signals/2",
+      "suggested_label": "telemetry_gap",
+      "suggested_next_step": "Have a human identify needed telemetry.",
+      "suggested_rationale": "The context identifies unavailable telemetry needed for review."
+    }
+  ],
+  "warnings": []
+}

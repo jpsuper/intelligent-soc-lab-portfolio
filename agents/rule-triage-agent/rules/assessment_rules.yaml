@@ -1,0 +1,63 @@
+version: 1
+
+rules:
+  - id: triage.assessment.001
+    name: malicious_download_and_execute_from_external_source
+    domain: process_execution
+    category: assessment
+    tags: [process_execution, assessment, critical]
+    enabled: true
+    description: Marks the incident as malicious when all core process-execution signals are present.
+    stage: triage
+    when:
+      all:
+        - feature: download_and_execute_chain
+          equals: true
+        - feature: high_risk_execution_flow
+          equals: true
+        - feature: external_payload_source
+          equals: true
+    produce:
+      assessment:
+        verdict: malicious
+        confidence: high
+        priority: P1
+        risk_score: 90
+
+  - id: triage.assessment.002
+    name: suspicious_download_and_execute_chain
+    domain: process_execution
+    category: assessment
+    tags: [process_execution, assessment, medium]
+    enabled: true
+    description: Marks the incident as suspicious when a download-and-execute chain is present but supporting risk signals are weaker.
+    stage: triage
+    when:
+      all:
+        - feature: download_and_execute_chain
+          equals: true
+    produce:
+      assessment:
+        verdict: suspicious
+        confidence: medium
+        priority: P2
+        risk_score: 70
+
+  - id: triage.assessment.999
+    name: benign_default
+    domain: default
+    category: assessment
+    tags: [default, assessment]
+    enabled: true
+    description: Default fallback when no higher-priority assessment rule matches.
+    stage: triage
+    when:
+      all:
+        - feature: download_and_execute_chain
+          equals: false
+    produce:
+      assessment:
+        verdict: benign
+        confidence: low
+        priority: P3
+        risk_score: 10

@@ -85,11 +85,6 @@ RFC1918 or IPv4 link-local lab endpoint additionally requires
 
 For a lab-hosted Windows LM Studio instance:
 
-> [!NOTE]
-> The `192.0.2.7` address below is a documentation-only placeholder used in
-> this public snapshot. Replace it with the RFC1918 address of the LM Studio
-> host in your isolated lab before running the command.
-
 ```bash
 uv run python scripts/run_ai_review_draft_lmstudio_model.py \
   --prompt-bundle data/runs/<run-id>/rule_improvement_ai_review_draft_prompt_bundle.json \
@@ -213,8 +208,6 @@ Set the run and model variables:
 RUN_ID="<run-id>"
 RUN_DIR="data/runs/$RUN_ID"
 OPENAI_MODEL="gpt-4.1-mini"
-# Documentation-only placeholder; replace with the RFC1918 address of the
-# LM Studio host in the isolated lab before execution.
 LMSTUDIO_BASE_URL="http://192.0.2.7:1234/v1"
 LMSTUDIO_MODEL="qwen3.6-35b-a3b"
 export RUN_ID RUN_DIR OPENAI_MODEL LMSTUDIO_BASE_URL LMSTUDIO_MODEL
@@ -517,7 +510,7 @@ do
 done
 ```
 
-Confirm that no candidate or promotion artifacts were created. 
+Confirm that no candidate or promotion artifacts were created.
 The command should complete silently. Any listed artifact must only be created by a later,
 explicitly reviewed workflow.
 

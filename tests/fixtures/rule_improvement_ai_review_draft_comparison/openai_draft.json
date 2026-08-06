@@ -1,0 +1,49 @@
+{
+  "ai_assistance_only": true,
+  "assistant_info": {
+    "configuration_ref": "manual-openai-run",
+    "model": "gpt-5.4",
+    "provider": "openai"
+  },
+  "candidate_generation_started": false,
+  "classification_decision_allowed": false,
+  "draft_id": "ri-ai-review-draft-openai-comparison-001",
+  "errors": [],
+  "human_review_required": true,
+  "promotion_allowed": false,
+  "source_review_input_id": "ri-review-comparison-001",
+  "source_review_input_ref": "data/runs/run-comparison/rule_improvement_review_input.json",
+  "source_stage": "post_action_dfir",
+  "suggestions": [
+    {
+      "confidence_rationale": "ProcessList is only a point-in-time snapshot, so the suggestion remains tentative.",
+      "evidence_caveats": [
+        "Linux.ProcessList is a point-in-time snapshot; process absence does not prove non-execution."
+      ],
+      "review_questions": [
+        "Could collection timing or scope explain what is not represented?"
+      ],
+      "source_signal_ref": "/supporting_signals/0",
+      "suggested_label": "timing_or_scope_limit",
+      "suggested_next_step": "Have a human review collection timing and independent telemetry.",
+      "suggested_rationale": "Point-in-time evidence limits conclusions outside the observed interval."
+    },
+    {
+      "confidence_rationale": "The parser gap is visible in normalized context but still needs human confirmation.",
+      "evidence_caveats": [
+        "Parser coverage should be reviewed before candidate work."
+      ],
+      "review_questions": [
+        "Does the current parser expose the fields needed for review?"
+      ],
+      "source_signal_ref": "/supporting_signals/1",
+      "suggested_label": "parser_gap",
+      "suggested_next_step": "Have a human review parser coverage.",
+      "suggested_rationale": "The normalized context identifies parser extraction as a review gap."
+    }
+  ],
+  "warnings": [
+    "OpenAI output is untrusted candidate output until imported.",
+    "Human review remains required."
+  ]
+}

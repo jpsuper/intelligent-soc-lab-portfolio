@@ -39,7 +39,7 @@ collection_result.json
 
 ---
 
-## 2. Current state and contracts
+## 2. Contract Relationships
 
 ### 2.1 Pre-case investigation result
 
@@ -276,47 +276,30 @@ The process pipeline keeps this stage off by default. Pass `--run-post-action-df
 
 ---
 
-## 7. Implementation phases
+## 7. Status And Evidence Ownership
 
-### Phase A — Contract and mock outcome generation — completed
+This document owns the append-only case-ingestion behavior, the separation from
+pre-case Investigation, and the handoff from `collection_result.json` to the
+post-action DFIR workflow. The schemas, fixture-backed parsers, mock outputs,
+run-based workflow, and tests named in this document are evidence references for
+those boundaries.
 
-- Define `collection_result.json` contract and schema.
-- Provide sample-compatible mock result generation.
-- Keep collection outcome generation separate from interpretation.
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, supported parser breadth, collector integration,
+priorities, and sequencing. A supported fixture parser does not imply
+Velociraptor-native ingestion or production collection coverage.
 
-### Phase B — Case append-only enrichment — completed
-
-- Use `RunPaths.collection_result` in case-agent.
-- Load `collection_result.json` when present.
-- Append `dfir_collection_summary` and `dfir_evidence_refs`.
-- Preserve assessment and case decision fields.
-- Test top-level and per-artifact output-reference collection.
-
-### Phase C — Post-action DFIR workflow contract — completed
-
-- Define the dedicated `post_action_dfir_investigation_result.json` artifact contract.
-- Define input/output ownership and the human-review boundary.
-- Specify how initial TheHive case creation differs from post-action enrichment.
-- Keep `collection_result.json` out of the pre-case Investigation Agent.
-
-### Phase D — Collected-output fixtures and limited parsing — MVP completed
-
-- A controlled `Linux.Syslog.SSHLogin` fixture and factual parser are implemented.
-- Run-based mock collection writes `forensics/mock/Linux.Syslog.SSHLogin.json`, references it through the collected artifact's `output_refs`, and can be consumed by the post-action workflow.
-- Parse failures and collection limitations are recorded explicitly.
-- Evidence level and assessment are not automatically upgraded.
-- Broader mock output generation, additional parsers, and real Velociraptor collection ingestion remain follow-on work.
-
-### Phase E — Collector integration and result comparison
-
-- Add Velociraptor-native output mapping after the generic fixture/parser contract is stable.
-- Define executor / DFIR result comparison only after post-action artifact semantics are stable.
+Additional parsers or collector mappings must preserve source provenance,
+represent unsupported or failed outputs as limitations, and must not turn
+evidence absence into a negative security conclusion. Executor/result
+comparison requires a separate contract after collection and post-action
+semantics remain stable.
 
 ---
 
-## 8. Validation direction
+## 8. Validation Invariants
 
-Completed case-ingestion coverage:
+Case-ingestion invariants:
 
 ```text
 - collection_result completed or partial -> case has dfir_collection_summary
@@ -326,7 +309,7 @@ Completed case-ingestion coverage:
 - absent collection_result preserves the previous case output
 ```
 
-Post-action workflow coverage:
+Post-action workflow invariants:
 
 ```text
 - collection_result alone does not alter investigation_result.json

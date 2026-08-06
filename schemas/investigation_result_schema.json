@@ -1,0 +1,390 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/investigation_result.schema.json",
+  "title": "investigation_result",
+  "description": "Evidence-aware investigation artifact used by the investigation stage and investigation comparison harness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "incident_id",
+    "summary",
+    "attack_story",
+    "evidence",
+    "enriched_features",
+    "evidence_level",
+    "evidence_summary",
+    "investigation_notes",
+    "timeline_notes",
+    "recommended_next_steps"
+  ],
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Generation timestamp for this investigation result."
+    },
+    "investigation_id": {
+      "type": "string",
+      "description": "Optional unique ID for the investigation result."
+    },
+    "incident_id": {
+      "type": "string",
+      "description": "Incident this investigation belongs to."
+    },
+    "triage_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional triage result ID used as input."
+    },
+    "attack_id": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Optional attack/run identifier if available."
+    },
+    "summary": {
+      "type": "string",
+      "description": "Human-readable summary of investigation findings."
+    },
+    "attack_story": {
+      "type": "string",
+      "description": "Narrative describing the most plausible sequence of activity, grounded in available evidence."
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Structured evidence reorganized from incident/triage and optional telemetry. Additional stage-specific keys are allowed.",
+      "additionalProperties": true,
+      "properties": {
+        "payload_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "execution_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "parent_pid": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "download_hosts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "download_ports": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "child_processes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "process_event_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "process_chain_hit_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "process_observations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/compactProcessObservation"
+          }
+        },
+        "process_chain_hits": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/compactProcessChainHit"
+          }
+        },
+        "command_lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parent_command_lines": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network_observations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "http_observations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "zeek_uids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "enriched_features": {
+      "type": "array",
+      "description": "Contextual features added by investigation. These should remain evidence/context-oriented, not final verdicts.",
+      "items": {
+        "type": "string"
+      },
+      "uniqueItems": true
+    },
+    "evidence_level": {
+      "type": "string",
+      "enum": [
+        "none",
+        "limited",
+        "moderate",
+        "strong"
+      ],
+      "description": "High-level completeness of currently available investigation evidence."
+    },
+    "evidence_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Structured explanation of what is observed, what supports it, what remains missing, and why the evidence level is appropriate.",
+      "properties": {
+        "observed_facts": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "supporting_signals": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence_gaps": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "confidence_rationale": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "observed_facts",
+        "supporting_signals",
+        "evidence_gaps",
+        "confidence_rationale"
+      ]
+    },
+    "unsupported_claims": {
+      "type": "array",
+      "description": "Claims that are intentionally held back because current evidence does not justify them.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "claim": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim",
+          "reason"
+        ]
+      }
+    },
+    "missing_pivots": {
+      "type": "array",
+      "description": "Key unanswered pivots or checks that remain before a stronger conclusion would be justified.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "pivot": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        },
+        "required": [
+          "pivot",
+          "reason",
+          "priority"
+        ]
+      }
+    },
+    "recommended_pivots": {
+      "type": "array",
+      "description": "Concrete next pivots to investigate based on current evidence.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "pivot": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "source_artifact": {
+            "type": "string"
+          },
+          "priority": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          }
+        },
+        "required": [
+          "pivot",
+          "reason",
+          "source_artifact",
+          "priority"
+        ]
+      }
+    },
+    "investigation_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Short analyst-style notes explaining contextual findings."
+    },
+    "timeline_notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Timeline-oriented notes for later case enrichment."
+    },
+    "recommended_next_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Human-readable follow-up steps derived from current evidence."
+    },
+    "source_inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional trace of which inputs were used to build the investigation result.",
+      "properties": {
+        "incident_json": {
+          "type": "boolean"
+        },
+        "triage_result_json": {
+          "type": "boolean"
+        },
+        "process_events_json": {
+          "type": "boolean"
+        },
+        "auditd_events_json": {
+          "type": "boolean"
+        },
+        "endpoint_events_json": {
+          "type": [
+            "boolean",
+            "string"
+          ]
+        },
+        "process_chain_hits_json": {
+          "type": "boolean"
+        },
+        "zeek_enrichment_json": {
+          "type": "boolean"
+        },
+        "wazuh_fim_alerts_json": {
+          "type": "boolean"
+        },
+        "wazuh_sudo_alerts_json": {
+          "type": "boolean"
+        },
+        "ssh_auth_events_json": {
+          "type": "boolean"
+        }
+      }
+    },
+    "profile": {
+      "type": "string",
+      "description": "Profile label such as current or variant when generated by a harness exporter."
+    }
+  },
+  "$defs": {
+    "compactProcessObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timestamp": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "user": {
+          "type": "string"
+        },
+        "command_line": {
+          "type": "string"
+        },
+        "parent_command_line": {
+          "type": "string"
+        }
+      }
+    },
+    "compactProcessChainHit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "rule": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "command_line": {
+          "type": "string"
+        },
+        "timestamp": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

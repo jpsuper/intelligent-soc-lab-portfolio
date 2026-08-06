@@ -23,7 +23,7 @@ promote candidates or agents, or mutate operational state.
 
 ## 2. Flow Position
 
-The current export MVP flow is:
+The standalone export flow is:
 
 ```text
 rule_improvement_proposal_review_decisions.json
@@ -37,14 +37,13 @@ rule_improvement_proposal_review_decisions.json
   -> parser_candidates.yaml
   -> scripts/summarize_rule_improvement_export_artifacts.py
   -> rule_improvement_export_artifact_validation_summary.json
-  -> future apply / deployment / update / promotion workflows
+  -> separate human review and any state-changing workflows
 ```
 
-The concrete candidate bundle schema and standalone converter are implemented.
-The Phase 1 legacy-compatible rule/prompt exporter is implemented. Promotion
-recommendation export is implemented as a separate recommendation-only exporter.
-Parser export is implemented as a separate parser-candidate-only exporter.
-Telemetry/correlation export is not implemented yet.
+Rule and prompt narrowing is handled by the Phase 1 exporter. Promotion-review
+and parser narrowing use separate recommendation-only and candidate-only
+exporters. Telemetry and correlation are outside this contract and require
+dedicated schemas and export contracts.
 
 ## 3. Export Eligibility
 
@@ -64,16 +63,16 @@ The exporter must not export:
 apply, deploy, update baselines, update prompts, update parser code, update
 telemetry collection, update correlation logic, or promote.
 
-## 4. Candidate Type Support Strategy
+## 4. Candidate Type Support
 
-Implemented Phase 1 support:
+Rule and prompt exporter support:
 
 | Bundle `candidate_type` | Legacy-compatible output |
 |---|---|
 | `rule` | `rule_candidates.yaml` |
 | `prompt` | `prompt_candidates.yaml` |
 
-Separate implemented support:
+Separate exporter support:
 
 | Bundle `candidate_type` | Legacy-compatible output |
 |---|---|
@@ -81,22 +80,22 @@ Separate implemented support:
 | `parser` | `parser_candidates.yaml` |
 
 `promotion_review` export must remain recommendation-only. It must not promote
-anything by itself and should require later human review.
+anything by itself and requires separate human review.
 Parser export must remain candidate-only. It must not update parser code,
 parser configuration, active agents, or production state.
 
-Not yet exportable:
+Outside this contract:
 
 - `telemetry`
 - `correlation`
 
-Telemetry and correlation export should wait for dedicated legacy-compatible
-schemas or separate artifact contracts. The parser legacy export contract
+Telemetry and correlation export require dedicated legacy-compatible schemas
+and separate artifact contracts. The parser legacy export contract
 defines the `parser_candidates.yaml` and parser diagnostics boundaries.
 
 ## 5. Legacy Artifact Relationship
 
-Legacy comparison-harness artifacts currently include:
+Legacy comparison-harness artifacts include:
 
 - `rule_candidates.yaml`
 - `prompt_candidates.yaml`
@@ -118,7 +117,7 @@ approval, or promotion approval.
 
 ## 6. Required Source and Provenance Handling
 
-A future exporter should preserve or link back to:
+Each exporter should preserve or link back to:
 
 - source concrete candidate bundle ref
 - source concrete candidate bundle SHA-256
@@ -143,25 +142,25 @@ artifact.
 
 ## 7. Output Path Strategy
 
-Implemented Phase 1 output names:
+Rule and prompt output names:
 
 - `rule_candidates.yaml`
 - `prompt_candidates.yaml`
 
-Separate implemented output names:
+Separate exporter output names:
 
 - `promotion_recommendation.yaml`
 - `parser_candidates.yaml`
 
-Promotion recommendation output is implemented through the separate
+Promotion recommendation output is produced by the separate
 recommendation-only exporter. Exporters should refuse unsafe paths and must
 refuse to overwrite the source concrete candidate bundle.
-Parser candidate output is implemented through the separate candidate-only
-exporter and must remain candidate-only.
+Parser candidate output is produced by the separate candidate-only exporter
+and must remain candidate-only.
 
 ## 8. Safety Boundaries
 
-The future exporter must not:
+Exporters must not:
 
 - apply changes
 - deploy changes
@@ -185,7 +184,7 @@ update approval, or promotion approval.
 
 ## 9. Failure Behavior
 
-The future exporter must fail closed on:
+Exporters must fail closed on:
 
 - invalid bundle schema
 - unsafe approval/apply/promotion-like fields
@@ -201,47 +200,38 @@ The future exporter must fail closed on:
 The exporter must write outputs only after successful input validation, safety
 checks, provenance checks, and output schema validation.
 
-## 10. Implementation Status
+## 10. Status And Evidence Ownership
 
-Implemented:
+This document owns eligibility for rule and prompt narrowing, the separation of
+promotion-review and parser exporters, provenance handling, safe output paths,
+schema validation, and fail-closed behavior. The bundle schema, dedicated
+exporters, output schemas, diagnostics, and focused tests named here are
+evidence for those boundaries.
 
-- proposal v2 schema and generator
-- proposal review decisions schema
-- proposal review decisions template exporter
-- proposal review decisions importer / validator
-- concrete candidate bundle v1 schema
-- concrete candidate bundle converter
-- legacy-compatible export contract document
-- Phase 1 legacy-compatible rule/prompt exporter
-- promotion recommendation export contract document
-- promotion recommendation exporter
-- direct generation of recommendation-only `promotion_recommendation.yaml`
-- parser legacy export contract document
-- parser candidate schema
-- parser candidate schema tests
-- parser legacy exporter
-- parser legacy exporter tests
-- parser export chain smoke test
-- export artifact validation summary contract document
-- export artifact validation summary script
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Telemetry or correlation support must arrive through dedicated contracts rather
+than being inferred from this exporter.
 
-Not implemented:
+---
 
-- parser process-pipeline wiring
-- telemetry legacy export
-- correlation legacy export
-- process-pipeline wiring
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
+## 11. Boundary Acceptance Criteria
 
-## 11. One-Line Summary
+The legacy-compatible export boundary remains valid when:
+
+- only converted candidates of supported types are eligible
+- skipped decisions and diagnostics cannot become candidate artifacts
+- source bundle and review provenance remain traceable
+- every exporter validates input, output, and safe path handling before write
+- rule, prompt, and parser outputs remain candidate-only
+- promotion output remains recommendation-only
+- narrowing artifacts cannot authorize apply, deployment, mutation, or
+  promotion
+
+---
+
+## 12. One-Line Summary
 
 ```text
-Legacy-compatible export is a narrowing step from non-applying bundle artifacts into legacy candidate artifacts; it must not apply, deploy, update baselines, or promote.
+Legacy-compatible export narrows non-applying bundle artifacts into schema-valid candidate or recommendation artifacts; it must not apply, deploy, update baselines, or promote.
 ```

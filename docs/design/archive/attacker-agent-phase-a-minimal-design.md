@@ -1,5 +1,21 @@
 # Attacker Agent Phase A — Minimal Design
 
+> [!IMPORTANT]
+> This document is an archived Phase A implementation design from an earlier
+> attacker-agent stage. It is retained in its original language for historical
+> context and is not the current source of truth for implementation status,
+> priorities, sequencing, backend behavior, safety policy, or Done Criteria.
+>
+> Refer to [Phase 6](../../roadmap/phase6.md) and the
+> [Main Roadmap](../../roadmap/roadmap.md) for current status, and to the
+> [current attacker-agent design contracts](../attacker-agent/) for current
+> behavior and boundaries.
+>
+> The Phase A label below is a historical attacker-agent workstream label, not a
+> canonical project-wide phase.
+>
+> Archived: 2026-08-05
+
 ## 1. Goal
 
 Phase A の目的は、現在の `attacker-agent` を **step 実行器** から **scenario dispatcher** に再整理し、

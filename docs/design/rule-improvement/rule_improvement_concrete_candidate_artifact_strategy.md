@@ -28,9 +28,10 @@ Instead, it should emit a provenance-preserving v1 concrete candidate bundle:
 rule_improvement_concrete_candidate_bundle_v1.json
 ```
 
-Legacy-compatible export is a later, separate step after bundle conversion.
-Rule/prompt export is implemented, schema-validated, separately reviewed, and
-still non-applying. The legacy-compatible export boundary is defined in
+Legacy-compatible export is a separate downstream step after bundle conversion.
+Dedicated rule, prompt, parser, and promotion-review exporters are
+schema-validated, separately reviewed, and non-applying. The legacy-compatible
+export boundary is defined in
 `docs/design/rule-improvement/rule_improvement_legacy_compatible_export_contract.md`.
 The promotion recommendation export boundary is defined in
 `docs/design/rule-improvement/rule_improvement_promotion_recommendation_export_contract.md`.
@@ -39,7 +40,7 @@ The parser legacy export boundary is defined in
 The export artifact validation summary boundary is defined in
 `docs/design/rule-improvement/rule_improvement_export_artifact_validation_summary_contract.md`.
 
-Current export MVP flow:
+Standalone export path:
 
 ```text
 rule_improvement_proposal_review_decisions.json
@@ -53,14 +54,12 @@ rule_improvement_proposal_review_decisions.json
   -> parser_candidates.yaml
   -> scripts/summarize_rule_improvement_export_artifacts.py
   -> rule_improvement_export_artifact_validation_summary.json
-  -> future apply / deployment / update / promotion workflows
+  -> separate human review and any state-changing workflows
 ```
 
-This Rule Improvement export MVP is complete for the current
-candidate-generation boundary. It remains non-applying, non-deploying,
-non-mutating, review-oriented, and does not implement baseline updates, prompt
-updates, parser updates, telemetry updates, correlation updates, a promotion
-workflow, or automatic promotion.
+Every artifact in this path remains review-oriented, non-applying,
+non-deploying, non-mutating, and non-promoting. Apply, deployment, runtime
+updates, and promotion require separate workflows.
 
 ## 3. Rationale
 
@@ -81,9 +80,8 @@ Direct legacy emission risks losing:
 - skipped decision context
 
 A concrete candidate bundle can preserve the full conversion context while
-remaining a non-applying review artifact. Legacy-compatible export can then be
-implemented later as an explicit narrowing step, with clear schema validation
-and separate review.
+remaining a non-applying review artifact. Legacy-compatible exporters then
+perform explicit narrowing with schema validation and separate review.
 
 ## 4. Preferred Bundle Shape
 
@@ -119,14 +117,14 @@ Each converted candidate should preserve:
 The candidate payload area should remain specific to the candidate type. It
 should not smuggle approval, apply, deployment, baseline update, or promotion
 semantics into the bundle. Optional schema-safe proposal `payload` fields may
-be preserved into this area for later narrowing exporters, but they must not
+be preserved into this area for downstream narrowing exporters, but they must not
 override converter-owned base metadata such as `target`, `source_signal_ref`,
 `source_label`, `source_fact_ids`, `required_evidence_refs`, `priority`, or
 `review_status`.
 
 ## 5. Candidate Type Strategy
 
-Current bundle handling:
+Supported bundle handling:
 
 | `candidate_type` | Bundle strategy |
 |---|---|
@@ -142,7 +140,7 @@ closed before bundle output is written.
 
 ## 6. Skipped Decisions
 
-Only `accept_for_conversion` decisions may be considered for future conversion.
+Only `accept_for_conversion` decisions may be considered for conversion.
 All other decisions should be represented as skipped, not converted:
 
 - `reject`
@@ -174,7 +172,7 @@ Legacy comparison-harness artifacts remain separate:
 The legacy schemas are intentionally compact and strict. They do not preserve
 the full v2 proposal and proposal-review provenance. That is useful for the
 existing comparison-harness flow, but it makes them a poor first output for the
-future v2 proposal conversion path.
+v2 proposal conversion path.
 
 Legacy-compatible exports are candidate or recommendation artifacts only. They
 must be schema-validated and separately reviewed. They must not apply changes,
@@ -183,7 +181,7 @@ telemetry collection, update correlation logic, or promote anything.
 
 ## 8. Safety Boundaries
 
-The future concrete candidate bundle is not:
+The concrete candidate bundle is not:
 
 - apply approval
 - deployment approval
@@ -194,7 +192,7 @@ The future concrete candidate bundle is not:
 - correlation update approval
 - promotion approval
 
-The future bundle must not mutate:
+The bundle must not mutate:
 
 - rules
 - prompts
@@ -213,75 +211,55 @@ The future bundle must not mutate:
 - confidence
 - Rule Improvement promotion state
 
-Legacy-compatible exports, if implemented later, remain candidate artifacts only
-and must not apply or promote.
+Narrowing exports remain candidate or recommendation artifacts only and must
+not apply or promote.
 
-## 9. Future Failure Behavior
+## 9. Failure Behavior
 
-A future converter should fail closed on:
+The converter fails closed on:
 
 - invalid proposal review decisions
-- missing source hashes
-- missing provenance
-- unsupported candidate type
+- missing source hashes or provenance
+- unsupported candidate types
 - mismatched `candidate_type` / `allowed_next_artifact_type`
-- unsafe approval/apply/promotion-like fields
-- unsafe output path
-- overwrite attempt
+- unsafe approval, apply, deployment, mutation, or promotion-like fields
+- unsafe output paths or overwrite attempts
 - attempts to treat diagnostics as proposals
 
-The converter should write a bundle only after input validation, provenance
-checks, candidate type checks, safety checks, and output validation succeed.
+The converter writes a bundle only after input validation, provenance checks,
+candidate-type checks, safety checks, and output validation succeed.
 
-## 10. Implementation Status
+---
 
-Implemented:
+## 10. Status And Evidence Ownership
 
-- proposal v2 schema and generator
-- proposal review decisions schema
-- proposal review decisions template exporter
-- proposal review decisions importer / validator
-- proposal conversion contract
-- concrete candidate artifact strategy document
-- concrete candidate bundle v1 schema
-- standalone deterministic concrete candidate bundle converter
-- legacy-compatible export contract document
-- Phase 1 legacy-compatible rule/prompt exporter
-- promotion recommendation export contract document
-- promotion recommendation exporter
-- direct generation of recommendation-only `promotion_recommendation.yaml`
-- optional schema-safe proposal payload preservation into bundle payloads
-- promotion recommendation export-chain smoke test
-- parser legacy export contract document
-- parser candidate schema
-- parser candidate schema tests
-- parser legacy exporter
-- parser legacy exporter tests
-- parser export chain smoke test
-- export artifact validation summary contract document
-- export artifact validation summary script
+This document owns the provenance-preserving bundle strategy, converted and
+skipped decision separation, candidate-type handling, payload ownership, and
+the boundary between conversion and narrowing exports. The bundle schema,
+converter, export contracts, and focused tests named here are evidence for
+those boundaries.
 
-Not implemented:
+The [Main Roadmap](../../roadmap/roadmap.md) and relevant phase documents own
+current implementation status, validation depth, priorities, and sequencing.
+Exporter availability must not weaken the bundle's non-applying semantics.
 
-- telemetry legacy exporter
-- telemetry candidate schema
-- telemetry export chain smoke
-- correlation legacy exporter
-- correlation candidate schema
-- correlation export chain smoke
-- parser/telemetry/correlation export process-pipeline wiring
-- apply workflow
-- deployment workflow
-- baseline update workflow
-- prompt update workflow
-- parser update workflow
-- telemetry update workflow
-- correlation update workflow
-- promotion workflow
-- automatic promotion
+---
 
-## 11. One-Line Summary
+## 11. Boundary Acceptance Criteria
+
+The concrete candidate strategy remains valid when:
+
+- conversion writes a provenance-preserving bundle before any narrowing export
+- only `accept_for_conversion` decisions become converted candidates
+- every other decision remains explicit skipped audit context
+- candidate-type mapping and payload ownership fail closed on mismatch
+- narrowing exporters validate their own input and output schemas
+- bundle and narrowed artifacts cannot authorize state changes
+
+---
+
+## 12. One-Line Summary
 
 ```text
-Future proposal conversion should first preserve review provenance in a non-applying concrete candidate bundle, then optionally narrow to legacy-compatible candidate artifacts in a later reviewed step.
+Proposal conversion first preserves review provenance in a non-applying concrete candidate bundle, then optional narrowing exporters create candidate or recommendation artifacts.
 ```

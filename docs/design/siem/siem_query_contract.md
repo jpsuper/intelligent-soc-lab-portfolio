@@ -1,7 +1,5 @@
 # Provider-Neutral SIEM Query Contract
 
-Status: Design Only / Not Implemented
-
 ## 1. Purpose
 
 This document defines a provider-neutral contract for bounded, read-only
@@ -76,8 +74,10 @@ query hit alone is neither a detection nor an incident.
 
 ## 3. Query Input Contract
 
-The following JSON is the version `1.0` design shape. It is not a repository
-JSON Schema or an implemented runtime artifact in this docs-only change.
+The following JSON is the version `1.0` contract shape. This document does not
+by itself create a repository JSON Schema or runtime artifact. The
+[Main Roadmap](../../roadmap/roadmap.md) owns current implementation and
+validation status.
 
 ```json
 {
@@ -541,51 +541,44 @@ The canonical event contract defines downstream semantic expectations. The
 source registry defines where physical data is queried. Neither replaces the
 other.
 
-## 14. Scenario 009 Implications
+## 14. Scenario 009 Evidence Boundary
 
-Scenario 009 Stage 4 confirmed exact grouped-payload identity using
-manager-local `archives.json.full_log`: the completed local record bodies were
-newline-stripped, joined with single ASCII spaces, and matched the manager
-`full_log` by byte length and SHA-256. That is an evidence-plane result.
+The controlled Scenario 009 Stage 4 validation established exact grouped-payload
+identity for manager-local `archives.json.full_log`: completed local record
+bodies were newline-stripped, joined with single ASCII spaces, and matched the
+manager `full_log` by byte length and SHA-256. That is evidence-plane
+validation, not validation of an operational SIEM query path.
 
-The operational query plane remains future work:
+The manager-local result must not be generalized into persistent operational
+query architecture. An indexed Wazuh path requires separate evidence for source
+registration, field representation, bounded retrieval, provenance, pagination,
+and mapper parity. Detailed Scenario 009 evidence remains in the
+[Scenario 009 design documents](../scenarios/scenario009/); current status and
+priority remain Roadmap-owned.
 
-- Wazuh Indexer API search has not been validated for Scenario 009.
-- Filebeat archive indexing was not enabled at the Stage 2 observation point.
-- Existing or historical indexer archive data was not inspected by that stage.
-- The historical Scenario 009 evidence remains T3 / Outcome C.
-- The separate controlled Stage 4 result remains T1-equivalent evidence.
-- The current fixture pipeline remains the canonical validated pipeline.
-- This design does not select Wazuh as the canonical source.
+## 15. Implementation Acceptance Conditions
 
-The Stage 4 local evidence path must not be generalized into a persistent
-operational query architecture. A future Wazuh archive-indexing validation must
-establish the indexed source, field representation, retrieval behavior, and
-mapper parity separately.
+A backend path satisfies this contract only when it provides independently
+reviewable evidence for:
 
-## 15. Follow-Up Sequence
+1. bounded read-only query translation;
+2. a reviewed source-registry entry;
+3. deterministic backend-field mapping with provenance;
+4. `normalized_endpoint_event` parity where normalization is applicable;
+5. explicit truncation, pagination, timeout, and partial-result behavior;
+6. separation of raw-event and alert semantics;
+7. multi-source bounds where a request spans logical sources; and
+8. downstream detection and Incident handoffs that do not treat a query hit as
+   a detection result.
 
-The implementation and validation sequence is:
-
-1. Define this SIEM query contract.
-2. Run a controlled Wazuh archive-indexing validation.
-3. Implement a Wazuh Indexer query adapter.
-4. Add a reviewed Wazuh source registry entry.
-5. Implement and validate Wazuh field mapping.
-6. Validate `normalized_endpoint_event` parity.
-7. Validate a bounded query across multiple logical sources.
-8. Replay the existing DSL detection against mapped normalized events.
-9. Run an incident-pipeline smoke from the resulting detection.
-10. Translate a selected DSL subset into reviewed Wazuh custom rules.
-11. Compare lab DSL results with Wazuh native-alert results.
-
-Each step remains independently reviewable. This document does not claim that
-any adapter, registry entry, archive-indexing path, parity fixture, detection
-path, or incident integration has been implemented.
+Native backend-rule translation and parity comparison are separate target
+concerns. They are not prerequisites for validating the provider-neutral query
+contract itself. Current implementation order and completion claims belong in
+the [Main Roadmap](../../roadmap/roadmap.md).
 
 ## Non-Goals
 
-This docs-only contract does not:
+This contract does not:
 
 - implement a backend adapter or source mapper;
 - create a JSON Schema, fixture, or runtime artifact;

@@ -4,9 +4,12 @@
 
 This document defines a minimal structured output convention for attacker-agent shell runners.
 
-The goal is to reduce fragile stdout marker parsing while preserving the current shell-runner simplicity.
+The goal is to reduce fragile stdout-marker parsing while preserving readable,
+simple shell runners.
 
-Observed effects are now derived from structured runner events when present, with legacy stdout marker parsing retained as a fallback.
+When structured runner events are present, observed-effects derivation should
+prefer them while retaining legacy stdout-marker parsing as an identifiable
+fallback.
 
 Examples:
 
@@ -17,42 +20,26 @@ persistence execution finished
 authorized_keys
 ```
 
-This works for the current scenario_004 / 005 / 006 / 007 set, but it becomes fragile as scenarios grow.
+Human-readable markers may remain compatible fallbacks, but marker-only parsing
+becomes fragile as scenario families grow.
 
 The structured runner output convention introduces a small machine-readable event stream that shell runners may emit without requiring a full backend redesign.
 
 ---
 
 
-## Implementation Status
+## Status And Evidence Ownership
 
-Current implementation status:
+This document owns the line-oriented event envelope, parsing and preservation
+rules, fallback semantics, untrusted-content boundary, and separation from
+defender telemetry. The
+[`artifact_catalog.md`](artifact_catalog.md) owns canonical event-to-artifact
+mappings, while the shell backend contract owns execution policy.
 
-- `docs/design/attacker-agent/structured_runner_output_contract.md` exists
-- `docs/design/attacker-agent/artifact_catalog.md` documents canonical event / artifact mappings
-- `scripts/structured_runner_events.py` parses `ATTACK_EVENT_JSON:` stdout lines
-- parser tests cover valid, invalid, and mixed stdout cases
-- scenario_004 / 005 / 006 / 007 emit structured events for current observed-effect mappings:
-  - scenario_004: `ssh_bruteforce_attempted` -> `ssh_failed_login`
-  - scenario_004: `ssh_login_succeeded` -> `ssh_success_login`
-  - scenario_004: `authorized_keys_write_succeeded` -> `authorized_keys_modification`
-  - scenario_005: `ssh_login_succeeded` -> `ssh_key_login`
-  - scenario_006: `ssh_login_succeeded` -> `ssh_key_login`
-  - scenario_006: `payload_execution_succeeded` -> `process_exec`
-  - scenario_007: `ssh_login_succeeded` -> `ssh_key_login`
-  - scenario_007: `suspicious_file_write_succeeded` -> `suspicious_file_write`
-- attacker-agent `attack_observed_effects.json` generation prefers structured runner events when present
-- attacker-agent `attack_execution_log.json` includes parsed `structured_events` as an
-  additive top-level field when valid `ATTACK_EVENT_JSON:` lines are present
-- `structured_events` preserves, and does not replace, raw `events[].stdout` /
-  `events[].stderr` execution evidence
-- legacy stdout marker / exit-code fallback remains for runners without structured events
-- static shell backend contract tests enforce scenario runner path shape,
-  executable runner files, timeout / `state_changing` field shape, and the
-  boundary against inline shell fields in scenario YAML
-- `docs/operations/smoke_runbook.md` documents structured runner and
-  observed-effects smoke checks
-- scenario_006 runner suppresses the noisy SSH known-host warning while preserving error-level SSH output
+The [Main Roadmap](../../roadmap/roadmap.md) and
+[Phase 6](../../roadmap/phase6.md) own current scenario coverage, implementation
+status, validation depth, priorities, and sequencing. A mapping example does
+not prove that every runner emits it.
 
 ---
 
@@ -391,7 +378,7 @@ Completed implementation scope:
 - `docs/operations/smoke_runbook.md` documents structured runner and observed-effects smoke checks
 - scenario_006 keeps stderr cleaner by suppressing the repeated SSH known-host warning
 
-Remaining implementation should be incremental:
+Maintenance remains incremental:
 
 - maintain scenario_004 / 005 / 006 structured event coverage
 - extend structured event emission only when new scenario families introduce useful mappings
@@ -415,26 +402,22 @@ Avoid:
 ---
 
 
-## 16. Done Criteria
+## 16. Contract Acceptance Criteria
 
-Completed:
+The contract remains valid when:
 
-- the contract exists
-- a parser helper exists
-- parser tests exist
-- scenario_004 / 005 / 006 runners emit structured events for current observed-effect mappings
-- `attack_observed_effects.json` can use structured events
-- `attack_execution_log.json` includes additive `structured_events` for valid `ATTACK_EVENT_JSON:` lines
-- raw stdout / stderr behavior remains preserved
-- legacy stdout fallback still works
-- scenario_004 / 005 / 006 smoke checks confirm `structured_runner_event` evidence in `attack_observed_effects.json`
-- shell backend static contract tests enforce runner path, executable bit, timeout / `state_changing` shape, and inline shell field boundaries
-- attacker-side structured events remain separate from defender-side detections
+- event lines use the stable prefix and validate before consumption;
+- invalid or unknown events fail closed without execution or repair;
+- valid structured events are additive to raw stdout and stderr;
+- fallback evidence remains identifiable and semantically weaker;
+- event-to-artifact mappings stay in the artifact catalog;
+- secrets, credentials, private keys, and raw payload bodies are excluded;
+- runner output cannot become defender telemetry or a detection result; and
+- new event mappings receive focused parser, runner, and observed-effects
+  validation.
 
-Follow-on work:
-
-- extend structured event emission only when new scenario families introduce useful mappings
-- add runtime shell backend allowlist / approval enforcement when assessment mode requires it
+Shell-backend path controls and approval enforcement remain owned by the shell
+backend contract.
 
 ---
 

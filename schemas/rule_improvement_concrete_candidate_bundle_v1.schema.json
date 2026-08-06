@@ -1,0 +1,431 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "rule_improvement_concrete_candidate_bundle_v1_schema",
+  "title": "Rule Improvement Concrete Candidate Bundle v1",
+  "description": "Provenance-preserving non-applying concrete candidate bundle for future Rule Improvement proposal conversion. This artifact does not grant apply, deployment, baseline update, prompt update, parser update, telemetry update, correlation update, or promotion authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "artifact_type",
+    "artifact_semantics",
+    "source",
+    "converted_candidates",
+    "skipped_decisions"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "const": 1
+    },
+    "artifact_type": {
+      "type": "string",
+      "const": "rule_improvement_concrete_candidate_bundle"
+    },
+    "artifact_semantics": {
+      "type": "string",
+      "const": "candidate_bundle_only"
+    },
+    "source": {
+      "$ref": "#/$defs/source"
+    },
+    "converted_candidates": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/converted_candidate"
+      }
+    },
+    "skipped_decisions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/skipped_decision"
+      }
+    }
+  },
+  "$defs": {
+    "non_empty_string": {
+      "type": "string",
+      "minLength": 1
+    },
+    "non_empty_strings": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/non_empty_string"
+      }
+    },
+    "string_array": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/non_empty_string"
+      }
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "unsafe_field_name": {
+      "enum": [
+        "approved",
+        "candidate_approved",
+        "apply_approved",
+        "deployment_approved",
+        "baseline_update_approved",
+        "promotion_approved",
+        "auto_apply_allowed",
+        "promotion_allowed",
+        "applies_changes",
+        "promoted",
+        "updates_baseline",
+        "mutates_state",
+        "apply",
+        "deploy",
+        "promote"
+      ]
+    },
+    "safe_payload_value": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/safe_payload_value"
+          }
+        },
+        {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "$ref": "#/$defs/unsafe_field_name"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/safe_payload_value"
+          }
+        }
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_proposal_review_decisions_ref",
+        "source_proposal_review_decisions_sha256",
+        "source_proposals_ref",
+        "source_proposals_sha256"
+      ],
+      "properties": {
+        "source_proposal_review_decisions_ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "source_proposal_review_decisions_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_proposals_ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "source_proposals_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "proposal_ref": {
+      "type": "string",
+      "pattern": "^/proposals/[0-9]+$"
+    },
+    "proposal_review_decision_ref": {
+      "type": "string",
+      "pattern": "^/decisions/[0-9]+$"
+    },
+    "candidate_type": {
+      "type": "string",
+      "enum": [
+        "rule",
+        "prompt",
+        "parser",
+        "telemetry",
+        "correlation",
+        "promotion_review"
+      ]
+    },
+    "allowed_next_artifact_type": {
+      "type": "string",
+      "enum": [
+        "rule_candidate_proposal",
+        "prompt_candidate_proposal",
+        "parser_candidate_proposal",
+        "telemetry_candidate_proposal",
+        "correlation_candidate_proposal",
+        "promotion_review_recommendation"
+      ]
+    },
+    "target_artifact_type": {
+      "type": "string",
+      "enum": [
+        "rule_candidate_bundle_item",
+        "prompt_candidate_bundle_item",
+        "parser_candidate_bundle_item",
+        "telemetry_candidate_bundle_item",
+        "correlation_candidate_bundle_item",
+        "promotion_review_bundle_item"
+      ]
+    },
+    "skipped_decision_value": {
+      "type": "string",
+      "enum": [
+        "reject",
+        "defer",
+        "split_required",
+        "needs_more_evidence"
+      ]
+    },
+    "skipped_reason": {
+      "type": "string",
+      "enum": [
+        "decision_not_accepted_for_conversion",
+        "split_required",
+        "needs_more_evidence",
+        "rejected_by_reviewer",
+        "deferred_by_reviewer",
+        "unsupported_candidate_type",
+        "missing_required_context"
+      ]
+    },
+    "source_human_decision_provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decision_ref",
+        "decision_id",
+        "decision_status"
+      ],
+      "properties": {
+        "decision_ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "decision_id": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "decision_status": {
+          "type": "string",
+          "const": "accepted_for_candidate_creation"
+        }
+      }
+    },
+    "candidate_payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "summary",
+        "proposed_change",
+        "expected_effect",
+        "payload"
+      ],
+      "properties": {
+        "summary": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "proposed_change": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "expected_effect": {
+          "$ref": "#/$defs/non_empty_strings"
+        },
+        "payload": {
+          "type": "object",
+          "propertyNames": {
+            "not": {
+              "$ref": "#/$defs/unsafe_field_name"
+            }
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/safe_payload_value"
+          }
+        }
+      }
+    },
+    "converted_candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "properties": {
+            "candidate_type": {
+              "const": "rule"
+            },
+            "allowed_next_artifact_type": {
+              "const": "rule_candidate_proposal"
+            },
+            "target_artifact_type": {
+              "const": "rule_candidate_bundle_item"
+            }
+          }
+        },
+        {
+          "properties": {
+            "candidate_type": {
+              "const": "prompt"
+            },
+            "allowed_next_artifact_type": {
+              "const": "prompt_candidate_proposal"
+            },
+            "target_artifact_type": {
+              "const": "prompt_candidate_bundle_item"
+            }
+          }
+        },
+        {
+          "properties": {
+            "candidate_type": {
+              "const": "parser"
+            },
+            "allowed_next_artifact_type": {
+              "const": "parser_candidate_proposal"
+            },
+            "target_artifact_type": {
+              "const": "parser_candidate_bundle_item"
+            }
+          }
+        },
+        {
+          "properties": {
+            "candidate_type": {
+              "const": "telemetry"
+            },
+            "allowed_next_artifact_type": {
+              "const": "telemetry_candidate_proposal"
+            },
+            "target_artifact_type": {
+              "const": "telemetry_candidate_bundle_item"
+            }
+          }
+        },
+        {
+          "properties": {
+            "candidate_type": {
+              "const": "correlation"
+            },
+            "allowed_next_artifact_type": {
+              "const": "correlation_candidate_proposal"
+            },
+            "target_artifact_type": {
+              "const": "correlation_candidate_bundle_item"
+            }
+          }
+        },
+        {
+          "properties": {
+            "candidate_type": {
+              "const": "promotion_review"
+            },
+            "allowed_next_artifact_type": {
+              "const": "promotion_review_recommendation"
+            },
+            "target_artifact_type": {
+              "const": "promotion_review_bundle_item"
+            }
+          }
+        }
+      ],
+      "required": [
+        "candidate_id",
+        "candidate_type",
+        "allowed_next_artifact_type",
+        "proposal_ref",
+        "proposal_review_decision_ref",
+        "conversion_decision_rationale",
+        "source_candidate_creation_input_ref",
+        "source_candidate_creation_input_sha256",
+        "source_human_decision_provenance",
+        "limitations",
+        "required_follow_up_evidence_refs",
+        "target_artifact_type",
+        "candidate_payload"
+      ],
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "candidate_type": {
+          "$ref": "#/$defs/candidate_type"
+        },
+        "allowed_next_artifact_type": {
+          "$ref": "#/$defs/allowed_next_artifact_type"
+        },
+        "proposal_ref": {
+          "$ref": "#/$defs/proposal_ref"
+        },
+        "proposal_review_decision_ref": {
+          "$ref": "#/$defs/proposal_review_decision_ref"
+        },
+        "conversion_decision_rationale": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "source_candidate_creation_input_ref": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "source_candidate_creation_input_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "source_human_decision_provenance": {
+          "$ref": "#/$defs/source_human_decision_provenance"
+        },
+        "limitations": {
+          "$ref": "#/$defs/non_empty_strings"
+        },
+        "required_follow_up_evidence_refs": {
+          "$ref": "#/$defs/string_array"
+        },
+        "target_artifact_type": {
+          "$ref": "#/$defs/target_artifact_type"
+        },
+        "candidate_payload": {
+          "$ref": "#/$defs/candidate_payload"
+        }
+      }
+    },
+    "skipped_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "proposal_ref",
+        "proposal_review_decision_ref",
+        "decision",
+        "reason",
+        "source_human_decision_provenance"
+      ],
+      "properties": {
+        "candidate_id": {
+          "$ref": "#/$defs/non_empty_string"
+        },
+        "proposal_ref": {
+          "$ref": "#/$defs/proposal_ref"
+        },
+        "proposal_review_decision_ref": {
+          "$ref": "#/$defs/proposal_review_decision_ref"
+        },
+        "decision": {
+          "$ref": "#/$defs/skipped_decision_value"
+        },
+        "reason": {
+          "$ref": "#/$defs/skipped_reason"
+        },
+        "source_human_decision_provenance": {
+          "$ref": "#/$defs/source_human_decision_provenance"
+        }
+      }
+    }
+  }
+}
