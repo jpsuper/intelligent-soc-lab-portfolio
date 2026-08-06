@@ -1,5 +1,11 @@
 # Intelligent Security Operations Lab
 
+> [!NOTE] \
+> この公開ポートフォリオでは、プライベートラボのIPアドレスを
+> 文書用アドレス帯 `192.0.2.0/24` に置き換えています。
+> Runbookを実行する場合は、隔離された検証環境のIPアドレスへ
+> 置き換えてください。
+
 [English](README.md)
 
 > [!NOTE]
@@ -8,7 +14,7 @@
 >
 > Canonical source: `README.md`
 > Synchronization status: synchronized
-> Last synchronization date: 2026-08-05
+> Last synchronization date: 2026-08-06
 
 セキュリティ運用の未来を実践的に研究するための、個人向けホームラボです。
 
@@ -16,6 +22,48 @@
 トリアージ、調査、対応、DFIR、継続的改善をどのように変え得るかを探ります。
 自動化できる範囲を試すだけでなく、依然として人間の判断が必要な領域や、
 今後生まれ得る新しい運用方法を明らかにすることも目的としています。
+
+## Public Snapshotの収録範囲
+
+このリポジトリは、就職活動向けに選定した公開ポートフォリオsnapshotです。
+次の範囲について、代表的な実装、JSON Schema、合成fixture、focused testsを
+収録しています。
+
+- Linux auditdのパースと正規化から、決定論的検知、Incident構築、
+  Rule Triage、エビデンス境界を守るInvestigationまで
+- Windows Sysmon Event ID 1 Fixture A/B/Cのパース、正規化、決定論的検知、
+  共通Detection-to-Investigation pipeline
+- 共通のdeduplication、correlation、trust boundary
+- prompt input export、schema validation、信頼しないmodel outputのimport、
+  compare、promotion recommendationまでのoffline Rule Improvement経路
+
+環境固有設定、生成物、Labの生テレメトリ、一部integration、開発専用utilityは
+収録していません。Active developmentはPrivateリポジトリで継続しています。
+
+以下の実装状況は、より広いPrivate Lab全体について説明しています。この公開版で
+直接再現できるのは、対応する実装、schema、合成fixture、focused testが本リポジトリに
+存在する範囲です。それ以外の既存文書はarchitecture、設計履歴、Private Labでの作業を
+説明するものであり、対応するruntime integrationが公開版に含まれることを示すものでは
+ありません。
+
+[著作権表示](NOTICE.md) · [セキュリティポリシー](SECURITY.md)
+
+## 5～10分のReview Path
+
+1. **Architecture:**
+   [Defender event processing flow](docs/architecture/defender-event-processing-flow.md)を読む。
+2. **代表的な縦断処理:** Windowsの
+   [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py)、
+   [normalized mapper](scripts/windows/sysmon_event1/map_sysmon_event1_to_endpoint_event.py)、
+   [common defender pipeline](common/defender_pipeline.py)を追う。
+3. **Schema:**
+   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)を確認する。
+4. **Fixture:**
+   [Sysmon Fixture B](tests/fixtures/windows/sysmon_event1/source/sysmon-event1-encoded-flag-001.json)を確認する。
+5. **Test:**
+   [Windows detection test](tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py)と
+   [Detection-to-Investigation composition test](tests/test_common_detection_to_investigation_composition.py)で
+   期待値と共通境界を確認する。
 
 ## 概要
 
@@ -98,7 +146,8 @@ flowchart TD
 
 ## 現在の状況
 
-本リポジトリは、Phase 0からPhase 7までの限定された再現可能な基盤を提供します。
+より広いPrivate Labは、Phase 0からPhase 7までの限定された再現可能な基盤を
+提供します。
 
 ### 実装済みの基盤
 
@@ -142,7 +191,6 @@ execution validationが完了するまで未完了です。
 責務とtrust boundaryは、
 [Defender Event Processing Flow（日本語参考訳）](docs/architecture/defender-event-processing-flow_ja.md)
 を参照してください。
-
 ## アーキテクチャ境界
 
 - Collector、source parser、normalized mapper、platform/domain固有の
