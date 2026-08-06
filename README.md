@@ -42,6 +42,13 @@ is included in this repository.
 
 [Copyright notice](NOTICE.md) · [Security policy](SECURITY.md)
 
+## Portfolio Overview
+
+For a concise visual introduction to the research question, end-to-end
+architecture, current implementation boundary, representative public evidence,
+and current status, see the
+[Japanese portfolio overview (PDF, 9 pages)](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf).
+
 ## 5–10 Minute Review Path
 
 1. **Architecture:** read the
