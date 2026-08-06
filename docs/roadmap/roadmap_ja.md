@@ -16,7 +16,7 @@ Done Criteriaについて、英語版を正本とするロードマップです�
 安定したアーキテクチャ、artifact contract、evidence boundary、および運用方針は、
 [AI SOC Lab Master Guide](../AI_SOC_Lab_Master_Guide.md)を参照してください。
 ソースから共通Defender処理までの責務は、
-[Defender Event Processing Flow](../architecture/defender-event-processing-flow.md)を参照してください。
+[Defender Event Processing Flow（日本語参考訳）](../architecture/defender-event-processing-flow_ja.md)を参照してください。
 Phase固有の実装履歴と検証エビデンスは、[phase0.md](phase0.md)から
 [phase7.md](phase7.md)に記録されています。
 

@@ -189,7 +189,7 @@ execution validationが完了するまで未完了です。
 現在状況、優先順位、未完了作業、実装順序、Done Criteriaの正本は
 [Main Roadmap](docs/roadmap/roadmap.md)です。cross-platform processingの
 責務とtrust boundaryは、
-[Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md)
+[Defender Event Processing Flow（日本語参考訳）](docs/architecture/defender-event-processing-flow_ja.md)
 を参照してください。
 ## アーキテクチャ境界
 
@@ -232,7 +232,7 @@ execution validationが完了するまで未完了です。
   artifact boundary、evidence rule、operating policy
 - [Roadmap（日本語参考訳）](docs/roadmap/roadmap_ja.md) — Phaseの正式な状況、現在の優先事項、
   実装順序、Done Criteria
-- [Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md)
+- [Defender Event Processing Flow（日本語参考訳）](docs/architecture/defender-event-processing-flow_ja.md)
   — クロスプラットフォームの処理stage、trust boundary、
   Common Pipeline v0/v1 architecture
 - [Normalized Endpoint Event Contract](docs/design/defender/normalized_endpoint_event_contract.md)
