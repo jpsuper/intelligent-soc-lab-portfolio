@@ -13,7 +13,6 @@ SLICE2_FIXTURE_PATH = Path(
     "tests/fixtures/windows/sysmon_event1/slice2/powershell_parent_child_encoded_command.json"
 )
 INVESTIGATION_PATH = Path("agents/investigation-agent/src/main.py")
-HARNESS_PATH = Path("scripts/run_triage_harness.py")
 RULE_PATHS = [
     Path("detection/dsl/windows_powershell_encoded_command_observed.yaml"),
     Path("detection/dsl/windows_powershell_process_observed.yaml"),
@@ -120,30 +119,6 @@ def test_slice2_triage_and_investigation_preserve_correlation_evidence_boundary(
     assert "confirmed compromise" not in serialized
     assert "attack success" not in serialized
     assert "malicious powershell" not in serialized
-
-
-def test_windows_investigation_output_reaches_existing_harness_specificity_axis() -> None:
-    result = defender_pipeline.run_common_endpoint_to_investigation(
-        load_json(SLICE2_FIXTURE_PATH),
-        windows_rules(),
-    )["investigation_results"][0]
-    harness = load_module("windows_downstream_harness", HARNESS_PATH)
-    compare_result = {
-        "agent_only_items": {
-            "rule_investigation": {
-                "evidence_present": True,
-            }
-        }
-    }
-
-    score, reason = harness.score_evidence_specificity(
-        compare_result,
-        result,
-        "rule_investigation",
-    )
-
-    assert score > 0.4
-    assert "command/path/url evidence from endpoint telemetry" in reason
 
 
 @pytest.mark.parametrize(

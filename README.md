@@ -189,9 +189,11 @@ Common Pipeline v0 is complete at the bounded fixture-execution level, and the
 Common Pipeline v1 entry conditions are satisfied at the bounded fixture level.
 Linux Scenario 009, Windows Slice 1 Fixture A/B/C, and the Windows Slice 2
 PID/PPID correlation fixture enter one shared endpoint-to-Investigation
-boundary. Canonical Triage artifact grounding, correlation-Incident-scoped
-endpoint evidence binding, and deterministic harness specificity are
-regression-validated without Windows-specific downstream contracts.
+boundary. Canonical Triage artifact grounding and correlation-Incident-scoped
+endpoint evidence binding are regression-validated without Windows-specific
+downstream contracts. The broader private lab also evaluates deterministic
+harness specificity; that development harness is not included in this public
+snapshot.
 
 The bounded Wazuh source path now includes Sysmon Event ID 1 alert-hit
 conversion, a registered query adapter, TLS-verifying read-only transport,
@@ -273,7 +275,7 @@ The detailed tasks, evidence, dependencies, and Done Criteria live in the
 - [Windows Telemetry Contract](docs/design/windows/windows_telemetry_contract.md)
   — Windows source, parsing, normalization, and runtime evidence boundaries
 - [Windows Downstream Evidence-Quality Slice](docs/design/defender/windows_downstream_evidence_quality.md)
-  — bounded Triage grounding, Investigation evidence linkage, and harness validation
+  — bounded Triage grounding and Investigation evidence linkage
 - [Atomic Detection DSL](docs/design/atomic_detection_dsl.md) — deterministic
   rule source of truth and canonical detection-output contract
 - [Scenario Family Expansion Policy](docs/design/scenario_family_expansion_policy.md)

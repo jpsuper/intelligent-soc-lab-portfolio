@@ -189,8 +189,10 @@ Common Pipeline v1のentry conditionもbounded fixture levelで満たしまし�
 Linux Scenario 009、Windows Slice 1 Fixture A/B/C、およびWindows Slice 2の
 PID/PPID correlation fixtureは、同一のendpoint-to-Investigation boundaryへ
 入ります。Windows固有のdownstream contractを追加せず、canonicalなTriage
-artifact grounding、correlation-Incident-scopedなendpoint evidence binding、
-deterministic harness specificityをregression validationしています。
+artifact groundingとcorrelation-Incident-scopedなendpoint evidence bindingを
+regression validationしています。より広いprivate labではdeterministic harness
+specificityも評価していますが、そのdevelopment harnessはこの公開snapshotには
+含めていません。
 
 境界付きWazuh source pathには、Sysmon Event ID 1 alert-hit conversion、
 登録済みquery adapter、TLS検証付きread-only transport、PIT/cursor pagination、
@@ -269,7 +271,7 @@ integration、native Windows parity、authentication固有のCorrelationや
 - [Windows Telemetry Contract](docs/design/windows/windows_telemetry_contract.md)
   — Windowsのsource、parsing、normalization、runtime evidence boundary
 - [Windows Downstream Evidence-Quality Slice](docs/design/defender/windows_downstream_evidence_quality.md)
-  — 限定されたTriage grounding、Investigation evidence linkage、harness validation
+  — 限定されたTriage groundingとInvestigation evidence linkage
 - [Atomic Detection DSL](docs/design/atomic_detection_dsl.md) —
   決定論的ruleのsource of truthとcanonical detection-output contract
 - [Scenario Family Expansion Policy](docs/design/scenario_family_expansion_policy.md)

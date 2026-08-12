@@ -54,26 +54,19 @@ Detailed evidence for this contract remains close to the relevant boundary:
   owns mapper identity, timestamp, field-mapping, and parity behavior; and
 - the [native parity runbook](../../runbooks/windows/sysmon_event1_native_parity.md)
   owns the operator procedure and observed-run evidence;
-- the [Windows Security Authentication Fixture Contract](windows_security_auth_fixture_contract.md)
-  owns the sanitized 4624/4625 source-fixture and schema boundary; and
-- the [Windows Security Authentication Parser Contract](windows_security_auth_parser_contract.md)
-  owns deterministic source-to-parsed parity; and
-- the [Windows Security Authentication Normalized Mapper Contract](windows_security_auth_normalized_mapper_contract.md)
-  owns parsed-to-`endpoint_events.v1` identity, field mapping, provenance, and
-  exact expected-output parity; and
-- the [Wazuh Windows Security Authentication Conversion Contract](wazuh_windows_security_auth_conversion_contract.md)
-  owns sanitized Wazuh alert-hit adaptation and direct-versus-Wazuh normalized
-  parity. The related
-  [query adapter contract](../siem/wazuh_alerts_windows_security_auth_query_adapter_contract.md)
-  owns reviewed source selection and bounded query/response behavior. Its
-  [live smoke contract](../siem/wazuh_indexer_windows_security_auth_live_smoke_contract.md)
-  owns the still-unexecuted lab gate; and
-- the [Windows Security Authentication Detection Contract](windows_security_auth_detection_contract.md)
-  owns the observation-only 4625 atomic rule and explicit 4624 no-match parity.
-  The [Windows Security Authentication Common-Entry Contract](windows_security_auth_common_entry_contract.md)
-  owns the bounded no-match/failure-observation execution through Incident,
-  Triage, and Investigation. Authentication-specific analysis and live Wazuh
-  execution evidence remain future work.
+- the public Windows Security authentication
+  [source parser](../../../scripts/windows/security_auth/parse_windows_security_auth_source.py),
+  [normalized mapper](../../../scripts/windows/security_auth/map_windows_security_auth_to_endpoint_event.py),
+  and [Wazuh hit adapter](../../../scripts/windows/security_auth/adapt_wazuh_windows_security_auth_hit.py)
+  retain the sanitized 4624/4625 source, parsed, normalized, and conversion
+  boundaries; and
+- the public
+  [atomic rule](../../../detection/dsl/windows_security_auth_failure_observed.yaml),
+  [detection test](../../../tests/windows/security_auth/test_windows_security_auth_detection.py),
+  and [common-entry contract](windows_security_auth_common_entry_contract.md)
+  retain the explicit 4624 no-match and bounded 4625 execution through
+  Incident, Triage, and Investigation. Authentication-specific analysis and
+  generalized live Wazuh execution remain future work.
 
 The sections below define required behavior and scope. Describing a boundary or
 validation slice here does not by itself claim that it is implemented, live, or
@@ -511,9 +504,10 @@ event_type == auth_failure
 It emits `windows_security_auth_failure_observed` for the 4625 fixture. The 4624
 `auth_success` fixture is an explicit no-match. The rule does not inspect
 provider status fields, assign a MITRE technique, apply a threshold, relate
-multiple events, or infer maliciousness or credential validity. Its complete
-policy and evidence limits are defined in the
-[Windows Security Authentication Detection Contract](windows_security_auth_detection_contract.md).
+multiple events, or infer maliciousness or credential validity. Its public
+policy and evidence limits are represented by the
+[atomic rule](../../../detection/dsl/windows_security_auth_failure_observed.yaml)
+and [focused detection test](../../../tests/windows/security_auth/test_windows_security_auth_detection.py).
 
 The bounded
 [common-entry validation](windows_security_auth_common_entry_contract.md)
@@ -624,9 +618,10 @@ DSL
 ```
 
 The provider-like fixture path validates the Windows pipeline independently of
-Wazuh. The bounded
-[Wazuh Sysmon Event ID 1 conversion slice](wazuh_sysmon_event1_conversion_contract.md)
-also validates one sanitized alert-hit representation adapter while keeping
+Wazuh. The bounded public
+[Wazuh Sysmon Event ID 1 adapter](../../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+and [focused test](../../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py)
+also validate one sanitized alert-hit representation boundary while keeping
 these layers separate:
 
 ```text

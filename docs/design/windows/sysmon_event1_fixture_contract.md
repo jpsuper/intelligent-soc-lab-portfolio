@@ -718,9 +718,10 @@ be copied into sanitized fixture values or expected outputs.
 ## 10. Sysmon Semantics And Wazuh Retrieval
 
 Sysmon remains the semantic source for Event ID 1 regardless of acquisition
-path. The bounded
-[Wazuh conversion contract](wazuh_sysmon_event1_conversion_contract.md)
-validates a sanitized alert-hit projection for Fixture A/B/C. Wazuh retrieval
+path. The bounded public
+[Wazuh hit adapter](../../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+and [focused test](../../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py)
+validate a sanitized alert-hit projection for Fixture A/B/C. Wazuh retrieval
 metadata remains a separate envelope:
 
 ```text

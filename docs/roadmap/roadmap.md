@@ -129,8 +129,6 @@ The current bounded implementation supports:
   changing its assessment rules
 - correlation-Incident-scoped `input[N]` endpoint evidence binding in pre-case
   Investigation
-- platform-neutral normalized command specificity in the existing deterministic
-  Investigation harness
 
 This satisfies the Common Pipeline v1 entry conditions only at the bounded
 fixture level. It does **not** establish Windows downstream analytical quality,
@@ -148,7 +146,7 @@ live Windows telemetry parity, or continuous runtime automation.
 | Full cross-platform execution validation | Validated for Linux Scenario 009 and Windows Slice 1/2 |
 | Windows Slice 2 correlation boundary | Validated through the shared endpoint-to-Investigation regression |
 | Common Pipeline v1 entry conditions | Satisfied at the bounded fixture level |
-| Windows downstream evidence-quality slice | Validated for canonical artifact grounding, correlation endpoint evidence binding, and harness specificity |
+| Windows downstream evidence-quality slice | Publicly validated for canonical artifact grounding and correlation endpoint evidence binding; private-lab harness scoring is not published |
 | Bounded live Windows 4625 Detection-to-Incident/Investigation validation | Validated for one complete five-record Wazuh alert-plane query; all five records remained represented after dedupe produced four linked Detection/Incident/Triage/Investigation paths |
 | Bounded Wazuh Indexer live multi-page cursor smoke | Validated for one 14-record alert-plane PIT query across pages `[5, 5, 4]` with confirmed final deletion |
 | Windows Security 4624/4625 bounded common-entry boundary | Validated from sanitized source through the existing endpoint-to-Investigation entry: 4624 remains empty and 4625 preserves one uncorrelated low-severity observation with exact downstream linkage |
@@ -210,9 +208,8 @@ Linux and Windows Slice 1/2 common-entry regression
 
 1. Maintain the Linux and Windows Slice 1/2 regression through the fixed common
    entry boundary.
-2. Maintain the bounded Windows Triage, Investigation, and harness
-   evidence-quality regression without introducing Windows-specific downstream
-   contracts.
+2. Maintain the bounded Windows Triage and Investigation evidence-quality
+   regression without introducing Windows-specific downstream contracts.
 3. Maintain the bounded Wazuh Sysmon Event ID 1 alert-hit conversion parity
    regression while keeping its fixture claim distinct from the separately
    completed alert-plane transport evidence and still-unverified native parity.
@@ -388,10 +385,13 @@ persistent identity model, runtime service, or live cross-platform integration.
 
 ## 5.6 Windows downstream evidence-quality validation record
 
-The bounded artifact-grounding, correlation-Incident-scoped endpoint
-evidence-linkage, and deterministic harness-specificity mechanics, including
-Done Criteria and evidence limits, are recorded in the
+The bounded artifact-grounding and correlation-Incident-scoped endpoint
+evidence-linkage mechanics, including Done Criteria and evidence limits, are
+recorded in the
 [Windows Downstream Evidence-Quality Slice](../design/defender/windows_downstream_evidence_quality.md).
+
+The broader private lab's deterministic comparison-harness scoring is not part
+of this public snapshot.
 
 This validation does not establish Windows verdict or risk quality, model
 quality, live collection, source parity, or post-action DFIR coverage.
@@ -399,9 +399,11 @@ quality, live collection, source parity, or post-action DFIR coverage.
 ## 5.7 Bounded Wazuh Sysmon Event ID 1 conversion record
 
 The strict sanitized alert-hit projection, separate retrieval provenance,
-Fixture A/B/C source conversion, normalized semantic parity, Done Criteria,
-and evidence limits are recorded in the
-[Wazuh Sysmon Event ID 1 Bounded Conversion Contract](../design/windows/wazuh_sysmon_event1_conversion_contract.md).
+Fixture A/B/C source conversion, and normalized semantic parity are represented
+by the public
+[Wazuh hit adapter](../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+and its
+[focused conversion test](../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py).
 
 This validation does not establish a live Wazuh connection, operational query
 behavior, raw archive coverage, Wazuh rule quality, unalerted event coverage,
@@ -411,9 +413,9 @@ or live Windows parity.
 
 The reviewed single-source registry entry, request/response schemas, offline
 search-plan compiler, complete-page response parser, refinement behavior,
-partial-result rejection, hashed provenance, Done Criteria, and evidence limits
-are recorded in the
-[Wazuh Alerts Sysmon Event ID 1 Query Adapter Contract](../design/siem/wazuh_alerts_sysmon_event1_query_adapter_contract.md).
+partial-result rejection, and hashed provenance are represented by the public
+[query adapter](../../scripts/siem/wazuh_indexer_query_adapter.py) and its
+[focused tests](../../tests/test_wazuh_indexer_query_adapter.py).
 
 This validation does not establish credential resolution, HTTPS execution,
 live index mappings, PIT pagination, live query success, raw archive coverage,

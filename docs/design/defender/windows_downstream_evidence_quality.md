@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This slice validates that the existing common Triage, pre-case Investigation,
-and deterministic Investigation-harness boundaries can retain useful Windows
-fixture evidence without introducing a Windows-specific downstream contract.
+This public slice validates that the existing common Triage and pre-case
+Investigation boundaries can retain useful Windows fixture evidence without
+introducing a Windows-specific downstream contract.
 
 It is intentionally smaller than a Windows analytical-quality or live-runtime
 claim. The slice changes evidence grounding and linkage only; it does not tune
@@ -12,7 +12,7 @@ verdict, confidence, priority, risk, correlation severity, prompts, or models.
 
 ## Implemented Boundary
 
-The shared downstream flow now provides three bounded mechanics.
+The shared downstream flow now provides two bounded mechanics.
 
 1. Rule Triage projects otherwise-unknown canonical Incident `artifacts` or
    `primary_artifact` values into `summary`, `attack_story`, and
@@ -24,11 +24,6 @@ The shared downstream flow now provides three bounded mechanics.
    do not become Investigation facts. Observation-level Incidents keep their
    established surrounding-context behavior because one detection ref is not
    necessarily an exhaustive Investigation evidence set.
-3. The deterministic Investigation harness treats a non-empty command detail
-   from a normalized endpoint command-execution fact as concrete specificity.
-   The common rubric therefore does not require a Linux- or Windows-executable
-   allowlist.
-
 Legacy/direct Investigation callers and observation-level Incidents retain
 their existing all-events behavior. For correlation Incidents, a mixed
 `input[N]`/source-native reference set or an out-of-range `input[N]` reference
@@ -45,8 +40,8 @@ The focused matrix covers:
 - Windows Fixture C through the existing no-match regression;
 - Windows Slice 2 with both parent and child refs retained by its correlation
   Incident; and
-- the existing deterministic Investigation `evidence_specificity` scoring
-  function using normalized PowerShell command facts.
+- Windows Slice 2 investigation output using normalized PowerShell command
+  facts.
 
 The matrix confirms canonical artifact grounding, exact event selection,
 concrete observed facts, schema-valid downstream artifacts, deterministic
@@ -66,8 +61,6 @@ This bounded slice is done when:
 - missing, mixed, and out-of-range linkage behavior is explicit and covered;
 - Windows Slice 2 retains both supporting endpoint events without turning the
   correlation into a compromise or maliciousness claim;
-- normalized Windows command facts satisfy the existing deterministic harness
-  specificity axis without a platform-specific executable list; and
 - Linux/Windows common-pipeline and existing Triage/Investigation regressions
   continue to pass.
 
@@ -84,15 +77,14 @@ This bounded slice is done when:
 - Missing network, HTTP, authentication, payload, and other pivots remain
   explicit in Investigation output.
 - Pre-case Investigation remains separate from post-action DFIR evidence.
-- Harness scores remain comparison evidence for human review. They do not
-  approve apply, deployment, promotion, containment, or execution.
+- The broader private lab's comparison-harness scoring is not included in this
+  public snapshot and is not established by these focused tests.
 
 ## Validation Commands
 
 ```bash
 uv run pytest \
-  tests/windows/sysmon_event1/test_windows_downstream_evidence_quality.py \
-  tests/test_investigation_judge_endpoint_specificity.py -q
+  tests/windows/sysmon_event1/test_windows_downstream_evidence_quality.py -q
 uv run pytest \
   tests/windows/sysmon_event1/test_sysmon_event1_triage_boundary.py \
   tests/windows/sysmon_event1/test_sysmon_event1_investigation_boundary.py \

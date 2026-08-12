@@ -39,12 +39,13 @@ authentication into proof of an attack or claim that the existing generic
 Triage and Investigation outputs provide authentication-specific analytical
 quality.
 
-The atomic rule boundary is defined in the
-[Windows Security Authentication Detection Contract](windows_security_auth_detection_contract.md).
-The separately bounded
-[live common-pipeline contract](../siem/wazuh_indexer_windows_security_auth_live_pipeline_contract.md)
-reuses this entry after live Wazuh retrieval and conversion without changing
-the common composition.
+The atomic rule boundary is represented by the public
+[rule](../../../detection/dsl/windows_security_auth_failure_observed.yaml) and
+[focused detection test](../../../tests/windows/security_auth/test_windows_security_auth_detection.py).
+The public
+[bounded live pipeline](../../../scripts/siem/wazuh_indexer_windows_security_auth_live_pipeline.py)
+reuses this entry after Wazuh retrieval and conversion without changing the
+common composition.
 
 ## 2. Public Entry
 

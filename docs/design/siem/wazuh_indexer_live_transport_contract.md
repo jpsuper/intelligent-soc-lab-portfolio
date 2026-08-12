@@ -64,8 +64,10 @@ The implementation includes:
 
 Retries, token authentication, secret-manager plugins, raw archive retrieval,
 pipeline ingestion, and broader live multi-page coverage remain separate work.
-Detailed PIT semantics are recorded in the
-[Wazuh Indexer PIT Lifecycle Contract](wazuh_indexer_pit_lifecycle_contract.md).
+The public
+[transport implementation](../../../scripts/siem/wazuh_indexer_transport.py)
+and [focused tests](../../../tests/test_wazuh_indexer_transport.py) define the
+bounded PIT create/search/resume/delete and cleanup behavior retained here.
 
 ## 3. Runtime Connection Boundary
 

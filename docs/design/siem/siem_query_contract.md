@@ -579,10 +579,11 @@ the [Main Roadmap](../../roadmap/roadmap.md).
 
 ## 16. Bounded Wazuh Query Adapter Record
 
-The first executable subset is recorded in the
-[Wazuh Alerts Sysmon Event ID 1 Query Adapter Contract](wazuh_alerts_sysmon_event1_query_adapter_contract.md).
-It adds machine-readable request, response, and registry schemas; one reviewed
-single-source registry entry; bounded offline Wazuh search-plan compilation;
+The first executable subset is implemented by the public
+[Wazuh query adapter](../../../scripts/siem/wazuh_indexer_query_adapter.py) and
+[focused adapter tests](../../../tests/test_wazuh_indexer_query_adapter.py).
+It adds machine-readable request, response, and registry schemas; reviewed
+single-source registry entries; bounded offline Wazuh search-plan compilation;
 complete-page response parsing; hashed filter provenance; explicit refinement
 for unpageable volume; and fail-closed timeout and shard-failure behavior.
 
@@ -614,12 +615,13 @@ policy stop, or known failure. Live multi-page completeness, raw archive
 retrieval, multi-source execution, and downstream pipeline ingestion remain
 deferred.
 
-The next foundation is recorded in the
-[Wazuh Indexer Cursor Envelope Contract](wazuh_indexer_cursor_envelope_contract.md).
-It adds an encrypted, request-bound, expiring container for the PIT ID, stable
-`search_after` values, and cumulative count. The adapter and transport now use
-that container for deterministic continuation. No live second-page result or
-multi-page completeness claim is established yet.
+The next foundation is implemented by the public
+[cursor module](../../../scripts/siem/wazuh_indexer_cursor.py), its
+[JSON Schema](../../../schemas/wazuh_indexer_cursor_envelope.schema.json), and
+[focused tests](../../../tests/test_wazuh_indexer_cursor.py). It adds an
+encrypted, request-bound, expiring container for the PIT ID, stable
+`search_after` values, and cumulative count. The adapter and transport use that
+container for deterministic continuation.
 
 ## Non-Goals
 

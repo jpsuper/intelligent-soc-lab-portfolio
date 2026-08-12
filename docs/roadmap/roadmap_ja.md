@@ -137,8 +137,6 @@ quality**です。Phase5のendpoint-telemetryとPhase6のcommon-pipeline基盤�
   artifact grounding
 - pre-case Investigationでのcorrelation-Incident-scopedな`input[N]`
   endpoint evidence binding
-- 既存の決定論的Investigation harnessにおけるplatform-neutralな
-  normalized command specificity
 
 これは、限定されたfixture levelでCommon Pipeline v1の開始条件を満たしたことだけを
 意味します。Windows downstream analytical quality、live Windows telemetry parity、
@@ -156,7 +154,7 @@ quality**です。Phase5のendpoint-telemetryとPhase6のcommon-pipeline基盤�
 | 完全なcross-platform execution validation | Linux Scenario 009およびWindows Slice 1/2で検証済み |
 | Windows Slice 2 correlation boundary | 共通endpoint-to-Investigation regressionで検証済み |
 | Common Pipeline v1の開始条件 | 限定されたfixture levelで充足 |
-| Windows downstream evidence-quality slice | canonical artifact grounding、correlation endpoint evidence binding、およびharness specificityを検証済み |
+| Windows downstream evidence-quality slice | canonical artifact groundingとcorrelation endpoint evidence bindingを公開版で検証済み。private-lab harness scoringは非公開 |
 | 限定されたlive Windows 4625 Detection-to-Incident/Investigation validation | 完全なWazuh alert-plane record 5件について検証済み。dedupe後は4件のDetection/Incident/Triage/Investigation pathとなり、元の5件はすべて表現された |
 | 限定されたWazuh Indexer live multi-page cursor smoke | 14件のalert-plane PIT queryをpages `[5, 5, 4]` で取得し、最終deleteを確認済み |
 | Windows Security 4624/4625の限定されたcommon-entry boundary | sanitized sourceから既存endpoint-to-Investigation entryまで検証済み。4624はemptyを維持し、4625は正確なdownstream linkageを持つuncorrelated low-severity observationを保持 |
@@ -218,8 +216,8 @@ Linux and Windows Slice 1/2 common-entry regression
 
 1. 固定したcommon entry boundaryを通してLinuxおよびWindows Slice 1/2の
    regressionを維持する。
-2. Windows固有のdownstream contractを導入せずに、限定されたWindows Triage、
-   Investigation、harness evidence-quality regressionを維持する。
+2. Windows固有のdownstream contractを導入せずに、限定されたWindows Triageと
+   Investigationのevidence-quality regressionを維持する。
 3. 限定されたWazuh Sysmon Event ID 1 alert-hit conversion parity regressionを、
    完了したalert-plane transport evidenceおよび未検証のnative parityとは区別して
    維持する。
@@ -386,11 +384,13 @@ model、runtime service、またはlive cross-platform integrationとして定�
 
 ## 5.6 Windows downstream evidence-quality validation record
 
-限定されたartifact grounding、correlation-Incident-scopedなendpoint evidence
-linkage、および決定論的harness specificityの仕組みは、Done Criteriaとevidence
-limitationを含めて
+限定されたartifact groundingとcorrelation-Incident-scopedなendpoint evidence
+linkageの仕組みは、Done Criteriaとevidence limitationを含めて
 [Windows Downstream Evidence-Quality Slice](../design/defender/windows_downstream_evidence_quality.md)
 に記録します。
+
+より広いprivate labのdeterministic comparison-harness scoringは、この公開snapshot
+には含めていません。
 
 このvalidationは、Windowsのverdict/risk quality、model quality、live collection、
 source parity、またはpost-action DFIR coverageを確立するものではありません。
@@ -398,9 +398,11 @@ source parity、またはpost-action DFIR coverageを確立するものではあ
 ## 5.7 限定されたWazuh Sysmon Event ID 1 conversion record
 
 厳格なサニタイズ済みalert-hit projection、分離したretrieval provenance、Fixture A/B/C
-source conversion、normalized semantic parity、Done Criteria、およびevidence limitationは、
-[Wazuh Sysmon Event ID 1 Bounded Conversion Contract](../design/windows/wazuh_sysmon_event1_conversion_contract.md)
-に記録します。
+source conversion、normalized semantic parityは、公開版の
+[Wazuh hit adapter](../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+と
+[focused conversion test](../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py)
+で確認できます。
 
 このvalidationは、live Wazuh connection、operational query behavior、raw archive coverage、
 Wazuh rule quality、unalerted event coverage、またはlive Windows parityを確立するものでは
@@ -410,9 +412,10 @@ Wazuh rule quality、unalerted event coverage、またはlive Windows parityを�
 
 レビュー済みsingle-source registry entry、request/response schema、offline search-plan
 compiler、complete-page response parser、refinement behavior、partial-result rejection、
-hashed provenance、Done Criteria、およびevidence limitationは、
-[Wazuh Alerts Sysmon Event ID 1 Query Adapter Contract](../design/siem/wazuh_alerts_sysmon_event1_query_adapter_contract.md)
-に記録します。
+hashed provenanceは、公開版の
+[query adapter](../../scripts/siem/wazuh_indexer_query_adapter.py)と
+[focused tests](../../tests/test_wazuh_indexer_query_adapter.py)
+で確認できます。
 
 このvalidationは、credential resolution、HTTPS execution、live index mapping、PIT
 pagination、live query success、raw archive coverage、またはend-to-end live source parityを
