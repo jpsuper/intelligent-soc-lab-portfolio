@@ -1,0 +1,11 @@
+{
+  "schema_version": "windows_security_auth_expected_detection.v1",
+  "fixture_id": "windows-security-4625-network-logon-failure-001",
+  "normalized_event_id": "windows-security-auth:v1:7138b1d1c44cbd33eb15870eb5a70154d27d0a88c82157b761b531d30d3415d2",
+  "matched_rule_ids": [
+    "authentication.windows_security_failure_observed"
+  ],
+  "behavior_features": {
+    "windows_security_auth_failure_observed": true
+  }
+}

@@ -53,7 +53,20 @@ Detailed evidence for this contract remains close to the relevant boundary:
 - the [Sysmon Event ID 1 Normalized Mapper Contract](sysmon_event1_normalized_mapper_contract.md)
   owns mapper identity, timestamp, field-mapping, and parity behavior; and
 - the [native parity runbook](../../runbooks/windows/sysmon_event1_native_parity.md)
-  owns the operator procedure and observed-run evidence.
+  owns the operator procedure and observed-run evidence;
+- the public Windows Security authentication
+  [source parser](../../../scripts/windows/security_auth/parse_windows_security_auth_source.py),
+  [normalized mapper](../../../scripts/windows/security_auth/map_windows_security_auth_to_endpoint_event.py),
+  and [Wazuh hit adapter](../../../scripts/windows/security_auth/adapt_wazuh_windows_security_auth_hit.py)
+  retain the sanitized 4624/4625 source, parsed, normalized, and conversion
+  boundaries; and
+- the public
+  [atomic rule](../../../detection/dsl/windows_security_auth_failure_observed.yaml),
+  [detection test](../../../tests/windows/security_auth/test_windows_security_auth_detection.py),
+  and [common-entry contract](windows_security_auth_common_entry_contract.md)
+  retain the explicit 4624 no-match and bounded 4625 execution through
+  Incident, Triage, and Investigation. Authentication-specific analysis and
+  generalized live Wazuh execution remain future work.
 
 The sections below define required behavior and scope. Describing a boundary or
 validation slice here does not by itself claim that it is implemented, live, or
@@ -72,9 +85,14 @@ Secondary / later in the same Windows MVP
   Security Event ID 4625 - Failed logon
 ```
 
-The MVP scope permits a Sysmon Event ID 1-only initial slice. Event IDs 4624
-and 4625 require their own source-field mapping and fixtures before they are
-added.
+The Sysmon Event ID 1 path is implemented through its bounded downstream slice.
+Event IDs 4624 and 4625 now have reviewed source-fixture, source-parser,
+parsed-event, normalized-mapper, sanitized Wazuh alert-hit conversion, and
+bounded atomic-detection boundaries; their bounded common-entry matrix is also
+validated. Its bounded Wazuh source registry, deterministic query/response
+boundary, and offline live-smoke harness are also implemented.
+Authentication-specific correlation and analysis and the first live Wazuh
+authentication execution remain separate work.
 
 The first MVP does not cover:
 
@@ -146,13 +164,16 @@ The MVP anticipates these representations:
 1. Sanitized JSON fixture.
 2. Windows Event Log XML export.
 3. Future Windows Event Forwarding representation.
-4. Future Wazuh Indexer query record.
+4. Sanitized Wazuh Indexer alert-hit projection for bounded fixture parity;
+   operational query retrieval remains future work.
 
-The sanitized fixture is the initial validated test path. Wazuh is a
-future operational query path, not the source of canonical semantics. Windows
-XML and EVTX-derived events are source evidence that must be parsed and mapped
-before reaching the DSL. Raw EVTX binary parsing is not a prerequisite for the
-first MVP.
+The sanitized provider-like fixture is the initial validated test path. A
+bounded sanitized Wazuh alert-hit projection is also validated for the same
+Sysmon Event ID 1 Fixture A/B/C source and normalized semantics. Operational
+Wazuh querying remains a future path and is not the source of canonical
+semantics. Windows XML and EVTX-derived events are source evidence that must be
+parsed and mapped before reaching the DSL. Raw EVTX binary parsing is not a
+prerequisite for the first MVP.
 
 A representation adapter may vary by acquisition path, but it must produce the
 same source-specific parsed event contract for equivalent source evidence.
@@ -370,10 +391,11 @@ canonical field explicitly applies. No new Windows-only canonical top-level
 fields are introduced here.
 
 The reviewed canonical vocabulary already contains `auth_success` and
-`auth_failure`, so future Security Event ID 4624 and 4625 mappings can use those
-existing event types. Their detailed account, logon, network, status, and
-provenance mapping is deferred to the later fixture slice. This document does
-not introduce a new canonical `event_type`.
+`auth_failure`. The Windows Security authentication mapper now uses those
+existing event types for Event IDs 4624 and 4625 respectively. Its separate
+contract fixes canonical identity, `DOMAIN\user`, System timestamp, optional
+source-network, and provider-provenance policy. It does not introduce a new
+canonical `event_type` or establish detection behavior.
 
 ## 7. Identity And Typing Rules
 
@@ -468,6 +490,32 @@ The detector may emit observable behavior features. Conclusion-oriented
 interpretation remains with triage and investigation. The required DSL
 `severity: low` value is rule metadata, not a malicious verdict, Incident
 severity, confidence, assessment, or response approval.
+
+### Windows Security Authentication Failure Observation
+
+The bounded Windows Security authentication rule uses only the canonical route:
+
+```text
+source == windows_security
+platform == windows
+event_type == auth_failure
+```
+
+It emits `windows_security_auth_failure_observed` for the 4625 fixture. The 4624
+`auth_success` fixture is an explicit no-match. The rule does not inspect
+provider status fields, assign a MITRE technique, apply a threshold, relate
+multiple events, or infer maliciousness or credential validity. Its public
+policy and evidence limits are represented by the
+[atomic rule](../../../detection/dsl/windows_security_auth_failure_observed.yaml)
+and [focused detection test](../../../tests/windows/security_auth/test_windows_security_auth_detection.py).
+
+The bounded
+[common-entry validation](windows_security_auth_common_entry_contract.md)
+passes both results through the existing endpoint-to-Investigation API. Success
+remains empty across all five stage lists; failure produces one uncorrelated
+low-severity Incident, one Triage, and one Investigation with exact endpoint
+evidence linkage. This validates structural reuse, not authentication-specific
+Triage or Investigation quality.
 
 ## 10. Fixture-First Validation
 
@@ -569,8 +617,12 @@ DSL
   deterministic detection over normalized events
 ```
 
-The fixture path can validate the Windows pipeline before Wazuh integration.
-Future Wazuh mapping must keep these layers separate:
+The provider-like fixture path validates the Windows pipeline independently of
+Wazuh. The bounded public
+[Wazuh Sysmon Event ID 1 adapter](../../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+and [focused test](../../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py)
+also validate one sanitized alert-hit representation boundary while keeping
+these layers separate:
 
 ```text
 Wazuh retrieval metadata
@@ -581,7 +633,8 @@ raw/full payload reference
 
 A Wazuh query record is a retrieval envelope, not a Sysmon event and not a
 `normalized_endpoint_event`. The source parser and mapper still own Windows
-semantics.
+semantics. Operational retrieval, pagination, partial results, and live parity
+remain future work under the provider-neutral SIEM query contract.
 
 ## 14. Relationship To Linux Telemetry
 

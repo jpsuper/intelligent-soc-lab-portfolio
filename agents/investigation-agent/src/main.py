@@ -50,6 +50,7 @@ EXECUTION_PREFIXES = (
 )
 SUSPICIOUS_DIR_RE = re.compile(r"/(?:tmp|dev/shm)/[^\s'\"]+")
 URL_RE = re.compile(r"https?://[^\s\'\"]+")
+INPUT_EVENT_REF_RE = re.compile(r"^input\[(0|[1-9][0-9]*)\]$")
 
 WAZUH_PERSISTENCE_PATHS = [
     "/etc/systemd/system",
@@ -731,6 +732,64 @@ def normalize_endpoint_events(endpoint_events: object) -> list[dict]:
     return [event for event in events if isinstance(event, dict)]
 
 
+def bind_endpoint_events_to_incident(
+    endpoint_events: object,
+    incident: dict,
+) -> tuple[object, list[str]]:
+    """Select canonical endpoint events referenced by one Incident when possible."""
+
+    if endpoint_events is None:
+        return None, []
+
+    # Observation-level Incidents may intentionally admit surrounding endpoint
+    # context (for example, archive-staging steps around one matched event). A
+    # correlation Incident's refs, by contrast, are the complete selected-event
+    # set and can safely bind the shared optional evidence input.
+    if not isinstance(incident.get("correlation_id"), str):
+        return endpoint_events, []
+
+    raw_refs = incident.get("raw_event_refs")
+    if not isinstance(raw_refs, list) or not raw_refs:
+        return endpoint_events, []
+
+    matched_refs: list[tuple[str, int]] = []
+    unmatched_refs: list[object] = []
+    for ref in raw_refs:
+        match = INPUT_EVENT_REF_RE.fullmatch(ref) if isinstance(ref, str) else None
+        if match is None:
+            unmatched_refs.append(ref)
+            continue
+        pair = (ref, int(match.group(1)))
+        if pair not in matched_refs:
+            matched_refs.append(pair)
+
+    # Legacy and direct callers may use source-native refs. Preserve their existing
+    # all-events behavior unless the Incident uses the common input[N] contract.
+    if not matched_refs:
+        return endpoint_events, []
+    if unmatched_refs:
+        raise InvestigationBoundaryValidationError(
+            "incident raw_event_refs must not mix input[N] and non-input references"
+        )
+
+    normalized_events = normalize_endpoint_events(endpoint_events)
+    selected_events: list[dict] = []
+    selected_refs: list[str] = []
+    for ref, index in matched_refs:
+        if index >= len(normalized_events):
+            raise InvestigationBoundaryValidationError(
+                f"incident raw_event_ref {ref} is outside endpoint_events"
+            )
+        selected_events.append(normalized_events[index])
+        selected_refs.append(ref)
+
+    if isinstance(endpoint_events, dict):
+        selected_envelope = dict(endpoint_events)
+        selected_envelope["events"] = selected_events
+        return selected_envelope, selected_refs
+    return selected_events, selected_refs
+
+
 def load_optional_endpoint_events(path: str | Path, schema_path: str | Path) -> dict | None:
     file_path = Path(path)
     if not file_path.exists():
@@ -742,13 +801,20 @@ def load_optional_endpoint_events(path: str | Path, schema_path: str | Path) -> 
     return endpoint_events
 
 
-def add_endpoint_context(endpoint_events: object, evidence: dict) -> None:
+def add_endpoint_context(
+    endpoint_events: object,
+    evidence: dict,
+    *,
+    endpoint_event_refs: list[str] | None = None,
+) -> None:
     normalized_events = normalize_endpoint_events(endpoint_events)
     if not normalized_events:
         return
 
     evidence["endpoint_event_count"] = len(normalized_events)
     evidence["endpoint_events"] = normalized_events
+    if endpoint_event_refs:
+        evidence["endpoint_event_refs"] = endpoint_event_refs
 
 
 def derive_endpoint_enriched_features(endpoint_events: object) -> dict[str, bool]:
@@ -2344,12 +2410,25 @@ def build_investigation_result(
     ssh_auth_events: list[dict] | None = None,
     run_id: str | None = None,
 ) -> dict:
+    bound_endpoint_events, endpoint_event_refs = bind_endpoint_events_to_incident(
+        endpoint_events,
+        incident,
+    )
     evidence, enriched_features = build_base_evidence(incident)
     add_process_context(process_events, incident, evidence, enriched_features)
     add_auditd_context(auditd_events, evidence)
-    add_endpoint_context(endpoint_events, evidence)
-    enrich_with_endpoint_events(endpoint_events, enriched_features)
-    add_archive_staging_context(incident, endpoint_events, evidence, enriched_features)
+    add_endpoint_context(
+        bound_endpoint_events,
+        evidence,
+        endpoint_event_refs=endpoint_event_refs,
+    )
+    enrich_with_endpoint_events(bound_endpoint_events, enriched_features)
+    add_archive_staging_context(
+        incident,
+        bound_endpoint_events,
+        evidence,
+        enriched_features,
+    )
     enrich_with_process_chain_hits(process_chain_hits, evidence, enriched_features)
     add_auth_execution_context(ssh_auth_events, incident, evidence, enriched_features)
     promote_context_into_evidence(evidence)

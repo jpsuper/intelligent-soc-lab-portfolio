@@ -1,0 +1,37 @@
+{
+  "fixture_contract_version": "1.0",
+  "fixture_id": "windows-security-4625-network-logon-failure-001",
+  "source_format": "windows_security_eventlog_json",
+  "system": {
+    "provider_name": "Microsoft-Windows-Security-Auditing",
+    "provider_guid": "{54849625-5478-4994-a5ba-3e3b0328c30d}",
+    "provider_event_id": 4625,
+    "event_version": 0,
+    "event_level": 0,
+    "event_task": 12544,
+    "event_opcode": 0,
+    "event_keywords": "0x8010000000000000",
+    "system_time": "2026-01-15T02:01:00.123Z",
+    "event_record_id": 42002,
+    "channel": "Security",
+    "computer": "WIN-FIXTURE01"
+  },
+  "event_data": {
+    "SubjectUserSid": "S-1-0-0",
+    "SubjectUserName": "-",
+    "SubjectDomainName": "-",
+    "SubjectLogonId": "0x0",
+    "TargetUserSid": "S-1-0-0",
+    "TargetUserName": "fixture-user",
+    "TargetDomainName": "LAB",
+    "LogonType": "3",
+    "LogonProcessName": "NtLmSsp",
+    "AuthenticationPackageName": "NTLM",
+    "WorkstationName": "WIN-CLIENT01",
+    "IpAddress": "198.51.100.24",
+    "IpPort": "54433",
+    "FailureReason": "%%2313",
+    "Status": "0xC000006D",
+    "SubStatus": "0xC000006A"
+  }
+}

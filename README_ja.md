@@ -14,7 +14,7 @@
 >
 > Canonical source: `README.md`
 > Synchronization status: synchronized
-> Last synchronization date: 2026-08-06
+> Last synchronization date: 2026-08-12
 
 セキュリティ運用の未来を実践的に研究するための、個人向けホームラボです。
 
@@ -26,51 +26,63 @@
 ## Public Snapshotの収録範囲
 
 このリポジトリは、就職活動向けに選定した公開ポートフォリオsnapshotです。
-次の範囲について、代表的な実装、JSON Schema、合成fixture、focused testsを
+次の範囲について、代表的な実装、JSON Schema、合成fixture、focused testを
 収録しています。
 
 - Linux auditdのパースと正規化から、決定論的検知、Incident構築、
   Rule Triage、エビデンス境界を守るInvestigationまで
-- Windows Sysmon Event ID 1 Fixture A/B/Cのパース、正規化、決定論的検知、
-  共通Detection-to-Investigation pipeline
-- 共通のdeduplication、correlation、trust boundary
+- Windows Sysmon Event ID 1 Fixture A/B/CおよびSlice 2のパース、正規化、
+  決定論的検知、Correlation、共通endpoint-to-Investigation pipeline
+- 境界付きWazuh Indexer query planning、PIT/cursor処理、TLS検証付きread-only
+  transport、sanitized smoke harness、Sysmon alert-hit conversion
+- Windows Security Event ID 4624/4625のsource parse、正規化、決定論的な
+  failure observation、Wazuh alert-hit conversion、common-entry validation
+- 共通のdeduplication、correlation、artifact grounding、trust boundary
 - prompt input export、schema validation、信頼しないmodel outputのimport、
   compare、promotion recommendationまでのoffline Rule Improvement経路
 
-環境固有設定、生成物、Labの生テレメトリ、一部integration、開発専用utilityは
-収録していません。Active developmentはPrivateリポジトリで継続しています。
+環境固有設定、Labの生テレメトリ、生成されたruntime evidence、credential、
+一部integration、開発専用utilityは収録していません。Active developmentは
+Privateリポジトリで継続しています。
 
 以下の実装状況は、より広いPrivate Lab全体について説明しています。この公開版で
 直接再現できるのは、対応する実装、schema、合成fixture、focused testが本リポジトリに
-存在する範囲です。それ以外の既存文書はarchitecture、設計履歴、Private Labでの作業を
-説明するものであり、対応するruntime integrationが公開版に含まれることを示すものでは
-ありません。
+存在する範囲です。収録したlive-validation文書は、限定されたsanitized evidenceを
+説明するものであり、元のraw eventやcredentialは含みません。それ以外の文書は
+architecture、設計履歴、Private Labでの作業を説明する場合があり、対応するruntime
+integrationが公開版に含まれることを示すものではありません。
 
 [著作権表示](NOTICE.md) · [セキュリティポリシー](SECURITY.md)
 
 ## ポートフォリオ概要資料
 
-プロジェクトの研究目的、end-to-end architecture、現在の実装境界、
-代表的な公開証跡、現在状況を9ページでまとめています。
+プロジェクトの研究目的、end-to-end architecture、実装境界、代表的な公開証跡を
+9ページでまとめています。
 
-- [Intelligent SecOps Lab ポートフォリオ概要（PDF、9ページ）](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
+- [Intelligent SecOps Lab ポートフォリオ概要（PDF、9ページ、2026-08-06時点のstatus snapshot）](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
+
+PDFは今回の2026-08-12 repository synchronizationより前に作成されています。
+8ページ目はCommon Pipeline v0 / Windows Slice 2以前の状況を記録しているため、
+現在状況は[Main Roadmap](docs/roadmap/roadmap.md)を参照してください。
 
 ## 5～10分のReview Path
 
 1. **Architecture:**
    [Defender event processing flow](docs/architecture/defender-event-processing-flow.md)を読む。
-2. **代表的な縦断処理:** Windowsの
+2. **代表的なsource path:** Sysmonの
    [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py)、
-   [normalized mapper](scripts/windows/sysmon_event1/map_sysmon_event1_to_endpoint_event.py)、
+   [Wazuh hit adapter](scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)、
    [common defender pipeline](common/defender_pipeline.py)を追う。
-3. **Schema:**
-   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)を確認する。
-4. **Fixture:**
-   [Sysmon Fixture B](tests/fixtures/windows/sysmon_event1/source/sysmon-event1-encoded-flag-001.json)を確認する。
-5. **Test:**
-   [Windows detection test](tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py)と
-   [Detection-to-Investigation composition test](tests/test_common_detection_to_investigation_composition.py)で
-   期待値と共通境界を確認する。
+3. **2つ目のtelemetry family:** Windows Security authenticationの
+   [source parser](scripts/windows/security_auth/parse_windows_security_auth_source.py)、
+   [normalized mapper](scripts/windows/security_auth/map_windows_security_auth_to_endpoint_event.py)、
+   [detection rule](detection/dsl/windows_security_auth_failure_observed.yaml)を確認する。
+4. **Contractとfixture:**
+   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)と
+   [sanitized 4625 source fixture](tests/fixtures/windows/security_auth/source/windows-security-4625-network-logon-failure-001.json)を比較する。
+5. **Shared execution:**
+   [Common Pipeline v1 entry regression](tests/test_common_defender_pipeline_v1_entry_validation.py)と
+   [Windows Security common-entry test](tests/windows/security_auth/test_windows_security_auth_common_entry.py)を追う。
 
 ## 概要
 
@@ -172,24 +184,35 @@ flowchart TD
 
 ### 現在の主要作業
 
-現在の主要作業は、full Common Pipeline v0に向けたWindowsの
-cross-platform expansionです。Windows Fixture A/B/Cでは、source parsing、
-normalization、決定論的検知、shared correlationとIncident構築、
-deterministic Rule Triage、pre-case Investigationを、限定されたfixture
-pathで検証しています。
+Common Pipeline v0はbounded fixture-execution levelでcompleteとなり、
+Common Pipeline v1のentry conditionもbounded fixture levelで満たしました。
+Linux Scenario 009、Windows Slice 1 Fixture A/B/C、およびWindows Slice 2の
+PID/PPID correlation fixtureは、同一のendpoint-to-Investigation boundaryへ
+入ります。Windows固有のdownstream contractを追加せず、canonicalなTriage
+artifact groundingとcorrelation-Incident-scopedなendpoint evidence bindingを
+regression validationしています。より広いprivate labではdeterministic harness
+specificityも評価していますが、そのdevelopment harnessはこの公開snapshotには
+含めていません。
 
-このevidenceは、継続的なruntime automation、live Windows parity、
-live Windows Detection-to-Investigation path、AI modelの品質を
-実証するものではありません。Common Pipeline v0は、full cross-platform
-execution validationが完了するまで未完了です。
+境界付きWazuh source pathには、Sysmon Event ID 1 alert-hit conversion、
+登録済みquery adapter、TLS検証付きread-only transport、PIT/cursor pagination、
+sanitized smoke evidenceが含まれます。Windows Security Event ID 4624/4625も、
+source fixture、parser/mapper、決定論的なfailure observation、Wazuh conversion、
+限定されたlive 4625 evidenceを通じて共通entryへ到達します。元のlive eventと
+credentialは公開していません。
+
+このevidenceは、継続的なruntime automation、一般化されたlive Windows
+integration、native Windows parity、authentication固有のCorrelationや
+分析品質、AI modelの品質を実証するものではありません。
 
 ### 主な未完了作業
 
-- full cross-platform execution validation、Windows Slice 2、
-  Common Pipeline v1への移行作業
-- live Windows validation、Wazuh retrieval / conversion、追加のWindows
-  telemetry、AD / domain controller coverage
-- Windows Triage / Investigationの品質とAI model validation
+- Common Pipeline v1の安定化とWindows downstream evidence-quality
+  regressionの継続
+- 限定されたevidence gateを越える一般化・継続的なlive Wazuh / Windows integration
+- Windows Security native parity、追加のWindows telemetry、AD /
+  domain controller coverage
+- Windows Triage / Investigationの分析品質とAI model validation
 - Linux Scenario 009のcanonical sourceおよびlive integration
 - Rule Improvementのapply、deployment、runtime update、promotion workflow
 
@@ -198,6 +221,7 @@ execution validationが完了するまで未完了です。
 責務とtrust boundaryは、
 [Defender Event Processing Flow（日本語参考訳）](docs/architecture/defender-event-processing-flow_ja.md)
 を参照してください。
+
 ## アーキテクチャ境界
 
 - Collector、source parser、normalized mapper、platform/domain固有の
@@ -246,6 +270,8 @@ execution validationが完了するまで未完了です。
   — 対応source間で使用するcanonical endpoint telemetry shape
 - [Windows Telemetry Contract](docs/design/windows/windows_telemetry_contract.md)
   — Windowsのsource、parsing、normalization、runtime evidence boundary
+- [Windows Downstream Evidence-Quality Slice](docs/design/defender/windows_downstream_evidence_quality.md)
+  — 限定されたTriage groundingとInvestigation evidence linkage
 - [Atomic Detection DSL](docs/design/atomic_detection_dsl.md) —
   決定論的ruleのsource of truthとcanonical detection-output contract
 - [Scenario Family Expansion Policy](docs/design/scenario_family_expansion_policy.md)

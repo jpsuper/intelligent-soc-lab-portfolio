@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/wazuh_indexer_windows_security_auth_live_smoke_summary.schema.json",
+  "title": "wazuh_indexer_windows_security_auth_live_smoke_summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "status",
+    "run_id",
+    "event_id",
+    "request_fingerprint",
+    "host_value_sha256",
+    "executed_at",
+    "logical_source",
+    "physical_source_count",
+    "executed_time_range",
+    "results",
+    "identity_presence",
+    "filter_alignment",
+    "conversion_projection_alignment",
+    "time_alignment",
+    "evidence_scope",
+    "does_not_establish"
+  ],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "status": { "const": "passed" },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "event_id": { "enum": ["4624", "4625"] },
+    "request_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "host_value_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "logical_source": { "const": "wazuh-alerts-windows-security-auth" },
+    "physical_source_count": { "type": "integer", "minimum": 1 },
+    "executed_time_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "time_field"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "time_field": { "const": "timestamp" }
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_hits",
+        "total_hits_relation",
+        "returned_records",
+        "truncated",
+        "refinement_required",
+        "partial"
+      ],
+      "properties": {
+        "total_hits": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "total_hits_relation": { "const": "eq" },
+        "returned_records": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "truncated": { "const": false },
+        "refinement_required": { "const": false },
+        "partial": { "const": false }
+      }
+    },
+    "identity_presence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend_record_id_records",
+        "wazuh_alert_id_records",
+        "windows_event_record_id_records"
+      ],
+      "properties": {
+        "backend_record_id_records": { "type": "integer", "minimum": 1 },
+        "wazuh_alert_id_records": { "type": "integer", "minimum": 1 },
+        "windows_event_record_id_records": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "filter_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "provider", "event_id", "channel"],
+      "properties": {
+        "host": { "const": true },
+        "provider": { "const": true },
+        "event_id": { "const": true },
+        "channel": { "const": true }
+      }
+    },
+    "conversion_projection_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "eventdata_common", "eventdata_event_specific"],
+      "properties": {
+        "system": { "const": true },
+        "eventdata_common": { "const": true },
+        "eventdata_event_specific": { "const": true }
+      }
+    },
+    "time_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["records_with_system_time", "alert_to_system_delta_ms"],
+      "properties": {
+        "records_with_system_time": { "type": "integer", "minimum": 1 },
+        "alert_to_system_delta_ms": { "$ref": "#/$defs/deltaSummary" }
+      }
+    },
+    "evidence_scope": {
+      "const": "bounded_live_wazuh_authentication_alert_query"
+    },
+    "does_not_establish": {
+      "const": [
+        "raw_archive_completeness",
+        "continuous_runtime_collection",
+        "alert_or_detection_coverage",
+        "credential_validity_or_compromise",
+        "native_windows_parity",
+        "cross_platform_pipeline_validation"
+      ]
+    }
+  },
+  "$defs": {
+    "deltaSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum", "maximum_absolute"],
+      "properties": {
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" },
+        "maximum_absolute": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

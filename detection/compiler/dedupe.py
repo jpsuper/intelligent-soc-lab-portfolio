@@ -38,6 +38,11 @@ def _artifact_key(detection: dict[str, Any]) -> tuple:
     src_ip = detection.get("src_ip")
     path = detection.get("path")
 
+    if detection.get("event_type") == "process_exec":
+        event_id = detection.get("event_id")
+        if event_id is not None:
+            return (rule_id, artifact, host, user, src_ip, path, "event_id", str(event_id))
+
     if artifact == "authorized_keys_modification":
         return (rule_id, artifact, host, path)
 

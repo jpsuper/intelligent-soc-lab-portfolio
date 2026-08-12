@@ -100,11 +100,13 @@ Implemented capabilities include:
 - deterministic local-lab Deception inventory, hit, and Incident-bridge artifacts
 - normalized endpoint event and Windows Sysmon Event ID 1 fixture contracts
 - the Common Defender Pipeline v0 detector and bounded downstream composition
+- bounded Common Pipeline v1 entry validation across Linux and Windows Slice 1/2
 
 ## 2.2 Current active workstream
 
-The active workstream is **Windows cross-platform expansion**, extending the
-Phase5 endpoint-telemetry and Phase6 common-pipeline foundations.
+The active workstream is **Common Pipeline v1 stabilization and Windows
+downstream evidence quality**, extending the Phase5 endpoint-telemetry and
+Phase6 common-pipeline foundations.
 
 The current bounded implementation supports:
 
@@ -112,15 +114,25 @@ The current bounded implementation supports:
 - deterministic PowerShell process / encoded-command observation rules
 - canonical detection-list validation and deterministic ordering
 - platform-neutral dedupe-to-correlation execution using existing policies
+- a bounded Windows Slice 2 PID/PPID and 60-second parent/child Correlation
+  fixture and policy
 - correlation-result-to-Incident construction
 - exact supporting-detection-ID Incident selection and observation suppression
 - deterministic Rule Triage per selected Incident
 - evidence-aware pre-case Investigation per linked Incident/Triage pair
-- Linux Scenario 009 and Windows Fixture A/B/C focused regression at the stated
-  fixture boundary
+- one shared endpoint-to-Investigation execution entry for Linux Scenario 009
+  and Windows Fixture A/B/C at the stated fixture boundary
+- one combined Linux Scenario 009 and Windows Slice 1/2 regression matrix
+  through the same endpoint-to-Investigation entry
+- a canonical handoff that adds no native-source or scenario-dispatch parameter
+- canonical Incident artifact grounding in deterministic Rule Triage without
+  changing its assessment rules
+- correlation-Incident-scoped `input[N]` endpoint evidence binding in pre-case
+  Investigation
 
-This does **not** establish complete cross-platform execution validation,
-Windows downstream analytical quality, or live Windows telemetry parity.
+This satisfies the Common Pipeline v1 entry conditions only at the bounded
+fixture level. It does **not** establish Windows downstream analytical quality,
+live Windows telemetry parity, or continuous runtime automation.
 
 ## 2.3 Current status baseline
 
@@ -130,9 +142,14 @@ Windows downstream analytical quality, or live Windows telemetry parity.
 | Phase6 | Extended MVP complete |
 | Phase7 | Artifact-only MVP foundation complete; scenario YAML and runner deferred |
 | Phase8 | Later; maintained in this Roadmap rather than a separate `phase8.md` |
-| Common Pipeline v0 overall | Not complete |
-| Full cross-platform execution validation | Not complete |
-| Live Windows Detection-to-Incident/Investigation validation | Unverified / future |
+| Common Pipeline v0 overall | Complete at the bounded fixture execution level |
+| Full cross-platform execution validation | Validated for Linux Scenario 009 and Windows Slice 1/2 |
+| Windows Slice 2 correlation boundary | Validated through the shared endpoint-to-Investigation regression |
+| Common Pipeline v1 entry conditions | Satisfied at the bounded fixture level |
+| Windows downstream evidence-quality slice | Publicly validated for canonical artifact grounding and correlation endpoint evidence binding; private-lab harness scoring is not published |
+| Bounded live Windows 4625 Detection-to-Incident/Investigation validation | Validated for one complete five-record Wazuh alert-plane query; all five records remained represented after dedupe produced four linked Detection/Incident/Triage/Investigation paths |
+| Bounded Wazuh Indexer live multi-page cursor smoke | Validated for one 14-record alert-plane PIT query across pages `[5, 5, 4]` with confirmed final deletion |
+| Windows Security 4624/4625 bounded common-entry boundary | Validated from sanitized source through the existing endpoint-to-Investigation entry: 4624 remains empty and 4625 preserves one uncorrelated low-severity observation with exact downstream linkage |
 | Rule Improvement export MVP | Complete for the current candidate-generation boundary |
 | Rule Improvement apply, deploy, runtime update, and promotion | Unimplemented |
 | Scenario 009 fixture path | Implemented and bounded |
@@ -181,34 +198,71 @@ Rule Improvement review and export MVP
 scenario-family policy, broader Linux mapping, and bounded Scenario 009 fixture path
   ↓
 Windows Sysmon Event ID 1 fixture, parser, mapper, detection, and bounded common pipeline slice
+  ↓
+Windows Slice 2 PID/PPID and temporal Correlation
+  ↓
+Linux and Windows Slice 1/2 common-entry regression
 ```
 
 ## 4.2 Current work
 
-1. Complete full Common Defender Pipeline v0 cross-platform execution validation.
-2. Reconfirm Linux and Windows fixture regressions through the shared boundaries.
-3. Keep identity run-local unless a separately reviewed persistent identity
+1. Maintain the Linux and Windows Slice 1/2 regression through the fixed common
+   entry boundary.
+2. Maintain the bounded Windows Triage and Investigation evidence-quality
+   regression without introducing Windows-specific downstream contracts.
+3. Maintain the bounded Wazuh Sysmon Event ID 1 alert-hit conversion parity
+   regression while keeping its fixture claim distinct from the separately
+   completed alert-plane transport evidence and still-unverified native parity.
+4. Maintain the bounded `wazuh-alerts-sysmon-event1` query-plan and
+   complete-page response regression, including host/time/result bounds,
+   refinement, partial-result rejection, and hashed provenance.
+5. Maintain the bounded Wazuh Indexer PIT create/search/resume/delete lifecycle,
+   including final-page, policy-stop, and known-failure cleanup semantics.
+6. Maintain the encrypted, request-bound, 30-second Wazuh Indexer cursor,
+   cumulative 100-record cap, and strict stable `search_after` progression while
+   maintaining the deterministic runner and the bounded 2026-08-11 live
+   three-page/final-deletion evidence.
+7. Maintain the bounded Windows Security 4624/4625 source-fixture, parser,
+   normalized-mapper, sanitized Wazuh alert-hit conversion parity, source
+   registry/query regression, atomic-detection, and common-entry matrix together
+   with the completed five-record 4625 live common-pipeline evidence, without
+   inferring authentication-specific analysis, repeated-failure correlation,
+   native parity, or continuous live integration.
+8. Keep identity run-local unless a separately reviewed persistent identity
    contract is introduced.
-4. Preserve exact-ID Incident selection and the existing correlation-policy
+9. Preserve exact-ID Incident selection and the existing correlation-policy
    semantics during validation.
 
-## 4.3 Next after Common Pipeline v0
+## 4.3 Next after v1 entry validation
 
-1. Add Windows Slice 2 using a distinct multi-event Correlation shape based on
-   PID/PPID and temporal relationships.
-2. Run Linux and Windows Slice 1/2 regression through the same boundaries.
-3. Fix the common execution spine as Common Pipeline v1 after the second slice
-   validates the abstraction.
-4. Improve Windows Triage, Investigation, and harness evidence quality without
-   introducing Windows-specific downstream contracts.
+1. Review any further Windows downstream quality change against a concrete
+   shared-contract or shared-rubric gap before implementation.
+2. Maintain the completed live evidence gate for the credential-resolving,
+   TLS-verifying, read-only Wazuh HTTPS transport and bounded smoke harness. The
+   2026-08-10 lab run returned 14 exact, complete alert-plane records and
+   established the first manager/Indexer and alert/provider time-field baseline
+   without widening the evidence claim. A PIT-enabled rerun returned the same
+   14 records and confirmed the bounded create/search/delete lifecycle with the
+   existing read-only account. A 2026-08-11 bounded multi-page rerun returned
+   pages `[5, 5, 4]`, resumed two protected cursors with stable ordering, and
+   confirmed final-page deletion without retaining runtime state or raw events.
+3. Maintain the completed bounded Windows Security 4625 live common-pipeline
+   gate. The 2026-08-11 controlled query retrieved, adapted, normalized, and
+   represented all five records; dedupe produced four linked
+   Detection/Incident/Triage/Investigation paths, and the sanitized summary
+   SHA-256 was
+   `e4751c5af21ed7af17f841efa1b8226037fe67614d4c004b22fb600fc8bb9666`.
+4. Prepare the remaining Linux Scenario 009 canonical live-source selection and
+   bounded live common-pipeline integration without converting the existing
+   fixture evidence into a live claim.
 
 ## 4.4 Later work
 
-- live Windows collection and Wazuh retrieval/conversion integration
-- additional Windows telemetry sources such as Security 4624/4625 and Sysmon
-  Event ID 3
+- live Windows collection and operational Wazuh retrieval integration
+- Windows Security 4624/4625 native parity and broader live integration after
+  the bounded alert-plane smoke is reviewed
+- additional Windows telemetry sources such as Sysmon Event ID 3
 - AD/DC coverage after standalone Windows telemetry stabilizes
-- remaining Scenario 009 canonical-source and live-integration work
 - additional post-action DFIR artifact parsers and collector mappings
 - more practical attacker-agent behavior and optional SIEM integration
 - Phase7 deception scenario YAML and safe runner
@@ -216,7 +270,7 @@ Windows Sysmon Event ID 1 fixture, parser, mapper, detection, and bounded common
 
 ---
 
-# 5. Common Defender Pipeline v0
+# 5. Common Defender Pipeline v0 and v1 Entry
 
 ## 5.1 Implemented subset
 
@@ -243,6 +297,8 @@ evidence-aware pre-case Investigation
 
 Implemented and focused-test validated:
 
+- one endpoint-fixture entry that invokes deterministic detection before the
+  existing Detection-to-Investigation composition
 - canonical detection-list input and output validation
 - fail-closed duplicate detection ID and timestamp handling
 - rule-distinct deterministic dedupe behavior
@@ -252,21 +308,34 @@ Implemented and focused-test validated:
 - one-to-one Incident/Triage linkage validation
 - one-to-one Incident/Triage/Investigation execution
 - Linux Scenario 009 and Windows Fixture A/B/C bounded fixture regression
+- Linux Scenario 009 and Windows Slice 1/2 combined common-entry regression
 
 Not implemented as a v0 requirement:
 
 - correlation-to-correlation merge or suppression
 - persistent aggregate artifacts
 - stable identity across reprocessing or selection changes
-- live Wazuh Windows integration
+- generalized or continuous live Wazuh Windows integration beyond the bounded 4625 gate
 
-## 5.2 Remaining v0 work
+## 5.2 v0 validation record
 
-- full cross-platform execution validation through the shared boundaries
-- confirmation that the established Linux flow remains intact under the full
-  validation sequence
-- verification that all v0 Done Criteria below are satisfied together rather
-  than only as isolated focused tests
+The cross-platform validation matrix executes Linux Scenario 009 and Windows
+Fixture A/B/C through the same endpoint-to-Investigation entry. It confirms the
+established Linux flow, Windows match and no-match behavior, deterministic
+Incident/Triage/Investigation linkage, input immutability, fail-closed endpoint
+validation, and the bounded evidence exclusions together.
+
+Exact validation commands:
+
+```bash
+uv run pytest tests/test_common_defender_pipeline_v0_validation.py -q
+uv run pytest tests/test_common_detection_pipeline.py \
+  tests/test_common_detection_to_investigation_composition.py \
+  tests/windows/sysmon_event1/test_sysmon_event1_investigation_boundary.py -q
+uv run ruff check common/defender_pipeline.py \
+  tests/test_common_defender_pipeline_v0_validation.py
+uv run pytest tests -q
+```
 
 ## 5.3 Full Common Pipeline v0 Done Criteria
 
@@ -288,16 +357,69 @@ Common Pipeline v0 is complete only when all of the following are true.
 - Full cross-platform execution validation is recorded as complete with the
   exact commands and evidence used.
 
-Current result: **not complete**.
+Current result: **complete at the bounded fixture execution level**.
 
 ## 5.4 Common Pipeline v1 entry conditions
 
 Common Pipeline v1 begins only after:
 
 - Windows Slice 2 validates a different multi-event Correlation shape
-- Linux/Windows cross-platform regression passes
-- post-Incident stages remain independent of native source formats
-- the common run and harness artifact boundaries remain valid
+  (validated at the bounded fixture level)
+- Linux/Windows cross-platform regression passes (validated at the bounded
+  fixture level)
+- post-Incident stages remain independent of native source formats (validated
+  for the common endpoint entry)
+- the common run and harness artifact boundaries remain valid (validated for
+  the established five-list in-memory bundle)
+
+Current result: **entry conditions satisfied at the bounded fixture level**.
+
+## 5.5 v1 entry validation record
+
+The five-case matrix, fixed handoff properties, Done Criteria, evidence limits,
+and exact validation commands are recorded in the
+[Common Pipeline v1 Entry Validation](../design/defender/common_pipeline_v1_entry_validation.md).
+
+This status begins v1 stabilization. It does not define v1 as a new wire schema,
+persistent identity model, runtime service, or live cross-platform integration.
+
+## 5.6 Windows downstream evidence-quality validation record
+
+The bounded artifact-grounding and correlation-Incident-scoped endpoint
+evidence-linkage mechanics, including Done Criteria and evidence limits, are
+recorded in the
+[Windows Downstream Evidence-Quality Slice](../design/defender/windows_downstream_evidence_quality.md).
+
+The broader private lab's deterministic comparison-harness scoring is not part
+of this public snapshot.
+
+This validation does not establish Windows verdict or risk quality, model
+quality, live collection, source parity, or post-action DFIR coverage.
+
+## 5.7 Bounded Wazuh Sysmon Event ID 1 conversion record
+
+The strict sanitized alert-hit projection, separate retrieval provenance,
+Fixture A/B/C source conversion, and normalized semantic parity are represented
+by the public
+[Wazuh hit adapter](../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+and its
+[focused conversion test](../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py).
+
+This validation does not establish a live Wazuh connection, operational query
+behavior, raw archive coverage, Wazuh rule quality, unalerted event coverage,
+or live Windows parity.
+
+## 5.8 Bounded Wazuh query-adapter record
+
+The reviewed single-source registry entry, request/response schemas, offline
+search-plan compiler, complete-page response parser, refinement behavior,
+partial-result rejection, and hashed provenance are represented by the public
+[query adapter](../../scripts/siem/wazuh_indexer_query_adapter.py) and its
+[focused tests](../../tests/test_wazuh_indexer_query_adapter.py).
+
+This validation does not establish credential resolution, HTTPS execution,
+live index mappings, PIT pagination, live query success, raw archive coverage,
+or end-to-end live source parity.
 
 ---
 
@@ -307,20 +429,39 @@ Common Pipeline v1 begins only after:
 
 Current:
 
-- complete full v0 execution validation
+- maintain the bounded Common Pipeline v1 entry regression
+- preserve the Windows Slice 2 PID/PPID and temporal Correlation behavior
 - preserve bounded fixture evidence claims
 - keep Windows analytical quality separate from structural parity
+- maintain bounded Wazuh Sysmon Event ID 1 alert-hit conversion parity
+- maintain the bounded Wazuh query-plan and response-parser regression
+- maintain the deterministic runner and completed bounded live multi-page
+  alert-plane evidence
+- maintain exact Windows Security 4624/4625 source-to-normalized-to-common-entry
+  fixture parity
+- maintain the bounded Windows Security Wazuh conversion, source-registry,
+  query/response, and offline live-smoke regressions
+- maintain the bounded 2026-08-11 Windows Security 4625 live alert-plane
+  evidence: five exact complete records, reviewed sentinel normalization, and
+  sanitized summary SHA-256 only
 
 Next:
 
-- Windows Slice 2
-- cross-platform regression
-- Common Pipeline v1
 - downstream quality tuning
+- maintain the completed credential-backed Wazuh HTTPS and single-page PIT live
+  smoke evidence plus the three-page cursor/final-deletion evidence
+- review the observed manager/Indexer clock and alert/provider time-field
+  alignment before noise cleanup
+- validate the bounded in-memory Windows Security authentication live
+  common-pipeline runner through the reviewed Wazuh representation adapter,
+  normalized mapper, detection, and Common Pipeline entry, then execute it
+  against the retained controlled 4625 anchor and keep only sanitized summary
+  evidence
 
 Later:
 
-- live collection, Wazuh integration, additional telemetry, and AD/DC
+- Windows Security authentication native parity, broader live integration,
+  additional telemetry, correlation policies, and AD/DC
 
 ## 6.2 Linux Scenario 009
 

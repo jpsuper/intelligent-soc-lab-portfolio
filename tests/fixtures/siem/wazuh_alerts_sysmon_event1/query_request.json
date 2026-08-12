@@ -1,0 +1,24 @@
+{
+  "contract_version": "1.0",
+  "request_id": "query-windows-sysmon-event1-001",
+  "backend": "wazuh_indexer",
+  "source_names": [
+    "wazuh-alerts-sysmon-event1"
+  ],
+  "time_range": {
+    "start": "2026-01-15T01:00:00Z",
+    "end": "2026-01-15T01:05:00Z"
+  },
+  "filters": [
+    {
+      "field": "agent.name",
+      "operator": "eq",
+      "value": "WIN-FIXTURE01"
+    }
+  ],
+  "projection_fields": [],
+  "aggregation_fields": [],
+  "sort": [],
+  "limit": 2,
+  "cursor": null
+}

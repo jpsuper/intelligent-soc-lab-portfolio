@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/wazuh_indexer_windows_security_auth_live_pipeline_summary.schema.json",
+  "title": "wazuh_indexer_windows_security_auth_live_pipeline_summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "status",
+    "run_id",
+    "event_id",
+    "request_fingerprint",
+    "host_value_sha256",
+    "executed_at",
+    "logical_source",
+    "physical_source_count",
+    "executed_time_range",
+    "retrieval_results",
+    "rule_id",
+    "stage_counts",
+    "pipeline_alignment",
+    "evidence_scope",
+    "does_not_establish"
+  ],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "status": { "const": "passed" },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "event_id": { "const": "4625" },
+    "request_fingerprint": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "host_value_sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "logical_source": { "const": "wazuh-alerts-windows-security-auth" },
+    "physical_source_count": { "type": "integer", "minimum": 1 },
+    "executed_time_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "time_field"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "time_field": { "const": "timestamp" }
+      }
+    },
+    "retrieval_results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_hits",
+        "total_hits_relation",
+        "returned_records",
+        "truncated",
+        "refinement_required",
+        "partial"
+      ],
+      "properties": {
+        "total_hits": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "total_hits_relation": { "const": "eq" },
+        "returned_records": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "truncated": { "const": false },
+        "refinement_required": { "const": false },
+        "partial": { "const": false }
+      }
+    },
+    "rule_id": { "const": "authentication.windows_security_failure_observed" },
+    "stage_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retrieved_records",
+        "adapted_records",
+        "normalized_events",
+        "represented_detection_events",
+        "deduped_detections",
+        "correlations",
+        "incidents",
+        "triage_results",
+        "investigation_results"
+      ],
+      "properties": {
+        "retrieved_records": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "adapted_records": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "normalized_events": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "represented_detection_events": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "deduped_detections": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "correlations": { "const": 0 },
+        "incidents": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "triage_results": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "investigation_results": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    },
+    "pipeline_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "all_records_adapted",
+        "all_records_normalized",
+        "all_records_represented_by_detection",
+        "raw_event_reference_coverage",
+        "incident_triage_investigation_linkage",
+        "in_memory_only"
+      ],
+      "properties": {
+        "all_records_adapted": { "const": true },
+        "all_records_normalized": { "const": true },
+        "all_records_represented_by_detection": { "const": true },
+        "raw_event_reference_coverage": { "const": true },
+        "incident_triage_investigation_linkage": { "const": true },
+        "in_memory_only": { "const": true }
+      }
+    },
+    "evidence_scope": {
+      "const": "bounded_live_wazuh_authentication_common_pipeline_execution"
+    },
+    "does_not_establish": {
+      "const": [
+        "raw_archive_completeness",
+        "continuous_runtime_collection",
+        "alert_or_detection_coverage",
+        "credential_validity_or_compromise",
+        "authentication_specific_analysis",
+        "repeated_failure_or_spraying_correlation",
+        "native_windows_parity",
+        "case_action_or_response",
+        "full_cross_platform_pipeline_validation"
+      ]
+    }
+  }
+}

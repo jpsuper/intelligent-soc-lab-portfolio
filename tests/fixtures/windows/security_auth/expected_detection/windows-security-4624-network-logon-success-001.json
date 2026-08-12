@@ -1,0 +1,7 @@
+{
+  "schema_version": "windows_security_auth_expected_detection.v1",
+  "fixture_id": "windows-security-4624-network-logon-success-001",
+  "normalized_event_id": "windows-security-auth:v1:8b1032cfeb278b18ae51cc6aa623af8091ab0f9544e00044ff7b8d599efb3f45",
+  "matched_rule_ids": [],
+  "behavior_features": {}
+}

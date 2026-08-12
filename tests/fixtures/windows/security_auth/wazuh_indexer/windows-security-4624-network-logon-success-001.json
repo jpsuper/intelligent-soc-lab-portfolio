@@ -1,0 +1,61 @@
+{
+  "fixture_contract_version": "1.0",
+  "fixture_id": "windows-security-4624-network-logon-success-001",
+  "source_format": "wazuh_indexer_alert_hit_projection",
+  "retrieval": {
+    "query_ref": "fixture-query:windows-security-auth-a",
+    "retrieved_at": "2026-01-15T02:05:00Z",
+    "query_window": {
+      "start": "2026-01-15T02:00:00Z",
+      "end": "2026-01-15T02:05:00Z"
+    }
+  },
+  "hit": {
+    "_index": "wazuh-alerts-4.x-2026.01.15",
+    "_id": "wazuh-auth-fixture-document-a",
+    "_source": {
+      "timestamp": "2026-01-15T02:00:01Z",
+      "agent": {
+        "id": "001",
+        "name": "WIN-FIXTURE01"
+      },
+      "manager": {
+        "name": "WAZUH-FIXTURE01"
+      },
+      "data": {
+        "win": {
+          "system": {
+            "providerName": "Microsoft-Windows-Security-Auditing",
+            "providerGuid": "{54849625-5478-4994-a5ba-3e3b0328c30d}",
+            "eventID": "4624",
+            "version": "2",
+            "level": "0",
+            "task": "12544",
+            "opcode": "0",
+            "keywords": "0x8020000000000000",
+            "systemTime": "2026-01-15T02:00:00.123Z",
+            "eventRecordID": "42001",
+            "channel": "Security",
+            "computer": "WIN-FIXTURE01"
+          },
+          "eventdata": {
+            "subjectUserSid": "S-1-5-18",
+            "subjectUserName": "WIN-FIXTURE01$",
+            "subjectDomainName": "LAB",
+            "subjectLogonId": "0x3E7",
+            "targetUserSid": "S-1-5-21-111111111-222222222-333333333-1001",
+            "targetUserName": "fixture-user",
+            "targetDomainName": "LAB",
+            "targetLogonId": "0xABC001",
+            "logonType": "3",
+            "logonProcessName": "NtLmSsp",
+            "authenticationPackageName": "NTLM",
+            "workstationName": "WIN-CLIENT01",
+            "ipAddress": "198.51.100.24",
+            "ipPort": "54432"
+          }
+        }
+      }
+    }
+  }
+}

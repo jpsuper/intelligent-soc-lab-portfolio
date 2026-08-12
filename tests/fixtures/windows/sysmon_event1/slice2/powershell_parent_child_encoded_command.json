@@ -1,0 +1,63 @@
+{
+  "schema_version": "endpoint_events.v1",
+  "metadata": {
+    "fixture_id": "windows-slice2-powershell-parent-child-001",
+    "scope": "Synthetic normalized defender-side fixture for bounded correlation validation.",
+    "evidence_boundary": "This fixture does not establish source-parser parity, live Windows telemetry, maliciousness, or compromise.",
+    "payload_boundary": "SAFE_PLACEHOLDER is inert fixture text and is not a functional encoded payload."
+  },
+  "events": [
+    {
+      "event_id": "windows-slice2:parent:001",
+      "source": "sysmon",
+      "platform": "windows",
+      "host": "WIN-SLICE2-01",
+      "timestamp": "2026-08-01T00:00:00Z",
+      "event_type": "process_exec",
+      "user": "LAB\\fixture-user",
+      "pid": 5100,
+      "ppid": 5000,
+      "process_name": "powershell.exe",
+      "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "command_line": "powershell.exe -NoProfile -Command \"Write-Output parent-ready\"",
+      "parent_process_name": "cmd.exe",
+      "parent_exe": "C:\\Windows\\System32\\cmd.exe",
+      "parent_command_line": "cmd.exe",
+      "raw_ref": {
+        "fixture_id": "windows-slice2-powershell-parent-child-001",
+        "event_role": "parent"
+      },
+      "source_fields": {
+        "provider_name": "Microsoft-Windows-Sysmon",
+        "provider_event_id": 1,
+        "fixture_provenance": "curated-normalized-only"
+      }
+    },
+    {
+      "event_id": "windows-slice2:child:001",
+      "source": "sysmon",
+      "platform": "windows",
+      "host": "WIN-SLICE2-01",
+      "timestamp": "2026-08-01T00:00:30Z",
+      "event_type": "process_exec",
+      "user": "LAB\\fixture-user",
+      "pid": 5200,
+      "ppid": 5100,
+      "process_name": "powershell.exe",
+      "exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "command_line": "powershell.exe -NoProfile -EncodedCommand SAFE_PLACEHOLDER",
+      "parent_process_name": "powershell.exe",
+      "parent_exe": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+      "parent_command_line": "powershell.exe -NoProfile -Command \"Write-Output parent-ready\"",
+      "raw_ref": {
+        "fixture_id": "windows-slice2-powershell-parent-child-001",
+        "event_role": "child"
+      },
+      "source_fields": {
+        "provider_name": "Microsoft-Windows-Sysmon",
+        "provider_event_id": 1,
+        "fixture_provenance": "curated-normalized-only"
+      }
+    }
+  ]
+}

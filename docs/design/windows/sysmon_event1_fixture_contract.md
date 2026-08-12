@@ -188,7 +188,7 @@ another:
 | `ProcessGuid` / `process_guid` | Sysmon process identity, synthetic in fixtures | Source-specific process correlation and fallback canonical identity input |
 | `fixture_id` | Repository test-case identity such as `sysmon-event1-ordinary-powershell-001` | Locate and relate a fixture to separate expectations |
 | canonical `event_id` | Lab-generated deterministic normalized event identifier | Identify one normalized event within the canonical artifact |
-| future Wazuh document ID | Retrieval-backend record identity | Retrieval provenance only |
+| Wazuh document ID | Retrieval-backend record identity | Retrieval provenance only |
 
 `fixture_id` is not an `event_record_id`. It must not be written into
 `event_record_id` to compensate for missing source identity. Conversely,
@@ -445,7 +445,7 @@ The mapping expectations are:
 | Parsed input | Normalized field | Expected rule |
 |---|---|---|
 | versioned identity inputs | `event_id` | Generate a deterministic lab identifier distinct from all source IDs |
-| Sysmon source semantics | `source` | Constant `sysmon`, including when retrieval is later performed through Wazuh |
+| Sysmon source semantics | `source` | Constant `sysmon`, including when retrieval passes through the bounded Wazuh projection |
 | Event ID 1 platform | `platform` | Constant `windows` |
 | `computer` | `host` | Preserve the source value |
 | `utc_time` | `timestamp` | Preserve the Sysmon EventData process-observation timestamp |
@@ -715,14 +715,17 @@ detection coverage, Wazuh retrieval, or any later pipeline stage.
 Runtime inventory details belong in architecture documentation. They must not
 be copied into sanitized fixture values or expected outputs.
 
-## 10. Sysmon Semantics And Future Wazuh Retrieval
+## 10. Sysmon Semantics And Wazuh Retrieval
 
 Sysmon remains the semantic source for Event ID 1 regardless of acquisition
-path. A future Wazuh integration may retrieve an indexed representation, but
-Wazuh retrieval metadata is a separate envelope:
+path. The bounded public
+[Wazuh hit adapter](../../../scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)
+and [focused test](../../../tests/windows/sysmon_event1/test_wazuh_sysmon_event1_conversion.py)
+validate a sanitized alert-hit projection for Fixture A/B/C. Wazuh retrieval
+metadata remains a separate envelope:
 
 ```text
-future Wazuh document / query metadata
+Wazuh document / query metadata
   -> Windows/Sysmon representation adapter
   -> the same source-specific parsed event boundary
   -> the same normalized mapping boundary
@@ -736,8 +739,9 @@ the underlying provider fields are unavailable.
 The normalized `source` remains `sysmon` when the normalized semantics come
 from recoverable Sysmon provider data. Wazuh query scope, retrieval provenance,
 and backend identity remain separate metadata governed by the provider-neutral
-SIEM query contract. Wazuh Windows integration is outside this fixture
-contract. Its status belongs in the Main Roadmap.
+SIEM query contract. The bounded fixture conversion does not establish an
+operational query path or live Wazuh Windows integration. Their status belongs
+in the Main Roadmap.
 
 ## 11. Sanitization And Safety Requirements
 

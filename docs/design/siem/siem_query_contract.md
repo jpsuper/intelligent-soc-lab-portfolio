@@ -221,6 +221,7 @@ Candidate logical sources include:
 
 - `wazuh-archives`
 - `wazuh-alerts`
+- `wazuh-alerts-sysmon-event1` for the bounded registered Windows alert slice
 - `splunk-endpoint`
 - `elastic-network`
 - `timesketch-timeline`
@@ -284,7 +285,7 @@ The version `1.0` response design is:
   "query_provenance": {
     "executed_at": "2026-07-13T12:20:00Z",
     "adapter_name": "wazuh-indexer-query-adapter",
-    "adapter_version": "0.1.0"
+    "adapter_version": "0.2.0"
   }
 }
 ```
@@ -575,6 +576,52 @@ Native backend-rule translation and parity comparison are separate target
 concerns. They are not prerequisites for validating the provider-neutral query
 contract itself. Current implementation order and completion claims belong in
 the [Main Roadmap](../../roadmap/roadmap.md).
+
+## 16. Bounded Wazuh Query Adapter Record
+
+The first executable subset is implemented by the public
+[Wazuh query adapter](../../../scripts/siem/wazuh_indexer_query_adapter.py) and
+[focused adapter tests](../../../tests/test_wazuh_indexer_query_adapter.py).
+It adds machine-readable request, response, and registry schemas; reviewed
+single-source registry entries; bounded offline Wazuh search-plan compilation;
+complete-page response parsing; hashed filter provenance; explicit refinement
+for unpageable volume; and fail-closed timeout and shard-failure behavior.
+
+That subset does not by itself provide credential resolution, an HTTPS
+transport, live index mapping evidence, a Wazuh Indexer PIT lifecycle, live
+query evidence, raw archive retrieval, or multi-source execution. The bounded
+alert-hit conversion contract remains the separately reviewed
+source-representation mapping boundary.
+
+## 17. Bounded Wazuh Live Transport Record
+
+The follow-on implementation is recorded in the
+[Wazuh Indexer Live Transport and Smoke Contract](wazuh_indexer_live_transport_contract.md).
+It resolves one read-only connection from runtime-only values, requires HTTPS
+and certificate verification, executes only the registered bounded plan, caps
+the response body, rejects redirects and partial/error responses, and produces
+a sanitized smoke summary with identity-presence and time-alignment counts.
+
+Implementation and deterministic tests do not by themselves establish live
+retrieval. The separately recorded 2026-08-10 read-only lab run satisfied that
+bounded gate for one run-correlated host/time window. A follow-on bounded Wazuh
+Indexer PIT lifecycle now creates a 30-second snapshot, performs the same
+single-page search, and confirms deletion. A separately recorded 2026-08-10
+rerun through that lifecycle returned the same 14 exact records and confirmed
+PIT deletion with the existing read-only account. The deterministic transport
+now retains that PIT across protected cursor calls, resumes with stable
+`search_after`, caps cumulative results at 100, and deletes on final page,
+policy stop, or known failure. Live multi-page completeness, raw archive
+retrieval, multi-source execution, and downstream pipeline ingestion remain
+deferred.
+
+The next foundation is implemented by the public
+[cursor module](../../../scripts/siem/wazuh_indexer_cursor.py), its
+[JSON Schema](../../../schemas/wazuh_indexer_cursor_envelope.schema.json), and
+[focused tests](../../../tests/test_wazuh_indexer_cursor.py). It adds an
+encrypted, request-bound, expiring container for the PIT ID, stable
+`search_after` values, and cumulative count. The adapter and transport use that
+container for deterministic continuation.
 
 ## Non-Goals
 
