@@ -1,105 +1,45 @@
 # Intelligent Security Operations Lab
 
-> [!NOTE] \
-> This public portfolio snapshot replaces private lab addresses with
-> documentation-only addresses from `192.0.2.0/24`.
-> Replace these placeholders with addresses appropriate for your own
-> isolated lab environment before executing the runbooks.
-
 [日本語](README_ja.md)
 
-A personal home lab for hands-on research into the future of security
-operations.
+A personal home lab for researching how security operations can combine
+deterministic detection, AI-assisted analysis, and evidence-driven improvement.
 
-This project explores how AI may reshape attack simulation, detection,
-correlation, triage, investigation, response, DFIR, and continuous improvement.
-The goal is not only to test what can be automated, but also to understand what
-still requires human judgment and what new operating methods may emerge.
+The project connects controlled attack simulation with telemetry collection,
+detection, correlation, triage, investigation, response, DFIR, and detection-rule
+improvement. It is designed for hands-on experimentation rather than production
+deployment.
 
-## Public Snapshot Scope
+For a visual introduction, see the
+[Japanese portfolio overview (PDF, 9 pages)](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf).
 
-This repository is a curated public portfolio snapshot. It includes selected
-implementation code, JSON Schemas, synthetic fixtures, and focused tests for:
+## Key Capabilities
 
-- Linux auditd parsing and normalization through deterministic detection,
-  Incident construction, Rule Triage, and evidence-bounded Investigation
-- Windows Sysmon Event ID 1 Fixture A/B/C and Slice 2 parsing, normalization,
-  deterministic detection, correlation, and the shared
-  endpoint-to-Investigation pipeline
-- bounded Wazuh Indexer query planning, PIT/cursor handling, TLS-verifying
-  read-only transport, sanitized smoke harnesses, and Sysmon alert-hit conversion
-- Windows Security Event ID 4624/4625 source parsing, normalization,
-  deterministic failure observation, Wazuh alert-hit conversion, and common-entry
-  validation
-- common deduplication, correlation, artifact-grounding, and trust boundaries
-- an offline Rule Improvement path for prompt-input export, schema validation,
-  untrusted model-output import, comparison, and promotion recommendations
+- Normalize Linux auditd and Windows Sysmon / Security events into shared event
+  formats
+- Apply deterministic detection, deduplication, and correlation rules to build
+  Incident candidates
+- Pass Incidents through rule-based or AI-assisted Triage and evidence-aware
+  Investigation
+- Connect Case, Action, approval, and post-action DFIR workflows
+- Retrieve selected Windows alerts from Wazuh through a read-only integration
+  and process them through the shared pipeline
+- Compare detection-rule improvement proposals in an offline review workflow
+  before deployment decisions
 
-Environment-specific configuration, raw lab telemetry, generated runtime
-evidence, credentials, some integrations, and development-only utilities are not
-included. Active development continues in a private repository.
+## Architecture
 
-The implementation status described below reflects the broader private lab.
-In this public snapshot, a claim is directly reproducible only when its
-implementation, schema, synthetic fixture, and focused test are present here.
-Retained live-validation documents describe bounded, sanitized evidence; they do
-not include the underlying raw events or credentials. Other retained documents
-may describe architecture, design history, or private-lab work and should not be
-read as proof that the corresponding runtime integration is included here.
-
-[Copyright notice](NOTICE.md) · [Security policy](SECURITY.md)
-
-## Portfolio Overview
-
-For a concise visual introduction to the research question, end-to-end
-architecture, implementation boundary, and representative public evidence, see
-the
-[Japanese portfolio overview (PDF, 9 pages; 2026-08-06 status snapshot)](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf).
-
-The PDF predates this 2026-08-12 repository synchronization. Its page 8 records
-the earlier Common Pipeline v0 / Windows Slice 2 boundary; use the
-[Main Roadmap](docs/roadmap/roadmap.md) for current status.
-
-## 5–10 Minute Review Path
-
-1. **Architecture:** read the
-   [defender event processing flow](docs/architecture/defender-event-processing-flow.md).
-2. **Representative source path:** follow the Sysmon
-   [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py),
-   [Wazuh hit adapter](scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py),
-   and [common defender pipeline](common/defender_pipeline.py).
-3. **Second telemetry family:** inspect the Windows Security authentication
-   [source parser](scripts/windows/security_auth/parse_windows_security_auth_source.py),
-   [normalized mapper](scripts/windows/security_auth/map_windows_security_auth_to_endpoint_event.py),
-   and
-   [detection rule](detection/dsl/windows_security_auth_failure_observed.yaml).
-4. **Contracts and fixtures:** compare the
-   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)
-   with the
-   [sanitized 4625 source fixture](tests/fixtures/windows/security_auth/source/windows-security-4625-network-logon-failure-001.json).
-5. **Shared execution:** trace the
-   [Common Pipeline v1 entry regression](tests/test_common_defender_pipeline_v1_entry_validation.py)
-   and the
-   [Windows Security common-entry test](tests/windows/security_auth/test_windows_security_auth_common_entry.py).
-
-## Overview
-
-The lab treats security operations as an evidence-driven improvement loop
-rather than a collection of isolated tools.
+The lab treats security operations as a repeatable improvement loop.
 
 ```mermaid
 flowchart TD
     A["Attack / Noise / Deception"]
     B["Defender Telemetry"]
-    C["Source Parsing / Normalization"]
-    D["Deterministic Detection"]
-    E["Correlation / Incident"]
-    F["Triage"]
-    G["Pre-case Investigation"]
-    H["Case / Action"]
-    I["Post-action DFIR"]
-    J["Rule Improvement"]
-    K["Attack Again"]
+    C["Parse / Normalize"]
+    D["Detect / Correlate"]
+    E["Triage / Investigate"]
+    F["Case / Action / DFIR"]
+    G["Rule Improvement"]
 
     A --> B
     B --> C
@@ -107,207 +47,92 @@ flowchart TD
     D --> E
     E --> F
     F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> A
+    G --> A
 ```
 
-Attacker-side execution records and observed effects are used for run alignment
-and gap analysis. They are not defender telemetry, detection evidence, or
-alerts, and they cannot create an incident by themselves.
+Attacker-side records are used for run alignment and gap analysis. They do not
+become defender evidence or create an Incident by themselves.
 
-## Objectives
+## Public Portfolio Snapshot
 
-- Build a hands-on environment for security operations research
-- Explore how AI changes SOC workflows in practice
-- Evaluate how much of detection, triage, investigation, and response can be
-  automated safely
-- Experiment with adversary simulation and detection engineering in a
-  repeatable loop
-- Validate evidence boundaries across attacker, defender, case, action, and
-  DFIR artifacts
-- Study realistic SOC conditions by mixing attacks with normal activity and
-  incomplete evidence
-- Understand where human judgment remains essential
-- Turn validated findings into reviewable detection and workflow improvements
+This repository contains selected implementation code, JSON Schemas, synthetic
+fixtures, and tests that support the capabilities described above.
 
-## Focus Areas
+It does not include environment-specific configuration, credentials, raw lab
+telemetry, generated runtime evidence, or every private-lab integration and
+development utility.
 
-- Deterministic detection engineering
-- Adversary simulation
-- Correlation-first incident construction
-- SOC triage and comparison
-- Evidence-aware investigation
-- Case, action, approval, and execution boundaries
-- DFIR collection workflows
-- Rule Improvement
-- Deception and background activity
-- Human and AI collaboration in security analysis
+This is a research prototype. It does not claim production readiness, continuous
+autonomous operation, complete telemetry coverage, or complete detection
+coverage. Detailed implementation status and remaining work are maintained in
+the [Roadmap](docs/roadmap/roadmap.md).
 
-## Design Principles
+## Quick Review
 
-- Detection is deterministic; AI does not replace the detection boundary
-- AI acts as an analyst, not a blind decision-maker
-- Conclusions about attack success or impact must remain limited to what can be
-  verified from defender-side evidence
-- Source parsing, normalization, detection, triage, investigation, and response
-  are separate responsibilities
-- Runtime evidence and repository fixtures are labeled separately
-- Automation should improve repeatability, evidence linkage, and feedback loops
-- Rule changes remain proposal- and review-driven before apply, deploy, or
-  promotion
-- Confirmed deception hits can be high-confidence signals, but they do not
-  bypass evidence, approval, containment, or Rule Improvement review boundaries
-- External tools such as Wazuh may be used as rule deployment targets, alert
-  and search platforms, or evidence sources. The repository remains the source
-  of truth for detection-rule meaning, evaluation criteria, and DSL definitions
+If you have only a few minutes:
 
-## Current Status
+1. Read the
+   [portfolio overview](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
+   and the
+   [defender processing flow](docs/architecture/defender-event-processing-flow.md).
+2. Follow a Windows event through the
+   [Sysmon parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py),
+   [Wazuh adapter](scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py),
+   and [shared defender pipeline](common/defender_pipeline.py).
+3. Review the
+   [Windows Security detection rule](detection/dsl/windows_security_auth_failure_observed.yaml)
+   and its
+   [common-pipeline test](tests/windows/security_auth/test_windows_security_auth_common_entry.py).
+4. Compare the
+   [normalized event schema](schemas/endpoint_events.schema.json) with a
+   [sanitized 4625 fixture](tests/fixtures/windows/security_auth/source/windows-security-4625-network-logon-failure-001.json).
 
-The broader private lab provides a bounded, reproducible foundation across
-Phase 0 through Phase 7.
+The portfolio PDF is a 2026-08-06 snapshot. The Roadmap is the current source
+for detailed implementation status.
 
-### Implemented foundation
+## Run the Tests
 
-- Phase 0 through Phase 5 bounded MVPs are complete.
-- Phase 6 extended MVP is complete. It includes deterministic detection,
-  correlation-first Incident entry, Triage / Investigation / Action stages and
-  comparison harnesses, Action-to-DFIR request handoff, post-action DFIR result
-  handling, and review-oriented Rule Improvement candidate export.
-- Phase 7 has an artifact-only Deception foundation. Scenario YAML, a safe
-  runner, and canonical detection-output integration remain deferred.
-- Linux `scenario_004` through `scenario_006` provide repeatable regression
-  coverage. `scenario_009_suspicious_archive_staging` has a bounded,
-  fixture-backed Incident-to-Action path; canonical live Wazuh source
-  integration remains deferred.
+Requirements:
 
-### Current active workstream
+- Python 3.12 or later
+- [uv](https://docs.astral.sh/uv/)
 
-Common Pipeline v0 is complete at the bounded fixture-execution level, and the
-Common Pipeline v1 entry conditions are satisfied at the bounded fixture level.
-Linux Scenario 009, Windows Slice 1 Fixture A/B/C, and the Windows Slice 2
-PID/PPID correlation fixture enter one shared endpoint-to-Investigation
-boundary. Canonical Triage artifact grounding and correlation-Incident-scoped
-endpoint evidence binding are regression-validated without Windows-specific
-downstream contracts. The broader private lab also evaluates deterministic
-harness specificity; that development harness is not included in this public
-snapshot.
+```bash
+git clone https://github.com/jpsuper/intelligent-soc-lab-portfolio.git
+cd intelligent-soc-lab-portfolio
+uv sync --dev
+uv run pytest tests -q
+```
 
-The bounded Wazuh source path now includes Sysmon Event ID 1 alert-hit
-conversion, a registered query adapter, TLS-verifying read-only transport,
-PIT/cursor pagination, and sanitized smoke evidence. Windows Security Event ID
-4624/4625 also reaches the shared common entry through source fixtures,
-parser/mapper, deterministic failure observation, Wazuh conversion, and bounded
-live 4625 evidence. Raw live events and credentials are not published here.
+The committed tests use synthetic or sanitized fixtures and do not require
+access to the private lab.
 
-This evidence does not establish continuous runtime automation, generalized live
-Windows integration, native Windows parity, authentication-specific correlation
-or analytical quality, or AI-model quality.
+## Repository Guide
 
-### Major incomplete work
-
-- Common Pipeline v1 stabilization and continued Windows downstream
-  evidence-quality regression
-- generalized or continuous live Wazuh / Windows integration beyond the bounded
-  evidence gates
-- Windows Security native parity, additional Windows telemetry, and AD /
-  domain-controller coverage
-- Windows Triage / Investigation analytical quality and AI-model validation
-- Linux Scenario 009 canonical-source and live-integration work
-- Rule Improvement apply, deployment, runtime-update, and promotion workflows
-
-For authoritative current status, priorities, incomplete work, sequencing, and
-Done Criteria, see the [Main Roadmap](docs/roadmap/roadmap.md). For
-cross-platform processing responsibilities and trust boundaries, see the
-[Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md).
-
-## Architecture Boundaries
-
-- Collectors, source parsers, normalized mappers, and platform/domain-specific
-  rule content remain source-specific
-- Mapped Linux and Windows endpoint telemetry converges on
-  `endpoint_events.v1`
-- Existing source-family artifacts may remain in place until intentionally
-  migrated
-- Rule selection, detector invocation, deterministic execution, output
-  validation, and canonical detection-result handoff use a common execution
-  contract
-- Dedupe, correlation, Incident, Triage, pre-case Investigation, Case, and
-  Action use shared downstream contracts
-- Triage is a processing contract rather than a required model choice;
-  deterministic and AI-assisted implementations can be evaluated through the
-  same evidence and comparison boundaries
-- Common downstream logic depends on canonical artifacts and features rather
-  than native auditd/Sysmon shapes or hard-coded scenario IDs
-- Pre-case `investigation_result.json` remains separate from post-action
-  `post_action_dfir_investigation_result.json`
-
-## Phase Summary
-
-The detailed tasks, evidence, dependencies, and Done Criteria live in the
-[Roadmap](docs/roadmap/roadmap.md).
-
-| Phase | Scope | Status |
-|---|---|---|
-| Phase 0 | Lab stabilization | Completed |
-| Phase 1 | Detection engine, correlation, and Incident | Completed |
-| Phase 2 | Triage, Action planning, and execution boundary | Completed |
-| Phase 3 | Adversary simulation and evaluation | Completed |
-| Phase 4 | Case workflow and integration preparation | Completed: MVP, TheHive, and DFIR request |
-| Phase 5 | Endpoint telemetry and process-based detection | Completed: MVP and action/approval boundary |
-| Phase 6 | Automated improvement loop and workflow contracts | Extended MVP completed |
-| Phase 7 | Agentic deception layer | Artifact-only MVP foundation completed; scenario YAML and runner deferred |
-| Phase 8 | Background activity and telemetry expansion | Later |
+| Path | Purpose |
+|---|---|
+| `agents/` | Attacker, Triage, and Investigation agent implementations |
+| `common/` | Shared defender pipeline and cross-platform composition |
+| `config/` | Sanitized source registries and public configuration examples |
+| `detection/` | Detection DSL, compiler, correlation, and evaluation logic |
+| `scripts/` | Parsers, adapters, runners, and integration utilities |
+| `schemas/` | JSON Schemas for events and workflow artifacts |
+| `tests/` | Regression tests and synthetic or sanitized fixtures |
+| `docs/` | Architecture, design records, roadmaps, and runbooks |
 
 ## Documentation
 
-- [Master Guide](docs/AI_SOC_Lab_Master_Guide.md) — stable architecture,
-  artifact boundaries, evidence rules, and operating policy
-- [Roadmap](docs/roadmap/roadmap.md) — authoritative phase status, current
-  priority, implementation sequence, and Done Criteria
+- [Portfolio Overview](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
 - [Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md)
-  — cross-platform processing stages, trust boundaries, and Common Pipeline
-  v0/v1 architecture
-- [Normalized Endpoint Event Contract](docs/design/defender/normalized_endpoint_event_contract.md)
-  — canonical endpoint telemetry shape used across supported sources
-- [Windows Telemetry Contract](docs/design/windows/windows_telemetry_contract.md)
-  — Windows source, parsing, normalization, and runtime evidence boundaries
-- [Windows Downstream Evidence-Quality Slice](docs/design/defender/windows_downstream_evidence_quality.md)
-  — bounded Triage grounding and Investigation evidence linkage
-- [Atomic Detection DSL](docs/design/atomic_detection_dsl.md) — deterministic
-  rule source of truth and canonical detection-output contract
-- [Scenario Family Expansion Policy](docs/design/scenario_family_expansion_policy.md)
-  — mapping, evidence, safety, and review requirements for new scenario families
-- [Linux Scenario Family Candidates](docs/design/linux_scenario_family_candidates.md)
-  — validated Linux scenario coverage and deferred live-integration work
-- [Phase 7 Deception Roadmap](docs/roadmap/phase7.md) — implemented deception
-  artifact chain, current status, safety boundaries, and next steps
+- [Master Guide](docs/AI_SOC_Lab_Master_Guide.md)
+- [Roadmap](docs/roadmap/roadmap.md)
 
-## Non-Goals
+## Safety and Publication Notes
 
-This project is not intended to be:
-
-- A production SOC platform
-- A fully autonomous offensive security system
-- A replacement for enterprise SIEM, EDR, case-management, or DFIR products
-- A benchmark of a single vendor tool
-- A system that treats AI output as sufficient evidence or response approval
-- A purely theoretical study without hands-on validation
-
-The lab is designed for learning, experimentation, and iterative validation.
-
-## Philosophy
-
-Learn by building.
-
-Validate by attacking.
-
-Improve by iterating.
-
-## Name
-
-**Formal name:** Intelligent Security Operations Lab
-
-**Common name:** SOC Lab
+- Run attack simulations only in an isolated environment that you own or are
+  explicitly authorized to test.
+- Private lab addresses are replaced with documentation addresses from
+  `192.0.2.0/24`. Replace them with addresses appropriate for your own lab.
+- Secrets and environment-specific values must be supplied at runtime and must
+  not be committed.
+- See the [Security Policy](SECURITY.md) and [Copyright Notice](NOTICE.md).
