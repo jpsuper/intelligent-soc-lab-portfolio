@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/siem_query_request.schema.json",
+  "title": "siem_query_request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "request_id",
+    "backend",
+    "source_names",
+    "time_range",
+    "filters",
+    "projection_fields",
+    "aggregation_fields",
+    "sort",
+    "limit",
+    "cursor"
+  ],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]*$"
+    },
+    "backend": { "type": "string", "minLength": 1 },
+    "source_names": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "time_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" }
+      }
+    },
+    "filters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "operator", "value"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "operator": {
+            "enum": ["eq", "in", "exists", "range", "contains", "prefix"]
+          },
+          "value": {
+            "type": ["string", "number", "integer", "boolean", "array", "object"]
+          }
+        }
+      }
+    },
+    "projection_fields": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "aggregation_fields": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "sort": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field", "direction"],
+        "properties": {
+          "field": { "type": "string", "minLength": 1 },
+          "direction": { "enum": ["asc", "desc"] }
+        }
+      }
+    },
+    "limit": { "type": "integer", "minimum": 1 },
+    "cursor": { "type": ["string", "null"], "minLength": 1 }
+  }
+}

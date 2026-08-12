@@ -23,48 +23,64 @@ implementation code, JSON Schemas, synthetic fixtures, and focused tests for:
 
 - Linux auditd parsing and normalization through deterministic detection,
   Incident construction, Rule Triage, and evidence-bounded Investigation
-- Windows Sysmon Event ID 1 Fixture A/B/C parsing, normalization, deterministic
-  detection, and the shared Detection-to-Investigation pipeline
-- common deduplication, correlation, and trust boundaries
+- Windows Sysmon Event ID 1 Fixture A/B/C and Slice 2 parsing, normalization,
+  deterministic detection, correlation, and the shared
+  endpoint-to-Investigation pipeline
+- bounded Wazuh Indexer query planning, PIT/cursor handling, TLS-verifying
+  read-only transport, sanitized smoke harnesses, and Sysmon alert-hit conversion
+- Windows Security Event ID 4624/4625 source parsing, normalization,
+  deterministic failure observation, Wazuh alert-hit conversion, and common-entry
+  validation
+- common deduplication, correlation, artifact-grounding, and trust boundaries
 - an offline Rule Improvement path for prompt-input export, schema validation,
   untrusted model-output import, comparison, and promotion recommendations
 
-Environment-specific configuration, generated artifacts, raw lab telemetry,
-some integrations, and development-only utilities are not included. Active
-development continues in a private repository.
+Environment-specific configuration, raw lab telemetry, generated runtime
+evidence, credentials, some integrations, and development-only utilities are not
+included. Active development continues in a private repository.
 
 The implementation status described below reflects the broader private lab.
 In this public snapshot, a claim is directly reproducible only when its
 implementation, schema, synthetic fixture, and focused test are present here.
-Other retained documents describe architecture, design history, or private-lab
-work and should not be read as proof that the corresponding runtime integration
-is included in this repository.
+Retained live-validation documents describe bounded, sanitized evidence; they do
+not include the underlying raw events or credentials. Other retained documents
+may describe architecture, design history, or private-lab work and should not be
+read as proof that the corresponding runtime integration is included here.
 
 [Copyright notice](NOTICE.md) · [Security policy](SECURITY.md)
 
 ## Portfolio Overview
 
 For a concise visual introduction to the research question, end-to-end
-architecture, current implementation boundary, representative public evidence,
-and current status, see the
-[Japanese portfolio overview (PDF, 9 pages)](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf).
+architecture, implementation boundary, and representative public evidence, see
+the
+[Japanese portfolio overview (PDF, 9 pages; 2026-08-06 status snapshot)](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf).
+
+The PDF predates this 2026-08-12 repository synchronization. Its page 8 records
+the earlier Common Pipeline v0 / Windows Slice 2 boundary; use the
+[Main Roadmap](docs/roadmap/roadmap.md) for current status.
 
 ## 5–10 Minute Review Path
 
 1. **Architecture:** read the
    [defender event processing flow](docs/architecture/defender-event-processing-flow.md).
-2. **Representative path:** follow the Windows
+2. **Representative source path:** follow the Sysmon
    [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py),
-   [normalized mapper](scripts/windows/sysmon_event1/map_sysmon_event1_to_endpoint_event.py),
+   [Wazuh hit adapter](scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py),
    and [common defender pipeline](common/defender_pipeline.py).
-3. **Schema:** inspect the
-   [normalized endpoint-event contract](schemas/endpoint_events.schema.json).
-4. **Fixture:** inspect
-   [Sysmon Fixture B](tests/fixtures/windows/sysmon_event1/source/sysmon-event1-encoded-flag-001.json).
-5. **Test:** trace the expected output in the
-   [Windows detection test](tests/windows/sysmon_event1/test_sysmon_event1_expected_detection.py)
-   and the shared
-   [Detection-to-Investigation composition test](tests/test_common_detection_to_investigation_composition.py).
+3. **Second telemetry family:** inspect the Windows Security authentication
+   [source parser](scripts/windows/security_auth/parse_windows_security_auth_source.py),
+   [normalized mapper](scripts/windows/security_auth/map_windows_security_auth_to_endpoint_event.py),
+   and
+   [detection rule](detection/dsl/windows_security_auth_failure_observed.yaml).
+4. **Contracts and fixtures:** compare the
+   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)
+   with the
+   [sanitized 4625 source fixture](tests/fixtures/windows/security_auth/source/windows-security-4625-network-logon-failure-001.json).
+5. **Shared execution:** trace the
+   [Common Pipeline v1 entry regression](tests/test_common_defender_pipeline_v1_entry_validation.py)
+   and the
+   [Windows Security common-entry test](tests/windows/security_auth/test_windows_security_auth_common_entry.py).
 
 ## Overview
 
@@ -169,24 +185,34 @@ Phase 0 through Phase 7.
 
 ### Current active workstream
 
-The active workstream is Windows cross-platform expansion toward full Common
-Pipeline v0. Windows Fixture A/B/C currently validate source parsing,
-normalization, deterministic detection, shared correlation and Incident
-construction, deterministic Rule Triage, and pre-case Investigation through
-bounded, fixture-backed paths.
+Common Pipeline v0 is complete at the bounded fixture-execution level, and the
+Common Pipeline v1 entry conditions are satisfied at the bounded fixture level.
+Linux Scenario 009, Windows Slice 1 Fixture A/B/C, and the Windows Slice 2
+PID/PPID correlation fixture enter one shared endpoint-to-Investigation
+boundary. Canonical Triage artifact grounding, correlation-Incident-scoped
+endpoint evidence binding, and deterministic harness specificity are
+regression-validated without Windows-specific downstream contracts.
 
-This evidence does not establish continuous runtime automation, live Windows
-parity, a live Windows Detection-to-Investigation path, or AI-model quality.
-Common Pipeline v0 remains incomplete until full cross-platform execution
-validation is complete.
+The bounded Wazuh source path now includes Sysmon Event ID 1 alert-hit
+conversion, a registered query adapter, TLS-verifying read-only transport,
+PIT/cursor pagination, and sanitized smoke evidence. Windows Security Event ID
+4624/4625 also reaches the shared common entry through source fixtures,
+parser/mapper, deterministic failure observation, Wazuh conversion, and bounded
+live 4625 evidence. Raw live events and credentials are not published here.
+
+This evidence does not establish continuous runtime automation, generalized live
+Windows integration, native Windows parity, authentication-specific correlation
+or analytical quality, or AI-model quality.
 
 ### Major incomplete work
 
-- full cross-platform execution validation, Windows Slice 2, and Common
-  Pipeline v1 entry work
-- live Windows validation, Wazuh retrieval and conversion, additional Windows
-  telemetry, and AD / domain-controller coverage
-- Windows Triage / Investigation quality and AI-model validation
+- Common Pipeline v1 stabilization and continued Windows downstream
+  evidence-quality regression
+- generalized or continuous live Wazuh / Windows integration beyond the bounded
+  evidence gates
+- Windows Security native parity, additional Windows telemetry, and AD /
+  domain-controller coverage
+- Windows Triage / Investigation analytical quality and AI-model validation
 - Linux Scenario 009 canonical-source and live-integration work
 - Rule Improvement apply, deployment, runtime-update, and promotion workflows
 
@@ -194,6 +220,7 @@ For authoritative current status, priorities, incomplete work, sequencing, and
 Done Criteria, see the [Main Roadmap](docs/roadmap/roadmap.md). For
 cross-platform processing responsibilities and trust boundaries, see the
 [Defender Event Processing Flow](docs/architecture/defender-event-processing-flow.md).
+
 ## Architecture Boundaries
 
 - Collectors, source parsers, normalized mappers, and platform/domain-specific
@@ -245,6 +272,8 @@ The detailed tasks, evidence, dependencies, and Done Criteria live in the
   — canonical endpoint telemetry shape used across supported sources
 - [Windows Telemetry Contract](docs/design/windows/windows_telemetry_contract.md)
   — Windows source, parsing, normalization, and runtime evidence boundaries
+- [Windows Downstream Evidence-Quality Slice](docs/design/defender/windows_downstream_evidence_quality.md)
+  — bounded Triage grounding, Investigation evidence linkage, and harness validation
 - [Atomic Detection DSL](docs/design/atomic_detection_dsl.md) — deterministic
   rule source of truth and canonical detection-output contract
 - [Scenario Family Expansion Policy](docs/design/scenario_family_expansion_policy.md)

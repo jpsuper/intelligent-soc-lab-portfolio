@@ -8,7 +8,7 @@
 >
 > Canonical source: `docs/roadmap/roadmap.md`
 > Synchronization status: synchronized
-> Last synchronization date: 2026-08-05
+> Last synchronization date: 2026-08-10
 
 この文書は、現在の実装状況、優先事項、未完了作業、実施順序、および
 Done Criteriaについて、英語版を正本とするロードマップです。
@@ -108,11 +108,13 @@ comparison / Rule Improvement review artifacts
 - 決定論的なlocal-lab Deception inventory、hit、およびIncident-bridge artifact
 - normalized endpoint eventおよびWindows Sysmon Event ID 1 fixtureのcontract
 - Common Defender Pipeline v0のdetectorおよび限定されたdownstream composition
+- LinuxおよびWindows Slice 1/2を対象とする限定的なCommon Pipeline v1開始条件の検証
 
 ## 2.2 現在の作業領域
 
-現在の作業領域は**Windows cross-platform expansion**です。Phase5のendpoint-telemetryと
-Phase6のcommon-pipeline基盤を拡張しています。
+現在の作業領域は、**Common Pipeline v1の安定化とWindows downstream evidence
+quality**です。Phase5のendpoint-telemetryとPhase6のcommon-pipeline基盤を
+拡張しています。
 
 現在の限定された実装は、次をサポートしています。
 
@@ -120,14 +122,27 @@ Phase6のcommon-pipeline基盤を拡張しています。
 - 決定論的なPowerShell process / encoded-command observation rule
 - canonical detection listのvalidationおよび決定論的なordering
 - 既存policyを利用したplatform-neutralなdedupe-to-correlation実行
+- 限定されたWindows Slice 2 PID/PPIDおよび60秒以内のparent/child
+  Correlation fixtureとpolicy
 - correlation-resultからのIncident構築
 - supporting-detection-IDの完全一致によるIncident selectionおよびobservation suppression
 - 選択されたIncidentごとの決定論的なRule Triage
 - 関連付けられたIncident/Triage pairごとのevidence-awareなpre-case Investigation
-- 明示したfixture境界におけるLinux Scenario 009およびWindows Fixture A/B/Cのfocused regression
+- 明示したfixture境界におけるLinux Scenario 009およびWindows Fixture A/B/Cの
+  共通endpoint-to-Investigation entry
+- 同じendpoint-to-Investigation entryを使用するLinux Scenario 009および
+  Windows Slice 1/2の統合regression matrix
+- native sourceまたはscenario dispatch parameterを追加しないcanonical handoff
+- assessment ruleを変更しない、決定論的Rule Triageでのcanonical Incident
+  artifact grounding
+- pre-case Investigationでのcorrelation-Incident-scopedな`input[N]`
+  endpoint evidence binding
+- 既存の決定論的Investigation harnessにおけるplatform-neutralな
+  normalized command specificity
 
-これは、完全なcross-platform execution validation、Windows downstream analytical quality、
-またはlive Windows telemetry parityが確立したことを意味しません。
+これは、限定されたfixture levelでCommon Pipeline v1の開始条件を満たしたことだけを
+意味します。Windows downstream analytical quality、live Windows telemetry parity、
+または継続的なruntime automationを確立したものではありません。
 
 ## 2.3 現在のステータス基準
 
@@ -137,9 +152,14 @@ Phase6のcommon-pipeline基盤を拡張しています。
 | Phase6 | 拡張MVPが完了（Extended MVP complete） |
 | Phase7 | artifact-only MVP基盤が完了。scenario YAMLとrunnerはDeferred |
 | Phase8 | Later。独立した`phase8.md`ではなく、このRoadmap内で管理 |
-| Common Pipeline v0全体 | 未完了（Not complete） |
-| 完全なcross-platform execution validation | 未完了（Not complete） |
-| Live Windows Detection-to-Incident/Investigation validation | Unverified / future |
+| Common Pipeline v0全体 | 限定されたfixture execution levelで完了 |
+| 完全なcross-platform execution validation | Linux Scenario 009およびWindows Slice 1/2で検証済み |
+| Windows Slice 2 correlation boundary | 共通endpoint-to-Investigation regressionで検証済み |
+| Common Pipeline v1の開始条件 | 限定されたfixture levelで充足 |
+| Windows downstream evidence-quality slice | canonical artifact grounding、correlation endpoint evidence binding、およびharness specificityを検証済み |
+| 限定されたlive Windows 4625 Detection-to-Incident/Investigation validation | 完全なWazuh alert-plane record 5件について検証済み。dedupe後は4件のDetection/Incident/Triage/Investigation pathとなり、元の5件はすべて表現された |
+| 限定されたWazuh Indexer live multi-page cursor smoke | 14件のalert-plane PIT queryをpages `[5, 5, 4]` で取得し、最終deleteを確認済み |
+| Windows Security 4624/4625の限定されたcommon-entry boundary | sanitized sourceから既存endpoint-to-Investigation entryまで検証済み。4624はemptyを維持し、4625は正確なdownstream linkageを持つuncorrelated low-severity observationを保持 |
 | Rule Improvement export MVP | 現在のcandidate-generation boundaryでは完了 |
 | Rule Improvementのapply、deploy、runtime update、promotion | Unimplemented |
 | Scenario 009 fixture path | Implementedかつ限定的 |
@@ -188,30 +208,62 @@ Rule Improvement review and export MVP
 scenario-family policy, broader Linux mapping, and bounded Scenario 009 fixture path
   ↓
 Windows Sysmon Event ID 1 fixture, parser, mapper, detection, and bounded common pipeline slice
+  ↓
+Windows Slice 2 PID/PPID and temporal Correlation
+  ↓
+Linux and Windows Slice 1/2 common-entry regression
 ```
 
 ## 4.2 現在の作業
 
-1. Common Defender Pipeline v0の完全なcross-platform execution validationを完了する。
-2. 共通境界を通して、LinuxおよびWindowsのfixture regressionを再確認する。
-3. 別途レビューされたpersistent identity contractが導入されない限り、identityをrun-localに保つ。
-4. 検証中も、完全一致IDによるIncident selectionと既存correlation-policyのsemanticsを維持する。
+1. 固定したcommon entry boundaryを通してLinuxおよびWindows Slice 1/2の
+   regressionを維持する。
+2. Windows固有のdownstream contractを導入せずに、限定されたWindows Triage、
+   Investigation、harness evidence-quality regressionを維持する。
+3. 限定されたWazuh Sysmon Event ID 1 alert-hit conversion parity regressionを、
+   完了したalert-plane transport evidenceおよび未検証のnative parityとは区別して
+   維持する。
+4. host/time/result bound、refinement、partial-result rejection、hashed provenanceを
+   含む、限定された`wazuh-alerts-sysmon-event1` query-planおよびcomplete-page
+   response regressionを維持する。
+5. final-page、policy-stop、known-failure cleanup semanticsを含む、限定されたWazuh
+   Indexer PIT create/search/resume/delete lifecycleを維持する。
+6. encryptedかつrequest-boundな30秒Wazuh Indexer cursor、累積100-record cap、
+   strictでstableな`search_after` progression、および2026-08-11のlive
+   three-page/final-deletion evidenceを維持する。
+7. Windows Security 4624/4625 source fixture、parser、normalized mapper、
+   sanitized Wazuh alert-hit conversion parity、source registry/query regression、
+   atomic detection、common-entry matrix、および完了した5-record 4625 live
+   common-pipeline evidenceを維持する。authentication固有の分析、反復失敗の相関、
+   native parity、continuous live integrationは推論しない。
+8. 別途レビューされたpersistent identity contractが導入されない限り、identityを
+   run-localに保つ。
+9. 検証中も、完全一致IDによるIncident selectionと既存correlation-policyのsemanticsを
+   維持する。
 
-## 4.3 Common Pipeline v0完了後の作業
+## 4.3 v1開始条件の検証後
 
-1. PID/PPIDと時間的関係に基づく、異なるmulti-event Correlation形状を使用して
-   Windows Slice 2を追加する。
-2. 同一の境界を通して、LinuxおよびWindows Slice 1/2のregressionを実行する。
-3. 2番目のsliceでabstractionを検証した後、共通execution spineをCommon Pipeline v1として固定する。
-4. Windows固有のdownstream contractを導入せずに、Windows Triage、Investigation、
-   harnessのevidence qualityを改善する。
+1. Windows downstream qualityをさらに変更する場合は、実装前に具体的な
+   shared-contractまたはshared-rubricの不足と照合してレビューする。
+2. credential-resolving、TLS-verifying、read-only Wazuh HTTPS transportおよび
+   bounded smoke harnessについて、完了したlive evidence gateを維持する。
+   2026-08-10のlab runでは正確かつ完全なalert-plane recordを14件取得した。
+   PIT-enabled rerunでは同じ14件を取得し、2026-08-11のmulti-page rerunでは
+   pages `[5, 5, 4]`、2回のprotected cursor resume、final-page deletionを確認した。
+3. 完了したWindows Security 4625の限定されたlive common-pipeline gateを維持する。
+   2026-08-11のcontrolled queryでは5件すべてをretrieve、adapt、normalize、
+   representし、dedupe後の4件をDetection/Incident/Triage/Investigationへ接続した。
+   sanitized summaryのSHA-256は
+   `e4751c5af21ed7af17f841efa1b8226037fe67614d4c004b22fb600fc8bb9666`。
+4. 既存fixture evidenceをlive claimへ読み替えずに、残っているLinux Scenario 009の
+   canonical live-source selectionおよび限定されたlive common-pipeline integrationを
+   準備する。
 
 ## 4.4 後続作業
 
-- live Windows collectionおよびWazuh retrieval/conversion integration
+- live Windows collectionおよびoperational Wazuh retrieval integration
 - Security 4624/4625やSysmon Event ID 3など、追加のWindows telemetry source
 - standalone Windows telemetryが安定した後のAD/DC対応
-- 残っているScenario 009 canonical-sourceおよびlive-integration作業
 - post-action DFIRの追加artifact parserおよびcollector mapping
 - より実用的なattacker-agent behaviorと任意のSIEM integration
 - Phase7 deception scenario YAMLおよびsafe runner
@@ -219,7 +271,7 @@ Windows Sysmon Event ID 1 fixture, parser, mapper, detection, and bounded common
 
 ---
 
-# 5. Common Defender Pipeline v0
+# 5. Common Defender Pipeline v0およびv1開始条件
 
 ## 5.1 実装済みの範囲
 
@@ -246,6 +298,8 @@ evidence-aware pre-case Investigation
 
 実装済みで、focused testにより検証済みの項目は次のとおりです。
 
+- 決定論的なdetectionの後に既存Detection-to-Investigation compositionを呼び出す
+  endpoint-fixture entry
 - canonical detection-list inputおよびoutput validation
 - duplicate detection IDおよびtimestampをfail-closedで処理
 - ruleごとに区別される決定論的なdedupe behavior
@@ -255,19 +309,34 @@ evidence-aware pre-case Investigation
 - 1対1のIncident/Triage linkage validation
 - 1対1のIncident/Triage/Investigation実行
 - Linux Scenario 009およびWindows Fixture A/B/Cの限定されたfixture regression
+- Linux Scenario 009およびWindows Slice 1/2の統合common-entry regression
 
 v0要件として実装しない項目は次のとおりです。
 
 - correlation-to-correlation mergeまたはsuppression
 - persistent aggregate artifact
 - reprocessingまたはselection変更をまたぐstable identity
-- live Wazuh Windows integration
+- 限定された4625 gateを超えるgeneralizedまたはcontinuousなlive Wazuh Windows integration
 
-## 5.2 残っているv0作業
+## 5.2 v0 validation record
 
-- 共通境界を通した完全なcross-platform execution validation
-- 完全な検証手順でも、確立済みのLinux flowが維持されることの確認
-- 個別のfocused testだけでなく、以下のv0 Done Criteriaをすべて同時に満たすことの検証
+cross-platform validation matrixは、Linux Scenario 009とWindows Fixture A/B/Cを
+同じendpoint-to-Investigation entryで実行します。確立済みのLinux flow、Windowsの
+match / no-match behavior、決定論的なIncident/Triage/Investigation linkage、input
+immutability、fail-closedなendpoint validation、および限定したevidence exclusionを
+まとめて確認します。
+
+正確なvalidation commandは次のとおりです。
+
+```bash
+uv run pytest tests/test_common_defender_pipeline_v0_validation.py -q
+uv run pytest tests/test_common_detection_pipeline.py \
+  tests/test_common_detection_to_investigation_composition.py \
+  tests/windows/sysmon_event1/test_sysmon_event1_investigation_boundary.py -q
+uv run ruff check common/defender_pipeline.py \
+  tests/test_common_defender_pipeline_v0_validation.py
+uv run pytest tests -q
+```
 
 ## 5.3 Common Pipeline v0の完全なDone Criteria
 
@@ -287,16 +356,67 @@ Common Pipeline v0が完了するのは、以下をすべて満たした場合�
 - 完全なcross-platform execution validationについて、使用した正確なコマンドと
   エビデンスを記録して完了とする。
 
-現在の結果: **未完了（not complete）**。
+現在の結果: **限定されたfixture execution levelで完了**。
 
 ## 5.4 Common Pipeline v1の開始条件
 
 Common Pipeline v1を開始するのは、以下を満たした後に限ります。
 
 - Windows Slice 2で異なるmulti-event Correlation形状を検証する
+  （限定されたfixture levelで検証済み）
 - Linux/Windows cross-platform regressionに合格する
+  （限定されたfixture levelで検証済み）
 - post-Incident stageがnative source formatから独立したままである
+  （common endpoint entryで検証済み）
 - common runおよびharness artifactの境界が引き続き有効である
+  （確立済みの5-list in-memory bundleで検証済み）
+
+現在の結果: **限定されたfixture levelで開始条件を充足**。
+
+## 5.5 v1開始条件のvalidation record
+
+5 caseのmatrix、固定したhandoff property、Done Criteria、evidence limitation、
+および正確なvalidation commandは、
+[Common Pipeline v1 Entry Validation](../design/defender/common_pipeline_v1_entry_validation.md)
+に記録します。
+
+このstatusはv1の安定化開始を意味します。v1を新しいwire schema、persistent identity
+model、runtime service、またはlive cross-platform integrationとして定義するものでは
+ありません。
+
+## 5.6 Windows downstream evidence-quality validation record
+
+限定されたartifact grounding、correlation-Incident-scopedなendpoint evidence
+linkage、および決定論的harness specificityの仕組みは、Done Criteriaとevidence
+limitationを含めて
+[Windows Downstream Evidence-Quality Slice](../design/defender/windows_downstream_evidence_quality.md)
+に記録します。
+
+このvalidationは、Windowsのverdict/risk quality、model quality、live collection、
+source parity、またはpost-action DFIR coverageを確立するものではありません。
+
+## 5.7 限定されたWazuh Sysmon Event ID 1 conversion record
+
+厳格なサニタイズ済みalert-hit projection、分離したretrieval provenance、Fixture A/B/C
+source conversion、normalized semantic parity、Done Criteria、およびevidence limitationは、
+[Wazuh Sysmon Event ID 1 Bounded Conversion Contract](../design/windows/wazuh_sysmon_event1_conversion_contract.md)
+に記録します。
+
+このvalidationは、live Wazuh connection、operational query behavior、raw archive coverage、
+Wazuh rule quality、unalerted event coverage、またはlive Windows parityを確立するものでは
+ありません。
+
+## 5.8 限定されたWazuh query-adapter record
+
+レビュー済みsingle-source registry entry、request/response schema、offline search-plan
+compiler、complete-page response parser、refinement behavior、partial-result rejection、
+hashed provenance、Done Criteria、およびevidence limitationは、
+[Wazuh Alerts Sysmon Event ID 1 Query Adapter Contract](../design/siem/wazuh_alerts_sysmon_event1_query_adapter_contract.md)
+に記録します。
+
+このvalidationは、credential resolution、HTTPS execution、live index mapping、PIT
+pagination、live query success、raw archive coverage、またはend-to-end live source parityを
+確立するものではありません。
 
 ---
 
@@ -306,20 +426,26 @@ Common Pipeline v1を開始するのは、以下を満たした後に限りま�
 
 現在:
 
-- v0の完全なexecution validationを完了する
+- 限定されたCommon Pipeline v1 entry regressionを維持する
+- Windows Slice 2 PID/PPIDおよびtemporal Correlation behaviorを維持する
 - 限定されたfixture evidenceの主張を維持する
 - Windows analytical qualityをstructural parityと分離して扱う
+- 限定されたWazuh Sysmon Event ID 1 alert-hit conversion parityを維持する
+- 限定されたWazuh query-planおよびresponse-parser regressionを維持する
 
 次:
 
-- Windows Slice 2
-- cross-platform regression
-- Common Pipeline v1
 - downstream quality tuning
+- 実装済みcredential-backed Wazuh HTTPS transport smokeをlabで実行し、
+  sanitizedされた限定summaryのみを保持する
+- noise cleanupより先に、観測したmanager/Indexer clockおよびalert/provider
+  time-field alignmentをレビューする
+- request-bound cursorおよびcleanup semanticsを備えたPIT/search-after pagination
+- 独立したcontractを持つ追加Windows telemetry
 
 後続:
 
-- live collection、Wazuh integration、追加telemetry、およびAD/DC
+- live collection、operational Wazuh retrieval、追加telemetry、およびAD/DC
 
 ## 6.2 Linux Scenario 009
 

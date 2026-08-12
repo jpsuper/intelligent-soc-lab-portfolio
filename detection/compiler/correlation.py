@@ -249,3 +249,121 @@ def correlate_key_login_then_process_exec(
         )
 
     return results
+
+
+def _process_identity(value: Any) -> str | None:
+    if value is None:
+        return None
+    normalized = str(value).strip()
+    return normalized or None
+
+
+def correlate_windows_powershell_parent_child_encoded_command(
+    detections: list[dict[str, Any]],
+    *,
+    execution_window_seconds: int = 60,
+) -> list[dict[str, Any]]:
+    """Correlate a PowerShell parent with an encoded-command PowerShell child."""
+    detections = sort_detections(detections)
+
+    process_observations = [
+        detection
+        for detection in detections
+        if detection.get("artifact") == "powershell_process_observed"
+    ]
+    encoded_observations = [
+        detection
+        for detection in detections
+        if detection.get("artifact") == "encoded_command_observed"
+    ]
+
+    results: list[dict[str, Any]] = []
+
+    for encoded_det in encoded_observations:
+        child_event_id = _process_identity(encoded_det.get("event_id"))
+        child_pid = _process_identity(encoded_det.get("pid"))
+        child_ppid = _process_identity(encoded_det.get("ppid"))
+        child_ts = detection_ts(encoded_det)
+        if not child_event_id or not child_pid or not child_ppid or child_ts is None:
+            continue
+
+        child_observations = [
+            detection
+            for detection in process_observations
+            if _process_identity(detection.get("event_id")) == child_event_id
+            and _process_identity(detection.get("pid")) == child_pid
+            and _process_identity(detection.get("ppid")) == child_ppid
+            and detection.get("host") == encoded_det.get("host")
+            and detection.get("user") == encoded_det.get("user")
+            and detection_ts(detection) == child_ts
+        ]
+
+        for child_det in child_observations:
+            matched_parents = []
+            for parent_det in process_observations:
+                parent_event_id = _process_identity(parent_det.get("event_id"))
+                parent_pid = _process_identity(parent_det.get("pid"))
+                parent_ts = detection_ts(parent_det)
+                if not parent_event_id or parent_event_id == child_event_id:
+                    continue
+                if not parent_pid or parent_pid != child_ppid or parent_ts is None:
+                    continue
+                if parent_det.get("host") != child_det.get("host"):
+                    continue
+                if parent_det.get("user") != child_det.get("user"):
+                    continue
+                if parent_ts <= child_ts and (child_ts - parent_ts) <= timedelta(
+                    seconds=execution_window_seconds
+                ):
+                    matched_parents.append(parent_det)
+
+            for parent_det in matched_parents:
+                all_items = [parent_det, child_det, encoded_det]
+                evidence_refs = sorted(
+                    {
+                        ref
+                        for detection in all_items
+                        for ref in detection.get("evidence_refs", []) or []
+                    }
+                )
+                raw_event_refs = sorted(
+                    {
+                        ref
+                        for detection in all_items
+                        for ref in detection.get("raw_event_refs", []) or []
+                    }
+                )
+                parent_ts = detection_ts(parent_det)
+
+                results.append(
+                    {
+                        "correlation_id": (f"corr-windows-ps-parent-child-{len(results) + 1:06d}"),
+                        "correlation_type": ("windows_powershell_parent_child_encoded_command"),
+                        "title": (
+                            "PowerShell parent process followed by encoded-command child process"
+                        ),
+                        "primary_artifact": "encoded_command_observed",
+                        "severity": "medium",
+                        "host": child_det.get("host"),
+                        "user": child_det.get("user"),
+                        "src_ip": child_det.get("src_ip"),
+                        "artifacts": [
+                            "powershell_process_observed",
+                            "encoded_command_observed",
+                        ],
+                        "behavior_features": {
+                            "powershell_parent_child_observed": True,
+                            "encoded_command_observed": True,
+                        },
+                        "supporting_detections": {
+                            "powershell_process_observed": [parent_det, child_det],
+                            "encoded_command_observed": [encoded_det],
+                        },
+                        "raw_event_refs": raw_event_refs,
+                        "evidence_refs": evidence_refs,
+                        "time_window_start": parent_ts.isoformat() if parent_ts else None,
+                        "time_window_end": child_ts.isoformat(),
+                    }
+                )
+
+    return results

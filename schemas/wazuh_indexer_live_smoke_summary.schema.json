@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/wazuh_indexer_live_smoke_summary.schema.json",
+  "title": "wazuh_indexer_live_smoke_summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "status",
+    "run_id",
+    "request_fingerprint",
+    "host_value_sha256",
+    "executed_at",
+    "logical_source",
+    "physical_source_count",
+    "executed_time_range",
+    "results",
+    "identity_presence",
+    "filter_alignment",
+    "time_alignment",
+    "evidence_scope",
+    "does_not_establish"
+  ],
+  "properties": {
+    "contract_version": { "const": "1.0" },
+    "status": { "const": "passed" },
+    "run_id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "request_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "host_value_sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "executed_at": { "type": "string", "format": "date-time" },
+    "logical_source": { "const": "wazuh-alerts-sysmon-event1" },
+    "physical_source_count": { "type": "integer", "minimum": 1 },
+    "executed_time_range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["start", "end", "time_field"],
+      "properties": {
+        "start": { "type": "string", "format": "date-time" },
+        "end": { "type": "string", "format": "date-time" },
+        "time_field": { "const": "timestamp" }
+      }
+    },
+    "results": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_hits",
+        "total_hits_relation",
+        "returned_records",
+        "truncated",
+        "refinement_required",
+        "partial"
+      ],
+      "properties": {
+        "total_hits": { "type": "integer", "minimum": 1 },
+        "total_hits_relation": { "const": "eq" },
+        "returned_records": { "type": "integer", "minimum": 1 },
+        "truncated": { "const": false },
+        "refinement_required": { "const": false },
+        "partial": { "const": false }
+      }
+    },
+    "identity_presence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "backend_record_id_records",
+        "wazuh_alert_id_records",
+        "windows_event_record_id_records"
+      ],
+      "properties": {
+        "backend_record_id_records": { "type": "integer", "minimum": 1 },
+        "wazuh_alert_id_records": { "type": "integer", "minimum": 1 },
+        "windows_event_record_id_records": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "filter_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "provider", "event_id", "channel"],
+      "properties": {
+        "host": { "const": true },
+        "provider": { "const": true },
+        "event_id": { "const": true },
+        "channel": { "const": true }
+      }
+    },
+    "time_alignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "records_with_system_time",
+        "records_with_utc_time",
+        "alert_to_system_delta_ms",
+        "system_to_utc_delta_ms"
+      ],
+      "properties": {
+        "records_with_system_time": { "type": "integer", "minimum": 1 },
+        "records_with_utc_time": { "type": "integer", "minimum": 1 },
+        "alert_to_system_delta_ms": { "$ref": "#/$defs/deltaSummary" },
+        "system_to_utc_delta_ms": { "$ref": "#/$defs/deltaSummary" }
+      }
+    },
+    "evidence_scope": { "const": "bounded_live_wazuh_alert_query" },
+    "does_not_establish": {
+      "const": [
+        "raw_archive_completeness",
+        "continuous_runtime_collection",
+        "detection_coverage",
+        "incident_or_compromise",
+        "cross_platform_pipeline_validation"
+      ]
+    },
+    "pagination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "requested_page_size",
+        "pages_returned",
+        "cursor_resumptions",
+        "page_record_counts",
+        "stable_request_fingerprint",
+        "stable_search_after_progression",
+        "final_page_cleanup_confirmed"
+      ],
+      "properties": {
+        "mode": { "const": "pit_search_after" },
+        "requested_page_size": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "pages_returned": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "cursor_resumptions": { "type": "integer", "minimum": 0, "maximum": 99 },
+        "page_record_counts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": { "type": "integer", "minimum": 1, "maximum": 100 }
+        },
+        "stable_request_fingerprint": { "const": true },
+        "stable_search_after_progression": { "const": true },
+        "final_page_cleanup_confirmed": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "deltaSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "maximum", "maximum_absolute"],
+      "properties": {
+        "minimum": { "type": "number" },
+        "maximum": { "type": "number" },
+        "maximum_absolute": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

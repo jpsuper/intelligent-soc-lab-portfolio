@@ -1,0 +1,29 @@
+id: authentication.windows_security_failure_observed
+title: Windows Security authentication failure observed
+status: experimental
+
+log_source:
+  product: windows
+  service: security
+
+match:
+  source: windows_security
+  platform: windows
+  event_type: auth_failure
+
+artifact: windows_security_auth_failure_observed
+severity: low
+
+behavior_features:
+  windows_security_auth_failure_observed: true
+
+metadata:
+  mitre: []
+  references: []
+  tags:
+    - authentication
+    - windows-security
+    - observation
+
+targets:
+  - python

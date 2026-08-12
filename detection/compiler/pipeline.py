@@ -10,6 +10,7 @@ from jsonschema import Draft202012Validator
 from .correlation import (
     correlate_auth_then_authorized_keys,
     correlate_key_login_then_process_exec,
+    correlate_windows_powershell_parent_child_encoded_command,
 )
 from .dedupe import dedupe_detections, parse_ts
 from .evaluator import evaluate_rules_against_events
@@ -43,6 +44,7 @@ SUPPORTED_CORRELATION_TYPES = frozenset(
     {
         "auth_then_authorized_keys",
         "key_login_then_process_exec",
+        "windows_powershell_parent_child_encoded_command",
     }
 )
 REQUIRED_CORRELATION_KEYS = frozenset(
@@ -159,6 +161,23 @@ def validate_canonical_detections(detections: object) -> list[dict[str, Any]]:
             if detection[field] is not None and not isinstance(detection[field], str):
                 raise CommonPipelineValidationError(
                     f"detections[{index}].{field} must be a string or null"
+                )
+        if (
+            "event_id" in detection
+            and detection["event_id"] is not None
+            and not isinstance(detection["event_id"], str)
+        ):
+            raise CommonPipelineValidationError(
+                f"detections[{index}].event_id must be a string or null"
+            )
+        for field in ("pid", "ppid"):
+            if field not in detection or detection[field] is None:
+                continue
+            if isinstance(detection[field], bool) or not isinstance(
+                detection[field], (str, int, float)
+            ):
+                raise CommonPipelineValidationError(
+                    f"detections[{index}].{field} must be a string, number, or null"
                 )
         if not isinstance(detection["behavior_features"], dict) or not all(
             isinstance(key, str) and isinstance(value, bool)
@@ -430,7 +449,25 @@ def _run_fixed_correlation_policies(
             "correlation policy key_login_then_process_exec output must be a list"
         )
 
-    return [*auth_correlations, *key_exec_correlations]
+    try:
+        windows_process_correlations = correlate_windows_powershell_parent_child_encoded_command(
+            deduped_detections
+        )
+    except (TypeError, ValueError) as exc:
+        raise CommonPipelineValidationError(
+            f"correlation policy windows_powershell_parent_child_encoded_command failed: {exc}"
+        ) from exc
+    if not isinstance(windows_process_correlations, list):
+        raise CommonPipelineValidationError(
+            "correlation policy windows_powershell_parent_child_encoded_command "
+            "output must be a list"
+        )
+
+    return [
+        *auth_correlations,
+        *key_exec_correlations,
+        *windows_process_correlations,
+    ]
 
 
 def validate_correlation_results_against_policies(

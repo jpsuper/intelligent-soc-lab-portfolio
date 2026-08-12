@@ -17,6 +17,7 @@ from typing import Callable
 from detection.compiler.pipeline import (
     CommonPipelineValidationError,
     run_common_correlation_stage,
+    run_common_detection_pipeline,
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
@@ -292,3 +293,30 @@ def run_common_detection_to_investigation(
         raise CommonPipelineCompositionError(
             f"composition output validation failed: {exc}"
         ) from exc
+
+
+def run_common_endpoint_to_investigation(
+    endpoint_events: object,
+    rules: object,
+    *,
+    endpoint_events_source: str | None = None,
+    observation_scenario_name: str | None = None,
+    observation_incident_severity: str | None = None,
+) -> dict[str, list[dict]]:
+    """Run one endpoint fixture through detector, Incident, Triage, and Investigation."""
+
+    try:
+        detections = run_common_detection_pipeline(
+            deepcopy(endpoint_events),
+            deepcopy(rules),
+        )
+    except CommonPipelineValidationError as exc:
+        raise CommonPipelineCompositionError(f"detection stage failed: {exc}") from exc
+
+    return run_common_detection_to_investigation(
+        detections,
+        observation_scenario_name=observation_scenario_name,
+        observation_incident_severity=observation_incident_severity,
+        endpoint_events=endpoint_events,
+        endpoint_events_source=endpoint_events_source,
+    )

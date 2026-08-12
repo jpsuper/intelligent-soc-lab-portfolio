@@ -1,0 +1,70 @@
+{
+  "fixture_contract_version": "1.0",
+  "fixture_id": "sysmon-event1-ordinary-powershell-001",
+  "source_format": "wazuh_indexer_alert_hit_projection",
+  "retrieval": {
+    "query_ref": "fixture-query:sysmon-event1-a",
+    "retrieved_at": "2026-01-15T01:05:00Z",
+    "query_window": {
+      "start": "2026-01-15T01:00:00Z",
+      "end": "2026-01-15T01:05:00Z"
+    }
+  },
+  "hit": {
+    "_index": "wazuh-alerts-4.x-2026.01.15",
+    "_id": "wazuh-fixture-document-a",
+    "_source": {
+      "timestamp": "2026-01-15T01:02:04Z",
+      "agent": {
+        "id": "001",
+        "name": "WIN-FIXTURE01"
+      },
+      "manager": {
+        "name": "WAZUH-FIXTURE01"
+      },
+      "data": {
+        "win": {
+          "system": {
+            "providerName": "Microsoft-Windows-Sysmon",
+            "providerGuid": "{44444444-4444-4444-4444-444444444444}",
+            "eventID": "1",
+            "version": "5",
+            "level": "4",
+            "task": "1",
+            "opcode": "0",
+            "keywords": "0x8000000000000000",
+            "systemTime": "2026-01-15T01:02:03.123Z",
+            "eventRecordID": "41001",
+            "channel": "Microsoft-Windows-Sysmon/Operational",
+            "computer": "WIN-FIXTURE01"
+          },
+          "eventdata": {
+            "ruleName": "-",
+            "utcTime": "2026-01-15 01:02:03.123",
+            "processGuid": "{11111111-1111-1111-1111-111111111111}",
+            "processId": "4100",
+            "image": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+            "fileVersion": "10.0.0.0",
+            "description": "Synthetic PowerShell fixture",
+            "product": "Synthetic Windows fixture",
+            "company": "Example Lab",
+            "originalFileName": "PowerShell.EXE",
+            "commandLine": "powershell.exe -NoProfile -Command \"Write-Output fixture-ok\"",
+            "currentDirectory": "C:\\LabFixture\\",
+            "user": "LAB\\fixture-user",
+            "logonGuid": "{11111111-1111-1111-1111-111111111113}",
+            "logonId": "0x123ABC",
+            "terminalSessionId": "1",
+            "integrityLevel": "Medium",
+            "hashes": "SHA256=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "parentProcessGuid": "{11111111-1111-1111-1111-111111111112}",
+            "parentProcessId": "4000",
+            "parentImage": "C:\\Windows\\System32\\cmd.exe",
+            "parentCommandLine": "cmd.exe",
+            "parentUser": "LAB\\fixture-user"
+          }
+        }
+      }
+    }
+  }
+}

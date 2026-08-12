@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/windows_security_auth_parsed_event.schema.json",
+  "title": "windows_security_auth_parsed_event",
+  "description": "Source-specific parsed event produced from a validated Windows Security Event ID 4624 or 4625 source fixture.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_contract_version",
+    "fixture_id",
+    "source_format",
+    "provider_name",
+    "provider_event_id",
+    "event_record_id",
+    "computer",
+    "channel",
+    "system_time",
+    "subject_user_sid",
+    "subject_logon_id",
+    "target_user_sid",
+    "target_user_name",
+    "target_domain_name",
+    "logon_type",
+    "logon_process_name",
+    "authentication_package_name"
+  ],
+  "properties": {
+    "fixture_contract_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^windows-security-46(?:24|25)-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "source_format": {
+      "type": "string",
+      "const": "windows_security_eventlog_json"
+    },
+    "provider_name": {
+      "type": "string",
+      "const": "Microsoft-Windows-Security-Auditing"
+    },
+    "provider_guid": {
+      "type": "string",
+      "const": "{54849625-5478-4994-a5ba-3e3b0328c30d}"
+    },
+    "provider_event_id": {
+      "type": "integer",
+      "enum": [
+        4624,
+        4625
+      ]
+    },
+    "event_version": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_level": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_task": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_opcode": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "event_keywords": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "event_record_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "computer": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "channel": {
+      "type": "string",
+      "const": "Security"
+    },
+    "system_time": {
+      "$ref": "#/$defs/normalizedTimestamp"
+    },
+    "subject_user_sid": {
+      "$ref": "#/$defs/sid"
+    },
+    "subject_user_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "subject_domain_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "subject_logon_id": {
+      "$ref": "#/$defs/hexInteger"
+    },
+    "target_user_sid": {
+      "$ref": "#/$defs/sid"
+    },
+    "target_user_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "target_domain_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "target_logon_id": {
+      "$ref": "#/$defs/hexInteger"
+    },
+    "logon_type": {
+      "$ref": "#/$defs/nonNegativeInteger"
+    },
+    "logon_process_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "authentication_package_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "workstation_name": {
+      "$ref": "#/$defs/nonSentinelString"
+    },
+    "source_ip": {
+      "oneOf": [
+        {
+          "type": "string",
+          "format": "ipv4"
+        },
+        {
+          "type": "string",
+          "format": "ipv6"
+        }
+      ]
+    },
+    "source_port": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "failure_reason": {
+      "$ref": "#/$defs/nonEmptyString"
+    },
+    "status": {
+      "$ref": "#/$defs/hexInteger"
+    },
+    "sub_status": {
+      "$ref": "#/$defs/hexInteger"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provider_event_id": {
+            "const": 4624
+          }
+        },
+        "required": [
+          "provider_event_id"
+        ]
+      },
+      "then": {
+        "required": [
+          "target_logon_id"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "failure_reason"
+              ]
+            },
+            {
+              "required": [
+                "status"
+              ]
+            },
+            {
+              "required": [
+                "sub_status"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provider_event_id": {
+            "const": 4625
+          }
+        },
+        "required": [
+          "provider_event_id"
+        ]
+      },
+      "then": {
+        "required": [
+          "failure_reason",
+          "status",
+          "sub_status"
+        ],
+        "not": {
+          "required": [
+            "target_logon_id"
+          ]
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nonSentinelString": {
+      "type": "string",
+      "minLength": 1,
+      "not": {
+        "const": "-"
+      }
+    },
+    "nonNegativeInteger": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "sid": {
+      "type": "string",
+      "pattern": "^S-[0-9]+(?:-[0-9]+)+$"
+    },
+    "hexInteger": {
+      "type": "string",
+      "pattern": "^0x[0-9A-Fa-f]+$"
+    },
+    "normalizedTimestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{6}Z$"
+    }
+  }
+}

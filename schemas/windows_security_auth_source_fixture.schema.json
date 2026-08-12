@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/windows_security_auth_source_fixture.schema.json",
+  "title": "windows_security_auth_source_fixture",
+  "description": "Sanitized provider-like source fixture for Windows Security Event ID 4624 and 4625 authentication telemetry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_contract_version",
+    "fixture_id",
+    "source_format",
+    "system",
+    "event_data"
+  ],
+  "properties": {
+    "fixture_contract_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^windows-security-46(?:24|25)-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "source_format": {
+      "type": "string",
+      "const": "windows_security_eventlog_json"
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider_name",
+        "provider_event_id",
+        "system_time",
+        "event_record_id",
+        "channel",
+        "computer"
+      ],
+      "properties": {
+        "provider_name": {
+          "type": "string",
+          "const": "Microsoft-Windows-Security-Auditing"
+        },
+        "provider_guid": {
+          "type": "string",
+          "const": "{54849625-5478-4994-a5ba-3e3b0328c30d}"
+        },
+        "provider_event_id": {
+          "type": "integer",
+          "enum": [
+            4624,
+            4625
+          ]
+        },
+        "event_version": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_level": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_task": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_opcode": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "event_keywords": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "system_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "event_record_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "channel": {
+          "type": "string",
+          "const": "Security"
+        },
+        "computer": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "event_data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "SubjectUserSid",
+        "SubjectUserName",
+        "SubjectDomainName",
+        "SubjectLogonId",
+        "TargetUserSid",
+        "TargetUserName",
+        "TargetDomainName",
+        "LogonType",
+        "LogonProcessName",
+        "AuthenticationPackageName",
+        "WorkstationName",
+        "IpAddress",
+        "IpPort"
+      ],
+      "properties": {
+        "SubjectUserSid": {
+          "$ref": "#/$defs/sid"
+        },
+        "SubjectUserName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "SubjectDomainName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "SubjectLogonId": {
+          "$ref": "#/$defs/hexInteger"
+        },
+        "TargetUserSid": {
+          "$ref": "#/$defs/sid"
+        },
+        "TargetUserName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "TargetDomainName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "TargetLogonId": {
+          "$ref": "#/$defs/hexInteger"
+        },
+        "LogonType": {
+          "$ref": "#/$defs/integerString"
+        },
+        "LogonProcessName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "AuthenticationPackageName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "WorkstationName": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "IpAddress": {
+          "oneOf": [
+            {
+              "const": "-"
+            },
+            {
+              "type": "string",
+              "format": "ipv4"
+            },
+            {
+              "type": "string",
+              "format": "ipv6"
+            }
+          ]
+        },
+        "IpPort": {
+          "oneOf": [
+            {
+              "const": "-"
+            },
+            {
+              "type": "string",
+              "pattern": "^(?:0|[1-9][0-9]{0,3}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])$"
+            }
+          ]
+        },
+        "FailureReason": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "Status": {
+          "$ref": "#/$defs/hexInteger"
+        },
+        "SubStatus": {
+          "$ref": "#/$defs/hexInteger"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "system": {
+            "properties": {
+              "provider_event_id": {
+                "const": 4624
+              }
+            },
+            "required": [
+              "provider_event_id"
+            ]
+          }
+        },
+        "required": [
+          "system"
+        ]
+      },
+      "then": {
+        "properties": {
+          "event_data": {
+            "required": [
+              "TargetLogonId"
+            ],
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "FailureReason"
+                  ]
+                },
+                {
+                  "required": [
+                    "Status"
+                  ]
+                },
+                {
+                  "required": [
+                    "SubStatus"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "system": {
+            "properties": {
+              "provider_event_id": {
+                "const": 4625
+              }
+            },
+            "required": [
+              "provider_event_id"
+            ]
+          }
+        },
+        "required": [
+          "system"
+        ]
+      },
+      "then": {
+        "properties": {
+          "event_data": {
+            "required": [
+              "FailureReason",
+              "Status",
+              "SubStatus"
+            ],
+            "not": {
+              "required": [
+                "TargetLogonId"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sid": {
+      "type": "string",
+      "pattern": "^S-[0-9]+(?:-[0-9]+)+$"
+    },
+    "hexInteger": {
+      "type": "string",
+      "pattern": "^0x[0-9A-Fa-f]+$"
+    },
+    "integerString": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    }
+  }
+}

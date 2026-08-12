@@ -20,6 +20,23 @@ class TriageBoundaryValidationError(ValueError):
     """Raised when the canonical Incident-to-Triage boundary is invalid."""
 
 
+def _canonical_artifact_observations(incident: dict) -> list[str]:
+    """Render canonical Incident artifacts without source- or platform-specific logic."""
+
+    values = incident.get("artifacts")
+    if not isinstance(values, list) or not values:
+        values = [incident.get("primary_artifact")]
+
+    observations: list[str] = []
+    for value in values:
+        if not isinstance(value, str) or not value.strip():
+            continue
+        observation = value.strip().replace("_", " ")
+        if observation not in observations:
+            observations.append(observation)
+    return observations
+
+
 def load_json(path: str):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
@@ -60,8 +77,18 @@ def build_output(
     if "authorized_keys_modification" in artifacts:
         artifact_parts.append("authorized_keys modification")
 
+    used_canonical_artifacts = False
+    if not artifact_parts:
+        artifact_parts = _canonical_artifact_observations(incident)
+        used_canonical_artifacts = bool(artifact_parts)
+
     if artifact_parts:
-        summary = "Rule-based triage observed: " + ", ".join(artifact_parts) + "."
+        prefix = (
+            "Rule-based triage observed canonical artifact(s): "
+            if used_canonical_artifacts
+            else "Rule-based triage observed: "
+        )
+        summary = prefix + ", ".join(artifact_parts) + "."
     else:
         summary = (
             "Rule-based triage result based on externalized derived feature and assessment rules."

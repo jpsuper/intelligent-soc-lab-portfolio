@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/wazuh_sysmon_event1_hit_projection.schema.json",
+  "title": "wazuh_sysmon_event1_hit_projection",
+  "description": "Sanitized bounded Wazuh Indexer alert-hit projection for Sysmon Event ID 1 conversion parity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "fixture_contract_version",
+    "fixture_id",
+    "source_format",
+    "retrieval",
+    "hit"
+  ],
+  "properties": {
+    "fixture_contract_version": {
+      "const": "1.0"
+    },
+    "fixture_id": {
+      "type": "string",
+      "pattern": "^sysmon-event1-[a-z0-9]+(?:-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "source_format": {
+      "const": "wazuh_indexer_alert_hit_projection"
+    },
+    "retrieval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["query_ref", "retrieved_at", "query_window"],
+      "properties": {
+        "query_ref": { "$ref": "#/$defs/nonEmptyString" },
+        "retrieved_at": { "$ref": "#/$defs/dateTime" },
+        "query_window": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "$ref": "#/$defs/dateTime" },
+            "end": { "$ref": "#/$defs/dateTime" }
+          }
+        }
+      }
+    },
+    "hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["_index", "_id", "_source"],
+      "properties": {
+        "_index": {
+          "type": "string",
+          "pattern": "^wazuh-alerts-[A-Za-z0-9._-]+$"
+        },
+        "_id": { "$ref": "#/$defs/nonEmptyString" },
+        "_source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["timestamp", "agent", "manager", "data"],
+          "properties": {
+            "timestamp": { "$ref": "#/$defs/dateTime" },
+            "agent": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "name"],
+              "properties": {
+                "id": { "$ref": "#/$defs/nonEmptyString" },
+                "name": { "$ref": "#/$defs/nonEmptyString" }
+              }
+            },
+            "manager": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["name"],
+              "properties": {
+                "name": { "$ref": "#/$defs/nonEmptyString" }
+              }
+            },
+            "data": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["win"],
+              "properties": {
+                "win": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["system", "eventdata"],
+                  "properties": {
+                    "system": { "$ref": "#/$defs/system" },
+                    "eventdata": { "$ref": "#/$defs/eventdata" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "digitString": {
+      "type": "string",
+      "pattern": "^[0-9]+$"
+    },
+    "bracedGuid": {
+      "type": "string",
+      "pattern": "^\\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\\}$"
+    },
+    "system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "providerName",
+        "providerGuid",
+        "eventID",
+        "version",
+        "level",
+        "task",
+        "opcode",
+        "keywords",
+        "systemTime",
+        "eventRecordID",
+        "channel",
+        "computer"
+      ],
+      "properties": {
+        "providerName": { "$ref": "#/$defs/nonEmptyString" },
+        "providerGuid": { "$ref": "#/$defs/bracedGuid" },
+        "eventID": { "$ref": "#/$defs/digitString" },
+        "version": { "$ref": "#/$defs/digitString" },
+        "level": { "$ref": "#/$defs/digitString" },
+        "task": { "$ref": "#/$defs/digitString" },
+        "opcode": { "$ref": "#/$defs/digitString" },
+        "keywords": { "$ref": "#/$defs/nonEmptyString" },
+        "systemTime": { "$ref": "#/$defs/dateTime" },
+        "eventRecordID": { "$ref": "#/$defs/digitString" },
+        "channel": { "$ref": "#/$defs/nonEmptyString" },
+        "computer": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "eventdata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "utcTime",
+        "processGuid",
+        "processId",
+        "image",
+        "commandLine",
+        "user",
+        "parentProcessId",
+        "parentImage"
+      ],
+      "properties": {
+        "ruleName": { "type": "string" },
+        "utcTime": { "$ref": "#/$defs/nonEmptyString" },
+        "processGuid": { "$ref": "#/$defs/bracedGuid" },
+        "processId": { "$ref": "#/$defs/digitString" },
+        "image": { "$ref": "#/$defs/nonEmptyString" },
+        "fileVersion": { "type": "string" },
+        "description": { "type": "string" },
+        "product": { "type": "string" },
+        "company": { "type": "string" },
+        "originalFileName": { "type": "string" },
+        "commandLine": { "$ref": "#/$defs/nonEmptyString" },
+        "currentDirectory": { "type": "string" },
+        "user": { "$ref": "#/$defs/nonEmptyString" },
+        "logonGuid": { "$ref": "#/$defs/bracedGuid" },
+        "logonId": { "type": "string", "pattern": "^0x[0-9A-Fa-f]+$" },
+        "terminalSessionId": { "$ref": "#/$defs/digitString" },
+        "integrityLevel": { "$ref": "#/$defs/nonEmptyString" },
+        "hashes": { "$ref": "#/$defs/nonEmptyString" },
+        "parentProcessGuid": { "$ref": "#/$defs/bracedGuid" },
+        "parentProcessId": { "$ref": "#/$defs/digitString" },
+        "parentImage": { "$ref": "#/$defs/nonEmptyString" },
+        "parentCommandLine": { "type": "string" },
+        "parentUser": { "type": "string" }
+      }
+    }
+  }
+}

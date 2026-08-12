@@ -1,0 +1,96 @@
+registry_version: "1.0"
+name: wazuh-alerts-sysmon-event1
+backend: wazuh_indexer
+connection_name: wazuh_indexer_readonly
+physical_source: wazuh-alerts-*
+time_field: timestamp
+source_kind: alert
+default_projection:
+  - timestamp
+  - id
+  - agent.id
+  - agent.name
+  - manager.name
+  - data.win.system
+  - data.win.eventdata
+default_sort:
+  - field: timestamp
+    direction: asc
+  - field: id
+    direction: asc
+fixed_filters:
+  - field: data.win.system.providerName
+    operator: eq
+    value: Microsoft-Windows-Sysmon
+  - field: data.win.system.eventID
+    operator: eq
+    value: "1"
+  - field: data.win.system.channel
+    operator: eq
+    value: Microsoft-Windows-Sysmon/Operational
+required_filters:
+  - agent.name
+field_definitions:
+  timestamp:
+    type: timestamp
+    operators: [range]
+    projectable: true
+    sortable: true
+  id:
+    type: keyword
+    operators: [eq]
+    projectable: true
+    sortable: true
+  agent.id:
+    type: keyword
+    operators: [eq]
+    projectable: true
+    sortable: false
+  agent.name:
+    type: keyword
+    operators: [eq]
+    projectable: true
+    sortable: false
+  manager.name:
+    type: keyword
+    operators: [eq]
+    projectable: true
+    sortable: false
+  data.win.system:
+    type: object
+    operators: []
+    projectable: true
+    sortable: false
+  data.win.eventdata:
+    type: object
+    operators: []
+    projectable: true
+    sortable: false
+  data.win.system.providerName:
+    type: keyword
+    operators: [eq]
+    projectable: false
+    sortable: false
+  data.win.system.eventID:
+    type: keyword
+    operators: [eq]
+    projectable: false
+    sortable: false
+  data.win.system.channel:
+    type: keyword
+    operators: [eq]
+    projectable: false
+    sortable: false
+raw_payload_fields: []
+max_query_window_seconds: 1800
+default_limit: 50
+max_limit: 100
+transport_policy:
+  read_only: true
+  tls_verify: true
+  connect_timeout_seconds: 3
+  read_timeout_seconds: 10
+  max_response_bytes: 5242880
+  pit_keep_alive_seconds: 30
+adapter_name: wazuh-indexer-query-adapter
+adapter_version: "0.2.0"

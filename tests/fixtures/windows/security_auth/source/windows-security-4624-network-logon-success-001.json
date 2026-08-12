@@ -1,0 +1,35 @@
+{
+  "fixture_contract_version": "1.0",
+  "fixture_id": "windows-security-4624-network-logon-success-001",
+  "source_format": "windows_security_eventlog_json",
+  "system": {
+    "provider_name": "Microsoft-Windows-Security-Auditing",
+    "provider_guid": "{54849625-5478-4994-a5ba-3e3b0328c30d}",
+    "provider_event_id": 4624,
+    "event_version": 2,
+    "event_level": 0,
+    "event_task": 12544,
+    "event_opcode": 0,
+    "event_keywords": "0x8020000000000000",
+    "system_time": "2026-01-15T02:00:00.123Z",
+    "event_record_id": 42001,
+    "channel": "Security",
+    "computer": "WIN-FIXTURE01"
+  },
+  "event_data": {
+    "SubjectUserSid": "S-1-5-18",
+    "SubjectUserName": "WIN-FIXTURE01$",
+    "SubjectDomainName": "LAB",
+    "SubjectLogonId": "0x3E7",
+    "TargetUserSid": "S-1-5-21-111111111-222222222-333333333-1001",
+    "TargetUserName": "fixture-user",
+    "TargetDomainName": "LAB",
+    "TargetLogonId": "0xABC001",
+    "LogonType": "3",
+    "LogonProcessName": "NtLmSsp",
+    "AuthenticationPackageName": "NTLM",
+    "WorkstationName": "WIN-CLIENT01",
+    "IpAddress": "198.51.100.24",
+    "IpPort": "54432"
+  }
+}
