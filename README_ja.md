@@ -1,20 +1,9 @@
 # Intelligent Security Operations Lab
 
-> [!NOTE] \
-> この公開ポートフォリオでは、プライベートラボのIPアドレスを
-> 文書用アドレス帯 `192.0.2.0/24` に置き換えています。
-> Runbookを実行する場合は、隔離された検証環境のIPアドレスへ
-> 置き換えてください。
-
 [English](README.md)
 
-> [!NOTE]
-> この文書は英語版`README.md`の参考翻訳です。
-> 英語版を正本とし、内容に差異がある場合は英語版を優先してください。
->
-> Canonical source: `README.md`
-> Synchronization status: synchronized
-> Last synchronization date: 2026-08-12
+> この文書は英語版`README.md`の参考訳です。英語版を正本とし、
+> 内容に差異がある場合は英語版を優先してください。
 
 セキュリティ運用の未来を実践的に研究するための、個人向けホームラボです。
 
@@ -23,85 +12,32 @@
 自動化できる範囲を試すだけでなく、依然として人間の判断が必要な領域や、
 今後生まれ得る新しい運用方法を明らかにすることも目的としています。
 
-## Public Snapshotの収録範囲
+全体像は
+[ポートフォリオ概要（PDF、9ページ）](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
+にまとめています。
 
-このリポジトリは、就職活動向けに選定した公開ポートフォリオsnapshotです。
-次の範囲について、代表的な実装、JSON Schema、合成fixture、focused testを
-収録しています。
+## 主な機能
 
-- Linux auditdのパースと正規化から、決定論的検知、Incident構築、
-  Rule Triage、エビデンス境界を守るInvestigationまで
-- Windows Sysmon Event ID 1 Fixture A/B/CおよびSlice 2のパース、正規化、
-  決定論的検知、Correlation、共通endpoint-to-Investigation pipeline
-- 境界付きWazuh Indexer query planning、PIT/cursor処理、TLS検証付きread-only
-  transport、sanitized smoke harness、Sysmon alert-hit conversion
-- Windows Security Event ID 4624/4625のsource parse、正規化、決定論的な
-  failure observation、Wazuh alert-hit conversion、common-entry validation
-- 共通のdeduplication、correlation、artifact grounding、trust boundary
-- prompt input export、schema validation、信頼しないmodel outputのimport、
-  compare、promotion recommendationまでのoffline Rule Improvement経路
+- Linux auditdおよびWindows Sysmon / Securityログを共通のイベント形式へ正規化
+- 再現可能なルールによる検知、重複排除、相関分析からIncident候補を作成
+- Rule-basedまたはAI-assisted Triageと、エビデンスを考慮したInvestigation
+- Case、Action、承認、Action後DFIRのワークフロー連携
+- Wazuhから対象のWindowsアラートをread-onlyで取得し、共通パイプラインで処理
+- 検知ルール改善案を、適用判断の前にオフラインで比較・レビュー
 
-環境固有設定、Labの生テレメトリ、生成されたruntime evidence、credential、
-一部integration、開発専用utilityは収録していません。Active developmentは
-Privateリポジトリで継続しています。
+## アーキテクチャ
 
-以下の実装状況は、より広いPrivate Lab全体について説明しています。この公開版で
-直接再現できるのは、対応する実装、schema、合成fixture、focused testが本リポジトリに
-存在する範囲です。収録したlive-validation文書は、限定されたsanitized evidenceを
-説明するものであり、元のraw eventやcredentialは含みません。それ以外の文書は
-architecture、設計履歴、Private Labでの作業を説明する場合があり、対応するruntime
-integrationが公開版に含まれることを示すものではありません。
-
-[著作権表示](NOTICE.md) · [セキュリティポリシー](SECURITY.md)
-
-## ポートフォリオ概要資料
-
-プロジェクトの研究目的、end-to-end architecture、実装境界、代表的な公開証跡を
-9ページでまとめています。
-
-- [Intelligent SecOps Lab ポートフォリオ概要（PDF、9ページ、2026-08-06時点のstatus snapshot）](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
-
-PDFは今回の2026-08-12 repository synchronizationより前に作成されています。
-8ページ目はCommon Pipeline v0 / Windows Slice 2以前の状況を記録しているため、
-現在状況は[Main Roadmap](docs/roadmap/roadmap.md)を参照してください。
-
-## 5～10分のReview Path
-
-1. **Architecture:**
-   [Defender event processing flow](docs/architecture/defender-event-processing-flow.md)を読む。
-2. **代表的なsource path:** Sysmonの
-   [source parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py)、
-   [Wazuh hit adapter](scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)、
-   [common defender pipeline](common/defender_pipeline.py)を追う。
-3. **2つ目のtelemetry family:** Windows Security authenticationの
-   [source parser](scripts/windows/security_auth/parse_windows_security_auth_source.py)、
-   [normalized mapper](scripts/windows/security_auth/map_windows_security_auth_to_endpoint_event.py)、
-   [detection rule](detection/dsl/windows_security_auth_failure_observed.yaml)を確認する。
-4. **Contractとfixture:**
-   [normalized endpoint-event contract](schemas/endpoint_events.schema.json)と
-   [sanitized 4625 source fixture](tests/fixtures/windows/security_auth/source/windows-security-4625-network-logon-failure-001.json)を比較する。
-5. **Shared execution:**
-   [Common Pipeline v1 entry regression](tests/test_common_defender_pipeline_v1_entry_validation.py)と
-   [Windows Security common-entry test](tests/windows/security_auth/test_windows_security_auth_common_entry.py)を追う。
-
-## 概要
-
-このラボでは、セキュリティ運用を個別ツールの集合ではなく、
-エビデンスに基づく改善ループとして捉えます。
+このラボでは、セキュリティ運用を反復可能な改善ループとして捉えます。
 
 ```mermaid
 flowchart TD
     A["攻撃 / ノイズ / Deception"]
     B["Defenderテレメトリ"]
-    C["ソースのパース / 正規化"]
-    D["決定論的検知"]
-    E["Correlation / Incident"]
-    F["トリアージ"]
-    G["Case前Investigation"]
-    H["Case / Action"]
-    I["Action後DFIR"]
-    J["Rule Improvement"]
-    K["再攻撃"]
+    C["パース / 正規化"]
+    D["検知 / 相関分析"]
+    E["トリアージ / 調査"]
+    F["Case / Action / DFIR"]
+    G["Rule Improvement"]
 
     A --> B
     B --> C
@@ -109,201 +45,86 @@ flowchart TD
     D --> E
     E --> F
     F --> G
-    G --> H
-    H --> I
-    I --> J
-    J --> K
-    K --> A
+    G --> A
 ```
 
-攻撃者側の実行記録と観測された影響は、実行の対応付けとギャップ分析に使用します。
-これらはDefenderテレメトリ、検知エビデンス、アラートではなく、
-それだけでIncidentを作成することはできません。
+攻撃者側の実行記録は、実行の対応付けとギャップ分析に使用します。
+それ自体をDefender側のエビデンスとして扱ったり、
+Incidentの作成根拠にしたりすることはありません。
 
-## 目的
+## 公開ポートフォリオの範囲
 
-- セキュリティ運用研究のための実践環境を構築する
-- AIが実際のSOCワークフローをどのように変えるかを探る
-- 検知、トリアージ、調査、対応をどこまで安全に自動化できるかを評価する
-- 再現可能なループで攻撃シミュレーションとDetection Engineeringを試す
-- 攻撃者、Defender、Case、Action、DFIRの各artifact間の
-  エビデンス境界を検証する
-- 攻撃に通常活動と不完全なエビデンスを混在させ、
-  現実的なSOCの状況を研究する
-- 人間の判断が不可欠な領域を明らかにする
-- 検証済みの知見をレビュー可能な検知・ワークフロー改善につなげる
+このリポジトリには、上記の機能を確認するための代表的な実装、
+JSON Schema、合成またはサニタイズ済みfixture、テストを収録しています。
 
-## 研究対象
+環境固有の設定、credential、Labの生テレメトリ、生成されたruntime evidence、
+Private Labのすべてのintegrationや開発用utilityは収録していません。
 
-- 決定論的Detection Engineering
-- 攻撃シミュレーション
-- Correlation-firstのIncident構築
-- SOCトリアージと比較評価
-- エビデンスを考慮した調査
-- Case、Action、承認、実行の境界
-- DFIR収集ワークフロー
-- Rule Improvement
-- Deceptionとバックグラウンド活動
-- セキュリティ分析における人間とAIの協働
+本リポジトリは研究用prototypeです。本番運用への対応、継続的な完全自律運用、
+完全なテレメトリcoverage、完全な検知coverageを示すものではありません。
+詳細な実装状況と今後の作業は
+[Roadmap](docs/roadmap/roadmap_ja.md)を参照してください。
 
-## 設計原則
+## 短時間で確認する場合
 
-- 検知は決定論的に行い、AIが検知境界を置き換えることはない
-- AIは盲目的な意思決定者ではなく、アナリストとして機能する
-- 攻撃の成立や影響について断定できるのは、
-  防御側で観測されたエビデンスから確認できる範囲までとする
-- ソースのパース、正規化、検知、トリアージ、調査、対応は
-  それぞれ独立した責務とする
-- ランタイムエビデンスとリポジトリ内fixtureを区別して表記する
-- 自動化によって再現性、エビデンスの関連付け、フィードバックループを改善する
-- ルール変更は、apply、deploy、promotionの前にproposalとレビューを必須とする
-- 確認済みのDeception hitは高信頼度のシグナルとなり得るが、
-  エビデンス、承認、封じ込め、Rule Improvementのレビュー境界を迂回しない
-- Wazuhなどの外部ツールは、必要に応じてルールの配布先、
-  アラート・検索基盤、エビデンス取得元として利用する。ただし、
-  検知ルールの意味や判定基準、DSL定義の正本は本リポジトリで管理する
+1. [ポートフォリオ概要](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)と
+   [Defender処理フロー](docs/architecture/defender-event-processing-flow_ja.md)を確認する。
+2. Windowsイベントが
+   [Sysmon parser](scripts/windows/sysmon_event1/parse_sysmon_event1_source.py)、
+   [Wazuh adapter](scripts/windows/sysmon_event1/adapt_wazuh_sysmon_event1_hit.py)、
+   [共通Defender pipeline](common/defender_pipeline.py)へ渡る流れを追う。
+3. [Windows Security検知ルール](detection/dsl/windows_security_auth_failure_observed.yaml)と
+   [common-pipeline test](tests/windows/security_auth/test_windows_security_auth_common_entry.py)
+   を確認する。
+4. [正規化イベントSchema](schemas/endpoint_events.schema.json)と
+   [サニタイズ済み4625 fixture](tests/fixtures/windows/security_auth/source/windows-security-4625-network-logon-failure-001.json)
+   を比較する。
 
-## 現在の状況
+ポートフォリオPDFは2026-08-06時点のsnapshotです。
+詳細な実装状況の正本はRoadmapです。
 
-より広いPrivate Labは、Phase 0からPhase 7までの限定された再現可能な基盤を
-提供します。
+## テストの実行
 
-### 実装済みの基盤
+必要なもの:
 
-- Phase 0からPhase 5までの限定されたMVPが完了しています。
-- Phase 6 extended MVPが完了しています。決定論的検知、Correlation-firstの
-  Incident entry、Triage / Investigation / Actionの各stageと比較harness、
-  ActionからDFIR requestへのhandoff、Action後のDFIR result処理、
-  reviewを前提とするRule Improvement candidate exportを含みます。
-- Phase 7ではartifact-onlyのDeception基盤を実装済みです。Scenario YAML、
-  安全なrunner、canonical detection-output integrationはdeferredです。
-- Linuxの`scenario_004`から`scenario_006`は、再現可能なregression
-  coverageを提供します。`scenario_009_suspicious_archive_staging`には、
-  fixtureに基づく限定されたIncident-to-Action pathがあります。
-  canonical live Wazuh source integrationはdeferredです。
+- Python 3.12以降
+- [uv](https://docs.astral.sh/uv/)
 
-### 現在の主要作業
+```bash
+git clone https://github.com/jpsuper/intelligent-soc-lab-portfolio.git
+cd intelligent-soc-lab-portfolio
+uv sync --dev
+uv run pytest tests -q
+```
 
-Common Pipeline v0はbounded fixture-execution levelでcompleteとなり、
-Common Pipeline v1のentry conditionもbounded fixture levelで満たしました。
-Linux Scenario 009、Windows Slice 1 Fixture A/B/C、およびWindows Slice 2の
-PID/PPID correlation fixtureは、同一のendpoint-to-Investigation boundaryへ
-入ります。Windows固有のdownstream contractを追加せず、canonicalなTriage
-artifact groundingとcorrelation-Incident-scopedなendpoint evidence bindingを
-regression validationしています。より広いprivate labではdeterministic harness
-specificityも評価していますが、そのdevelopment harnessはこの公開snapshotには
-含めていません。
+リポジトリ内のテストは合成またはサニタイズ済みfixtureを使用し、
+Private Labへの接続を必要としません。
 
-境界付きWazuh source pathには、Sysmon Event ID 1 alert-hit conversion、
-登録済みquery adapter、TLS検証付きread-only transport、PIT/cursor pagination、
-sanitized smoke evidenceが含まれます。Windows Security Event ID 4624/4625も、
-source fixture、parser/mapper、決定論的なfailure observation、Wazuh conversion、
-限定されたlive 4625 evidenceを通じて共通entryへ到達します。元のlive eventと
-credentialは公開していません。
+## ディレクトリ構成
 
-このevidenceは、継続的なruntime automation、一般化されたlive Windows
-integration、native Windows parity、authentication固有のCorrelationや
-分析品質、AI modelの品質を実証するものではありません。
-
-### 主な未完了作業
-
-- Common Pipeline v1の安定化とWindows downstream evidence-quality
-  regressionの継続
-- 限定されたevidence gateを越える一般化・継続的なlive Wazuh / Windows integration
-- Windows Security native parity、追加のWindows telemetry、AD /
-  domain controller coverage
-- Windows Triage / Investigationの分析品質とAI model validation
-- Linux Scenario 009のcanonical sourceおよびlive integration
-- Rule Improvementのapply、deployment、runtime update、promotion workflow
-
-現在状況、優先順位、未完了作業、実装順序、Done Criteriaの正本は
-[Main Roadmap](docs/roadmap/roadmap.md)です。cross-platform processingの
-責務とtrust boundaryは、
-[Defender Event Processing Flow（日本語参考訳）](docs/architecture/defender-event-processing-flow_ja.md)
-を参照してください。
-
-## アーキテクチャ境界
-
-- Collector、source parser、normalized mapper、platform/domain固有の
-  rule contentはsource固有のままとする
-- mapping済みのLinuxとWindowsのendpoint telemetryは
-  `endpoint_events.v1`に収束する
-- 既存のsource-family artifactは、意図的にmigrationするまで維持できる
-- rule selection、detector invocation、決定論的execution、output validation、
-  canonical detection-result handoffには共通のexecution contractを使用する
-- Dedupe、Correlation、Incident、トリアージ、Case前Investigation、
-  Case、Actionには共有downstream contractを使用する
-- トリアージはprocessing contractであり、特定のmodelを必須としない。
-  決定論的実装とAI-assisted実装を同じエビデンス境界と比較境界で評価できる
-- 共通downstream logicは、nativeのauditd/Sysmon shapeや
-  hard-coded scenario IDではなく、canonical artifactとfeatureに依存する
-- Case前の`investigation_result.json`は、Action後の
-  `post_action_dfir_investigation_result.json`と分離したままにする
-
-## Phase概要
-
-詳細なtask、evidence、dependency、Done Criteriaは
-[Roadmap（日本語参考訳）](docs/roadmap/roadmap_ja.md)に記載しています。
-
-| Phase | 範囲 | 状況 |
-|---|---|---|
-| Phase 0 | ラボの安定化 | 完了 |
-| Phase 1 | Detection engine、Correlation、Incident | 完了 |
-| Phase 2 | トリアージ、Action plan、execution boundary | 完了 |
-| Phase 3 | 攻撃シミュレーションと評価 | 完了 |
-| Phase 4 | Case workflowとintegration準備 | 完了: MVP、TheHive、DFIR request |
-| Phase 5 | Endpoint telemetryとprocess-based detection | 完了: MVP、action/approval boundary |
-| Phase 6 | 自動改善ループとworkflow contract | Extended MVP完了 |
-| Phase 7 | Agentic deception layer | Artifact-only MVP基盤完了。scenario YAMLとrunnerはdeferred |
-| Phase 8 | バックグラウンド活動とtelemetry拡張 | 後続 |
+| Path | 内容 |
+|---|---|
+| `agents/` | Attacker、Triage、Investigation agentの実装 |
+| `common/` | 共通Defender pipelineとcross-platform composition |
+| `config/` | サニタイズ済みsource registryと公開用設定例 |
+| `detection/` | Detection DSL、compiler、correlation、評価ロジック |
+| `scripts/` | Parser、adapter、runner、integration utility |
+| `schemas/` | Eventとworkflow artifactのJSON Schema |
+| `tests/` | Regression testと合成またはサニタイズ済みfixture |
+| `docs/` | Architecture、設計資料、Roadmap、Runbook |
 
 ## ドキュメント
 
-- [Master Guide（日本語参考訳）](docs/AI_SOC_Lab_Master_Guide_ja.md) — 安定したarchitecture、
-  artifact boundary、evidence rule、operating policy
-- [Roadmap（日本語参考訳）](docs/roadmap/roadmap_ja.md) — Phaseの正式な状況、現在の優先事項、
-  実装順序、Done Criteria
-- [Defender Event Processing Flow（日本語参考訳）](docs/architecture/defender-event-processing-flow_ja.md)
-  — クロスプラットフォームの処理stage、trust boundary、
-  Common Pipeline v0/v1 architecture
-- [Normalized Endpoint Event Contract](docs/design/defender/normalized_endpoint_event_contract.md)
-  — 対応source間で使用するcanonical endpoint telemetry shape
-- [Windows Telemetry Contract](docs/design/windows/windows_telemetry_contract.md)
-  — Windowsのsource、parsing、normalization、runtime evidence boundary
-- [Windows Downstream Evidence-Quality Slice](docs/design/defender/windows_downstream_evidence_quality.md)
-  — 限定されたTriage groundingとInvestigation evidence linkage
-- [Atomic Detection DSL](docs/design/atomic_detection_dsl.md) —
-  決定論的ruleのsource of truthとcanonical detection-output contract
-- [Scenario Family Expansion Policy](docs/design/scenario_family_expansion_policy.md)
-  — 新しいscenario familyに対するmapping、evidence、safety、reviewの要件
-- [Linux Scenario Family Candidates](docs/design/linux_scenario_family_candidates.md)
-  — 検証済みLinux scenario coverageとdeferredのlive-integration作業
-- [Phase 7 Deception Roadmap](docs/roadmap/phase7.md) —
-  実装済みDeception artifact chain、現在の状況、安全境界、次のstep
+- [ポートフォリオ概要](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf)
+- [Defender Event Processing Flow](docs/architecture/defender-event-processing-flow_ja.md)
+- [Master Guide](docs/AI_SOC_Lab_Master_Guide_ja.md)
+- [Roadmap](docs/roadmap/roadmap_ja.md)
 
-## 対象外
+## 安全上・公開上の注意
 
-このプロジェクトは、以下を目的としていません。
-
-- 本番環境向けSOC platform
-- 完全自律型のoffensive security system
-- enterprise SIEM、EDR、case management、DFIR製品の代替
-- 単一vendor toolのbenchmark
-- AI出力を十分なevidenceまたはresponse approvalとして扱うsystem
-- 実践的な検証を伴わない純粋な理論研究
-
-このラボは、学習、実験、反復的な検証を目的として設計しています。
-
-## Philosophy
-
-構築して学ぶ。
-
-攻撃して検証する。
-
-反復して改善する。
-
-## 名称
-
-**正式名称:** Intelligent Security Operations Lab
-
-**通称:** SOC Lab
+- 攻撃シミュレーションは、自身が所有するか明示的に許可された
+  隔離環境内でのみ実行してください。
+- Private LabのIPアドレスは文書用アドレス帯`192.0.2.0/24`へ置換しています。
+  実行時は自身のLab環境に合わせて変更してください。
+- Secretや環境固有値はruntimeで与え、リポジトリへcommitしないでください。
+- [セキュリティポリシー](SECURITY.md)と[著作権表示](NOTICE.md)も参照してください。
