@@ -2,13 +2,13 @@
 
 [日本語](README_ja.md)
 
-A personal home lab for researching how security operations can combine
-deterministic detection, AI-assisted analysis, and evidence-driven improvement.
+A personal home lab for hands-on research into the future of security
+operations.
 
-The project connects controlled attack simulation with telemetry collection,
-detection, correlation, triage, investigation, response, DFIR, and detection-rule
-improvement. It is designed for hands-on experimentation rather than production
-deployment.
+This project explores how AI may reshape attack simulation, detection,
+correlation, triage, investigation, response, DFIR, and continuous improvement.
+The goal is not only to test what can be automated, but also to understand what
+still requires human judgment and what new operating methods may emerge.
 
 For a visual introduction, see the
 [Japanese portfolio overview (PDF, 9 pages)](docs/portfolio/Intelligent_SecOps_Lab_Portfolio_Overview_JA.pdf).
