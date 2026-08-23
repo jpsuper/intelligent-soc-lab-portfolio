@@ -26,6 +26,7 @@ Sysmon Event ID 1 remain under `docs/design/`.
 ```mermaid
 flowchart LR
     A[Raw / Live Telemetry]
+    X[Collection / Adaptation]
     B[Source-Shaped Event]
     C[Source Parser]
     D[Source-Specific Parsed Event]
@@ -38,7 +39,8 @@ flowchart LR
     K[Triage]
     L[Pre-case Investigation]
 
-    A --> B
+    A --> X
+    X --> B
     B --> C
     C --> D
     D --> E
@@ -52,13 +54,19 @@ flowchart LR
     K --> L
 ```
 
+`Collection / Adaptation` is shown explicitly to make the raw-to-source-shaped
+handoff visible. It is a responsibility boundary, not a requirement for a new
+agent or a separately persisted artifact. If a collector already returns a
+provider-shaped structured record, adaptation may be close to a pass-through.
+
 ## Stage Responsibilities
 
-| Stage | Input | Responsibility | Output | Must not claim |
+| Stage / boundary | Input | Responsibility | Output | Must not claim |
 |---|---|---|---|---|
 | Raw / live telemetry | Runtime endpoint or platform activity | Preserve the actual defender-side observation | Raw log, event record, XML, EVTX, or provider output | That a repository fixture or later pipeline stage is implemented |
-| Source-shaped event | Raw or adapted source event | Preserve source vocabulary and source relationships in a structured form | Provider-shaped structured event | Canonical field meaning, maliciousness, or incident state |
-| Source parser | Source-shaped event | Validate the source contract, convert types, normalize source timestamps, and expose source-specific parsed fields | Source-specific parsed event | Detection, verdict, severity, incident, or response state |
+| Collection / adaptation | Raw/live telemetry or provider output | Decode or represent the observation as a programmatically usable source-shaped event while preserving source vocabulary, source relationships, and acquisition provenance | Source-shaped event | Canonical field meaning, parsed source semantics, malicious/benign classification, or incident state |
+| Source-shaped event | Collection/adaptation output | Preserve the provider/source vocabulary and relationships in a structured form suitable for the source parser | Provider-shaped structured event | Fully parsed source values, assigned cross-source semantics, or malicious/benign classification |
+| Source parser | Source-shaped event | Validate the expected source/provider contract, interpret source-native fields, convert types, normalize source timestamps, and expose source-specific parsed fields | Source-specific parsed event | Cross-source canonical mapping, detection, verdict, severity, incident, or response state |
 | Normalized mapper | Source-specific parsed event | Project source-specific fields into the lab-wide endpoint event contract while retaining selected provenance | Normalized endpoint event | Maliciousness, rule match, severity, incident, or response state |
 | Deterministic detector | Normalized event | Evaluate explicit deterministic conditions | Detection result or rule hit | Attack intent, full incident truth, or response approval |
 | Correlation / incident builder | Detection results and supporting observations | Relate events across time, host, user, process, or scenario context and construct an analysis unit | Incident candidate or incident artifact | That every correlated event is malicious or that evidence is complete |
@@ -83,29 +91,72 @@ users, identifiers, timestamps, command lines, and other environment-private
 values remain outside committed fixtures unless explicitly sanitized and
 reviewed.
 
-## Parser And Normalized Mapper Boundary
+## Source-Shaped Event, Parser, And Normalized Mapper Boundaries
 
-The parser and normalized mapper are separate because they solve different
-problems.
+The adaptation, source parser, and normalized mapper responsibilities remain
+separate because they answer different questions.
+
+```text
+raw / provider representation
+        -> collection / adaptation
+source-shaped event
+        -> source parser
+source-specific parsed event
+        -> normalized mapper
+normalized endpoint event
+```
+
+### Collection / adaptation and source-shaped event
+
+Collection/adaptation converts the transport or provider representation into a
+structured shape that the source parser can consume without replacing the
+source's own vocabulary with lab-wide canonical semantics.
+
+For example, an XML or provider record may be represented as an object with a
+`system` section and an `event_data` section. Field names and relationships
+remain provider-shaped. If the upstream collector already provides an
+equivalent structured representation, this boundary may require little or no
+additional transformation.
+
+The source-shaped event is therefore a handoff artifact, not a claim that the
+source has already been semantically parsed. At this boundary:
+
+- provider/source field names and structural relationships are preserved;
+- acquisition provenance may be retained;
+- representation-level decoding may already have occurred;
+- source-specific type interpretation and cross-source canonical mapping have
+  not yet been established; and
+- malicious/benign classification is not performed at this boundary.
 
 ### Source parser
 
-The source parser keeps source-specific meaning while making the event safe and
-consistent for programmatic use.
+The source parser answers: "Can this event be interpreted safely and
+consistently according to this source's contract?"
+
+It keeps source-specific meaning while making the event safe and consistent for
+programmatic use.
 
 Typical responsibilities:
 
-- validate the source-specific schema;
+- validate the expected provider, event family, and source-specific schema;
 - reject incorrect provider routing;
 - convert string process IDs to integers;
 - normalize source timestamp representations;
 - split source-specific composite fields such as Sysmon hash strings; and
 - omit unsupported or absent optional fields rather than inventing values.
 
+A parser may rename fields into implementation-friendly source-specific names
+such as `ProcessId` -> `process_id`. That naming change does not make the field
+canonical. The output still represents Sysmon, auditd, or another specific
+source and remains governed by that source's parsed contract.
+
 ### Normalized mapper
 
-The normalized mapper translates a validated source-specific parsed event into
-the common endpoint event vocabulary used by downstream detection.
+The normalized mapper answers: "How is a validated source-specific observation
+expressed in the common downstream vocabulary?"
+
+It translates a validated source-specific parsed event into the common endpoint
+event vocabulary used by downstream detection.
 
 Typical mappings include:
 
@@ -217,9 +268,23 @@ or overwrite golden files during normal test execution.
 
 ## Sysmon Event ID 1 Example
 
+The full handoff is shown here so that the source-shaped and parsed boundaries
+are not skipped.
+
 ```text
-Sysmon provider-like source event
-  system.provider_event_id = 1
+Raw / provider representation
+  <Event>
+    <System><EventID>1</EventID>...</System>
+    <EventData>
+      <Data Name="ProcessId">4100</Data>
+      <Data Name="Image">C:\\...\\powershell.exe</Data>
+    </EventData>
+  </Event>
+
+        -> collection / adaptation
+
+Sysmon source-shaped event
+  system.provider_event_id = "1"
   event_data.ProcessId = "4100"
   event_data.Image = "C:\\...\\powershell.exe"
 
@@ -246,10 +311,13 @@ Detection result
   rule matched or did not match
 ```
 
-The source event says that Sysmon observed process creation. The normalized
-event expresses that observation in the lab-wide endpoint vocabulary. Only the
-detector evaluates whether a defined condition matched, and later stages decide
-how the detection should be interpreted using available evidence.
+The raw/provider representation is the observed provider data. The source-shaped
+event preserves the Sysmon/Windows vocabulary in a structured handoff. The
+source parser validates and interprets that source-specific shape, including
+type conversion, without assigning the lab-wide endpoint vocabulary. The
+normalized mapper performs that cross-source projection. Only the detector then
+evaluates whether a defined condition matched, and later stages decide how the
+detection should be interpreted using available evidence.
 
 ## Cross-Platform Status Reference
 
@@ -285,10 +353,10 @@ validated results to a common pipeline engine.
 
 | Boundary | Responsibilities that remain source-specific | Responsibilities shared across platforms |
 |---|---|---|
-| Collection and adaptation | auditd, Sysmon, Windows Event Log, or future retrieval adapters; source routing and acquisition provenance | Run isolation, bounded artifact placement, and validation outcome handling |
-| Parsing | auditd multi-record interpretation; Sysmon provider/Event ID interpretation; source-native timestamps and identifiers | Basic fail-closed behavior and explicit skip/error reporting |
-| Parsed contract | Source-specific parsed schemas and source provenance | No common parsed schema is required |
-| Normalization | One mapper per source/domain; source-to-canonical field policy; retained SSH/Wazuh FIM paths use source-family artifacts; Zeek and deception retain non-`endpoint_events.v1` artifacts | Validated `endpoint_events.v1` handoff for mapped endpoint telemetry; canonical detection result handoff across all source families |
+| Collection and adaptation | Raw/provider representation -> source-shaped event; auditd, Sysmon, Windows Event Log, or future retrieval adapters; source routing and acquisition provenance | Run isolation, bounded artifact placement, and validation outcome handling |
+| Parsing | Source-shaped event -> source-specific parsed event; auditd multi-record interpretation; Sysmon provider/Event ID interpretation; source-native timestamps and identifiers | Basic fail-closed behavior and explicit skip/error reporting |
+| Parsed contract | Source-specific parsed schemas and source provenance; no canonical remapping yet | No common parsed schema is required |
+| Normalization | Source-specific parsed event -> source/domain normalized artifact; one mapper per source/domain; source-to-canonical field policy; retained SSH/Wazuh FIM paths use source-family artifacts; Zeek and deception retain non-`endpoint_events.v1` artifacts | Validated `endpoint_events.v1` handoff for mapped endpoint telemetry; canonical detection result handoff across all source families |
 | Detection | Platform/domain-specific rule content, match conditions, and feature logic | Rule selection, detector invocation, deterministic execution, output validation, and canonical detection result handoff |
 | Incident entry | No parser- or mapper-owned incident conclusions | Dedupe, correlation engine, incident builder, and canonical incident handoff |
 | Analysis and handoff | Platform-aware evidence interpretation where required | Triage, pre-case investigation/enrichment, initial case, and action handoff |
@@ -318,17 +386,34 @@ at canonical detection results.
 ```mermaid
 flowchart TD
     subgraph Endpoint[Endpoint telemetry]
-        LA[auditd or raw telemetry]
-        LP[Linux parser and mapper]
-        WA[Sysmon or raw telemetry]
-        WP[Windows parser and mapper]
+        LR[Linux raw / provider telemetry]
+        LA[Linux collection / adaptation]
+        LS[Linux source-shaped event]
+        LP[Linux source parser]
+        LSP[Linux source-specific parsed event]
+        LM[Linux normalized mapper]
+        WR[Windows raw / provider telemetry]
+        WA[Windows collection / adaptation]
+        WS[Windows source-shaped event]
+        WP[Windows source parser]
+        WSP[Windows source-specific parsed event]
+        WM[Windows normalized mapper]
         E[endpoint_events.v1]
         ER[Endpoint rule content and match]
 
-        LA --> LP
-        WA --> WP
-        LP --> E
-        WP --> E
+        LR --> LA
+        LA --> LS
+        LS --> LP
+        LP --> LSP
+        LSP --> LM
+        LM --> E
+
+        WR --> WA
+        WA --> WS
+        WS --> WP
+        WP --> WSP
+        WSP --> WM
+        WM --> E
     end
 
     subgraph Existing[Existing endpoint-related paths]
