@@ -9,7 +9,7 @@
 >
 > Canonical source: `docs/architecture/defender-event-processing-flow.md`
 > Synchronization status: synchronized
-> Last synchronization date: 2026-08-06
+> Last synchronization date: 2026-08-23
 
 ## 目的
 
@@ -24,7 +24,7 @@ trust boundaryを定義します。
 などのsource固有contractは`docs/design/`配下に置きます。
 
 > 文書の責務:
-> この文書は、安定したDefender側processing stage、handoff contract、
+> この文書は、安定したDefender側processing stage、stage間の受け渡し仕様、
 > trust boundaryを管理します。現在のimplementation status、priority、
 > validation depth、sequencing、Done Criteriaは
 > [Main Roadmap](../roadmap/roadmap_ja.md)が管理します。この文書に記載された
@@ -36,6 +36,7 @@ trust boundaryを定義します。
 ```mermaid
 flowchart LR
     A[Raw / Live Telemetry]
+    X[Collection / Adaptation]
     B[Source-Shaped Event]
     C[Source Parser]
     D[Source-Specific Parsed Event]
@@ -48,7 +49,8 @@ flowchart LR
     K[Triage]
     L[Pre-case Investigation]
 
-    A --> B
+    A --> X
+    X --> B
     B --> C
     C --> D
     D --> E
@@ -62,13 +64,19 @@ flowchart LR
     K --> L
 ```
 
+`Collection / Adaptation`は、rawからsource-shaped eventへの受け渡し境界を明示するために
+図へ追加しています。これは責務boundaryを示すものであり、新しいagentや別途永続化
+されるartifactを必須にするものではありません。Collectorがすでにprovider-shapedな
+structured recordを返す場合、adaptationはほぼpass-throughになることがあります。
+
 ## Stageごとの責務
 
-| Stage | Input | 責務 | Output | 主張してはいけないこと |
+| Stage / boundary | Input | 責務 | Output | 主張してはいけないこと |
 |---|---|---|---|---|
 | Raw / live telemetry | Runtime endpointまたはplatform activity | 実際にDefender側で観測された内容を保持する | Raw log、event record、XML、EVTX、またはprovider output | Repository fixtureや後続pipeline stageが実装済みであること |
-| Source-shaped event | Rawまたはadapted source event | Source vocabularyとsource間の関係を構造化して保持する | Provider-shaped structured event | Canonical fieldの意味、悪性、またはincident state |
-| Source parser | Source-shaped event | Source contractを検証し、typeを変換し、source timestampを正規化してsource固有のparsed fieldを公開する | Source-specific parsed event | Detection、verdict、severity、incident、またはresponse state |
+| Collection / adaptation | Raw/live telemetryまたはprovider output | Source vocabulary、source間の関係、acquisition provenanceを保持したまま、観測内容をprogrammaticに扱えるsource-shaped eventとしてdecodeまたは表現する | Source-shaped event | Canonical fieldの意味、parse済みsource semantics、悪性・良性の判定、またはincident state |
+| Source-shaped event | Collection/adaptation output | Provider/source vocabularyと関係を、source parserが入力として受け取れるstructured formとして保持する | Provider-shaped structured event | Source valueの完全なparse、cross-source semanticsの確定、または悪性・良性の判定 |
+| Source parser | Source-shaped event | 期待するsource/provider contractを検証し、source-native fieldを解釈し、typeを変換し、source timestampを正規化してsource固有のparsed fieldを公開する | Source-specific parsed event | Cross-source canonical mapping、detection、verdict、severity、incident、またはresponse state |
 | Normalized mapper | Source-specific parsed event | 選択したprovenanceを保持しながら、source固有fieldをlab全体のendpoint event contractへ投影する | Normalized endpoint event | 悪性、rule match、severity、incident、またはresponse state |
 | Deterministic detector | Normalized event | 明示的な決定論的conditionを評価する | Detection resultまたはrule hit | 攻撃意図、incident全体の真実、またはresponse approval |
 | Correlation / incident builder | Detection resultと補助的なobservation | 時間、host、user、process、scenario contextにまたがるeventを関連付け、分析単位を構築する | Incident candidateまたはincident artifact | 相関したすべてのeventが悪性であること、またはevidenceが完全であること |
@@ -93,25 +101,68 @@ hostname、user、identifier、timestamp、command line、その他の
 environment-privateな値は、明示的にsanitizedしてreviewしない限り、commitする
 fixtureに含めません。
 
-## ParserとNormalized Mapperの境界
+## Source-Shaped Event、Parser、Normalized Mapperの境界
 
-Parserとnormalized mapperは異なる問題を解決するため、分離します。
+Adaptation、source parser、normalized mapperは、それぞれ異なる問いに答えるため、
+責務を分離します。
+
+```text
+raw / provider representation
+        -> collection / adaptation
+source-shaped event
+        -> source parser
+source-specific parsed event
+        -> normalized mapper
+normalized endpoint event
+```
+
+### Collection / adaptationとSource-shaped event
+
+Collection/adaptationは、transportまたはproviderの表現を、source固有の語彙を
+lab全体のcanonical semanticsへ置き換えることなく、source parserが入力として受け取れる
+structured shapeへ変換します。
+
+例えば、XMLやprovider recordを、`system` sectionと`event_data` sectionを持つ
+objectとして表現できます。この段階ではfield名やfield間の関係はprovider-shapedな
+まま保持します。上流collectorが同等のstructured representationをすでに提供して
+いる場合、このboundaryでは追加の変換がほとんど不要な場合もあります。
+
+したがってSource-shaped eventはsource parserへ渡すための中間artifactであり、sourceがすでにsemanticに
+parse済みであるという主張ではありません。このboundaryでは次を守ります。
+
+- provider/source固有のfield名と構造的な関係を保持する
+- acquisition provenanceを保持できる
+- representation levelのdecodeは完了している場合がある
+- ただしsource固有のtype interpretationとcross-source canonical mappingはまだ
+  確定していない
+- 悪性・良性の判定は、このboundaryでは行わない
 
 ### Source parser
+
+Source parserが答える問いは、
+「このeventを、このsourceのcontractに従って安全かつ一貫して解釈できるか」です。
 
 Source parserは、eventをprogrammaticに安全かつ一貫して使用できるようにしつつ、
 source固有の意味を保持します。
 
 代表的な責務:
 
-- source-specific schemaを検証する
+- 期待するprovider、event family、source-specific schemaを検証する
 - 誤ったprovider routingをrejectする
 - 文字列のprocess IDをintegerへ変換する
 - source timestamp表現を正規化する
 - Sysmon hash stringなど、source固有の複合fieldを分割する
 - 値を捏造せず、未対応または存在しないoptional fieldを省略する
 
+Parserでは、`ProcessId`から`process_id`のようにimplementation上扱いやすい
+source-specificな名前へfieldを変更することがあります。ただし、このrenameだけで
+canonical fieldになるわけではありません。Outputは引き続きSysmon、auditd、
+その他の特定sourceを表しており、そのsource固有のparsed contractに従います。
+
 ### Normalized mapper
+
+Normalized mapperが答える問いは、
+「検証済みのsource固有observationを、共通downstream vocabularyでどう表現するか」です。
 
 Normalized mapperは、検証済みのsource-specific parsed eventを、後続のdetectionで
 使用する共通endpoint event vocabularyへ変換します。
@@ -161,7 +212,7 @@ Detection resultは、rule conditionがmatchしたことを示します。それ
 Triageは現在のevidenceにpriorityを付けて説明します。Pre-case Investigationは、
 利用可能なDefender側evidenceを調べてtriage hypothesisを検証し、evidence gapと
 推奨pivotを記録します。Collection requestを実行せず、
-`collection_result.json`もconsumeしません。不足しているevidenceは、確信度の高い
+`collection_result.json`も入力として使用しません。不足しているevidenceは、確信度の高い
 結論へ変換せず、不足したまま明示しなければなりません。
 
 ## Expected ArtifactとExact Parity
@@ -224,9 +275,22 @@ test実行中にgolden fileを再生成または上書きしてはいけませ�
 
 ## Sysmon Event ID 1の例
 
+Source-shapedとparsedのboundaryを飛ばさず確認できるよう、受け渡し全体を示します。
+
 ```text
-Sysmon provider-like source event
-  system.provider_event_id = 1
+Raw / provider representation
+  <Event>
+    <System><EventID>1</EventID>...</System>
+    <EventData>
+      <Data Name="ProcessId">4100</Data>
+      <Data Name="Image">C:\\...\\powershell.exe</Data>
+    </EventData>
+  </Event>
+
+        -> collection / adaptation
+
+Sysmon source-shaped event
+  system.provider_event_id = "1"
   event_data.ProcessId = "4100"
   event_data.Image = "C:\\...\\powershell.exe"
 
@@ -253,10 +317,13 @@ Detection result
   rule matched or did not match
 ```
 
-Source eventは、Sysmonがprocess creationを観測したことを示します。Normalized
-eventは、その観測をlab全体のendpoint vocabularyで表現します。定義された
-conditionがmatchしたかを評価するのはdetectorだけです。後続stageは、利用可能な
-evidenceを使用してdetectionをどのように解釈するかを判断します。
+Raw/provider representationは、実際に観測されたprovider dataです。Source-shaped
+eventは、Sysmon/Windows固有のvocabularyをsource parserへ渡す構造化データとして保持します。
+Source parserは、そのsource-specific shapeを検証・解釈し、type変換などを行いますが、
+lab全体のendpoint vocabularyはまだ割り当てません。そのcross-source projectionを
+行うのがnormalized mapperです。その後、定義されたconditionがmatchしたかを評価する
+のはdetectorだけであり、後続stageは利用可能なevidenceを使用してdetectionをどう
+解釈するかを判断します。
 
 ## Cross-Platform Statusの参照先
 
@@ -291,22 +358,22 @@ contractで実行し、検証済みresultをcommon pipeline engineへ渡すこ�
 
 | Boundary | Source固有のまま維持する責務 | Platform間で共有する責務 |
 |---|---|---|
-| Collection and adaptation | auditd、Sysmon、Windows Event Log、将来のretrieval adapter、source routing、acquisition provenance | Run isolation、範囲を限定したartifact placement、validation outcome handling |
-| Parsing | auditd multi-record interpretation、Sysmon provider/Event ID interpretation、source-native timestampとidentifier | 基本的なfail-closed behaviorと明示的なskip/error reporting |
-| Parsed contract | Source固有のparsed schemaとsource provenance | 共通parsed schemaは不要 |
-| Normalization | Source/domainごとに1つのmapper、source-to-canonical field policy、保持されたSSH/Wazuh FIM pathはsource-family artifactを使用し、Zeekとdeceptionはnon-`endpoint_events.v1` artifactを維持する | Mapping済みendpoint telemetryに対する検証済み`endpoint_events.v1` handoff、全source familyに対するcanonical detection result handoff |
-| Detection | Platform/domain固有のrule content、match condition、feature logic | Rule selection、detector invocation、決定論的execution、output validation、canonical detection result handoff |
-| Incident entry | Parserまたはmapperによるincident conclusionを持たない | Dedupe、correlation engine、incident builder、canonical incident handoff |
-| Analysis and handoff | 必要に応じたplatform-awareなevidence interpretation | Triage、pre-case investigation/enrichment、initial case、action handoff |
+| Collection and adaptation | Raw/provider representation -> source-shaped event、auditd、Sysmon、Windows Event Log、将来のretrieval adapter、source routing、acquisition provenance | Run isolation、範囲を限定したartifact placement、validation outcome handling |
+| Parsing | Source-shaped event -> source-specific parsed event、auditd multi-record interpretation、Sysmon provider/Event ID interpretation、source-native timestampとidentifier | 基本的なfail-closed behaviorと明示的なskip/error reporting |
+| Parsed contract | Source固有のparsed schemaとsource provenance。Canonical remappingはまだ行わない | 共通parsed schemaは不要 |
+| Normalization | Source-specific parsed event -> source/domain normalized artifact、source/domainごとに1つのmapper、source-to-canonical field policy、保持されたSSH/Wazuh FIM pathはsource-family artifactを使用し、Zeekとdeceptionはnon-`endpoint_events.v1` artifactを維持する | Mapping済みendpoint telemetryを検証済み`endpoint_events.v1`として後続stageへ渡すこと、全source familyのcanonical detection resultを共通downstreamへ渡すこと |
+| Detection | Platform/domain固有のrule content、match condition、feature logic | Rule selection、detector invocation、決定論的execution、output validation、canonical detection resultとして後続stageへ渡すこと |
+| Incident entry | Parserまたはmapperによるincident conclusionを持たない | Dedupe、correlation engine、incident builder、canonical incidentとして後続stageへ渡すこと |
+| 分析と後続stageへの受け渡し | 必要に応じたplatform-awareなevidence interpretation | Triage、pre-case investigation/enrichment、initial case、action stageへの受け渡し |
 | Runtime control | Collector固有configuration | Run isolation、run artifact management、schema validation、skip policy、fail-closed default |
 
 Common detector invocation contractは、検証済みsource-family artifactを受け取り、
 eventのplatform/domainに対して明示的に登録されたruleを選択し、決定論的にinvokeし、
-canonical detection resultまたは明示的なskip/failureをemitする前にoutputを検証する
+canonical detection resultまたは明示的なskip/failureを出力する前にoutputを検証する
 必要があります。Rule contentとmatch conditionはsource/platform固有のままです。
-Endpoint detectorは`endpoint_events.v1`をconsumeします。保持されたSSH/Wazuh FIM
-pathは、意図的にmigrationされない限りsource-family artifactをconsumeします。
-Zeekとdeceptionのdetectorは、それぞれ独自のnormalized artifactをconsumeします。
+Endpoint detectorは`endpoint_events.v1`を入力として受け取ります。保持されたSSH/Wazuh FIM
+pathは、意図的にmigrationされない限りsource-family artifactを入力として受け取ります。
+Zeekとdeceptionのdetectorは、それぞれ独自のnormalized artifactを入力として受け取ります。
 Canonical detection resultより後段のcommon codeは、auditd、Sysmon、その他の
 source-native shapeをparseしてはいけません。未対応schema、invalid artifact、
 invalid detector outputはfail closedとします。Optional inputが存在しない場合は
@@ -323,17 +390,34 @@ migrationされるまで分離されたままとし、Zeek network telemetryとd
 ```mermaid
 flowchart TD
     subgraph Endpoint[Endpoint telemetry]
-        LA[auditd or raw telemetry]
-        LP[Linux parser and mapper]
-        WA[Sysmon or raw telemetry]
-        WP[Windows parser and mapper]
+        LR[Linux raw / provider telemetry]
+        LA[Linux collection / adaptation]
+        LS[Linux source-shaped event]
+        LP[Linux source parser]
+        LSP[Linux source-specific parsed event]
+        LM[Linux normalized mapper]
+        WR[Windows raw / provider telemetry]
+        WA[Windows collection / adaptation]
+        WS[Windows source-shaped event]
+        WP[Windows source parser]
+        WSP[Windows source-specific parsed event]
+        WM[Windows normalized mapper]
         E[endpoint_events.v1]
         ER[Endpoint rule content and match]
 
-        LA --> LP
-        WA --> WP
-        LP --> E
-        WP --> E
+        LR --> LA
+        LA --> LS
+        LS --> LP
+        LP --> LSP
+        LSP --> LM
+        LM --> E
+
+        WR --> WA
+        WA --> WS
+        WS --> WP
+        WP --> WSP
+        WSP --> WM
+        WM --> E
     end
 
     subgraph Existing[Existing endpoint-related paths]
@@ -369,7 +453,7 @@ flowchart TD
         DC --> I[Incident]
         I --> T[Triage]
         T --> V[Pre-case investigation]
-        V --> C[Case and action handoff]
+        V --> C[Case / Actionへの受け渡し]
     end
 
     E --> RS
@@ -381,7 +465,7 @@ flowchart TD
     OV --> R
 ```
 
-Common spineはartifact handoffとexecution policyを管理します。Collector、parser、
+Common spineはstage間のartifact受け渡しとexecution policyを管理します。Collector、parser、
 mapper、rule semanticsを吸収するものではありません。そのため、Linux auditd
 ruleとWindows Sysmon ruleは異なっていても、後続processing向けに同じcanonical
 detection result shapeを生成できます。
@@ -393,7 +477,7 @@ Defender telemetry、detection evidence、alertではなく、それだけでinc
 作成することはできません。
 
 このflowのInvestigation stageは、`investigation_result.json`を出力するpre-case
-stageです。承認・実行済みのcollection pathをconsumeして
+stageです。承認・実行済みのcollection pathを入力として使用して
 `post_action_dfir_investigation_result.json`を出力するAction後DFIR workflowとは
 分離したままにします。Action後のresultをpre-case artifactへ戻したり、上書き
 したりしてはいけません。
@@ -415,7 +499,7 @@ v0は、次の処理が可能な最小のshared execution spineです。
 - 固定されたcorrelation policyをinvokeする
 - 正確なsupporting-ID selectionを使用してcorrelation Incidentとobservation
   Incidentを構築する
-- deterministic Triageとpre-case Investigationのhandoffを実行する
+- deterministic Triageを実行し、その結果をpre-case Investigationへ渡す
 - invalidなrequired inputまたはoutputに対してfail closedとする
 
 Collector、source parser、normalized mapper、rule contentはsource/domain固有の
@@ -456,7 +540,7 @@ platform間で一貫したvalidation、skip、fail-closed behaviorを保持し�
 
 1. **Windows Slice 1 — atomic flow:** 1件のSysmon Event ID 1 process
    observationを`endpoint_events.v1`へmappingし、決定論的observableまたは
-   detectionをemitしてIncident boundaryを通過させます。Process observation
+   detectionを出力してIncident boundaryを通過させます。Process observation
    だけで悪性を主張しません。
 2. **Windows Slice 2 — correlation flow:** PID/PPIDと範囲を限定した時間関係を
    使用して複数のprocess-execution observationをcorrelateします。Correlationは
